@@ -1,0 +1,123 @@
+<template>
+  <section class="product-msg">
+    <div class="header">
+      <div class="left">险种选择</div>
+      <div class="right" @click="addProduct">
+        <img width="11" src="@/assets/imgs/common/icon/icon_add.png" />
+        <span>添加险种</span>
+      </div>
+    </div>
+
+    <!-- 险种表格信息 -->
+    <div class="table">
+      <div class="table-header">
+        <div class="left">挚爱一生</div>
+        <div class="right">
+          <img width="11" src="@/assets/imgs/common/icon/icon_del.png" />
+        </div>
+      </div>
+      <div class="table-main">
+        <div class="table-th">
+          <span>基本保额(元)</span>
+          <span>交费频次</span>
+          <span>交费期间</span>
+          <span>保险期间</span>
+        </div>
+        <div class="table-tr">
+          <span>300，000.00</span><span>年交</span><span>20年期</span>
+          <span>终身</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 总保费 -->
+    <div class="all-pay">首期总保费：<span>6.927.00 </span>元</div>
+  </section>
+</template>
+
+<script>
+export default {
+  name: "productMsg",
+  components: {},
+  props: {},
+  data() {
+    return {};
+  },
+  computed: {},
+  watch: {},
+  created() {},
+  methods: {
+    //添加险种
+    addProduct() {
+      this.$emit("addProduct");
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.product-msg {
+  margin: 10px 0;
+  .header {
+    @include lineheight-height(37px);
+    margin: 0 20px;
+    padding: 0 15px;
+    background: $color-ds;
+    font-size: 14px;
+    color: #333333;
+    display: flex;
+    justify-content: space-between;
+    .right {
+      color: #ffcc00;
+      font-size: 12px;
+      img {
+        vertical-align: middle;
+      }
+    }
+  }
+  .table {
+    margin: 10px 15px;
+    border: 1px solid $color-ds;
+    font-size: 12px;
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      height: 40px;
+      padding: 0 15px;
+      align-items: center;
+      font-size: 14px;
+    }
+    .table-main {
+      .table-th {
+        display: flex;
+        padding: 10px 15px;
+        background: #fffbeb;
+        span {
+          flex: 1;
+          white-space: nowrap;
+          text-align: center;
+        }
+      }
+      .table-tr {
+        display: flex;
+        padding: 10px 15px;
+
+        span {
+          flex: 1;
+          white-space: nowrap;
+          text-align: center;
+        }
+      }
+    }
+  }
+  .all-pay {
+    text-align: right;
+    padding: 15px;
+    font-size: 14px;
+    span {
+      font-size: 20px;
+      color: #fa7070;
+    }
+  }
+}
+</style>

@@ -1,0 +1,56 @@
+<template>
+  <page class="demo-http demo-page">
+    <div class="btn-wrap">
+      <button class="btn" @click="httpTest">
+        请求统计功能使用率接口
+      </button>
+      <button class="btn" @click="httpGetIp">
+        请求后台获取用户IP接口
+      </button>
+      {{ ip }}
+      <button class="btn" @click="httpCode">
+        字典码表查询
+      </button>
+    </div>
+  </page>
+</template>
+
+<script>
+export default {
+  name: "demoHttp",
+  data() {
+    return {
+      ip: ""
+    };
+  },
+  computed: {},
+  created() {},
+  methods: {
+    httpTest() {
+      utils.http
+        .post(interfaces.global.test, {
+          reviewid: "",
+          functioncode: "all"
+        })
+        .then(() => {});
+    },
+    httpGetIp() {
+      utils.http.get(interfaces.global.getIp).then(res => {
+        this.ip = res.data;
+      });
+    },
+    httpCode() {
+      const params = {
+        sysDictDataDto: {
+          className: ""
+        }
+      };
+      utils.http.post(interfaces.global.code, params).then(() => {});
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/assets/css/demo/index.scss";
+</style>

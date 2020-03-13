@@ -1,0 +1,240 @@
+<template>
+  <page class="production_detail" :withAppBar="!globalConfig.isWx">
+    <!-- 导航栏 -->
+    <AppBar class="app-bar" v-if="!globalConfig.isWx">
+      <img
+        slot="left"
+        src="@/assets/imgs/common/icon/icon_back.png"
+        class="icon icon-back"
+        @click="goBack"
+      />
+      <template slot="center">
+        {{ productionItem.alias }}
+      </template>
+    </AppBar>
+    <!-- 主体 -->
+    <AppContent class="app-content">
+      <!--险种的图片-->
+      <article class="product_img">
+        <img :src="productionItem.url" alt="" />
+        <div class="product_brief">
+          <span>{{ productionItem.name }}</span>
+          <br />
+          <span>{{ productionItem.productDes }}</span>
+        </div>
+      </article>
+      <!--被保人部分-->
+      <section class="product_basis">
+        <div class="tt" style="">保费测算</div>
+        <h2 class="tt">被保险人信息</h2>
+        <!--被保人的信息的部分-->
+        <Insurant :mainlist="mainlist"></Insurant>
+        <!--被保人的可选计划的部分-->
+        <article>
+          <div class="tt choosedPlan">可选计划</div>
+          <AddInsurant></AddInsurant>
+        </article>
+      </section>
+      <!--详情的部分-->
+      <section>
+        <div id="details">
+          <!--<div class="tt" style="color: blue;background: white;line-height: 40px;font-size: 16px;">产品介绍</div>-->
+          <section class="header_tabs">
+            <nav
+              class="tab_item"
+              v-for="(item, index) in productDetail"
+              :key="index"
+              :class="{ choosed: tabshow == item.code }"
+              @click="newSwitch(item.code)"
+            >
+              {{ item.desc }}
+              <span v-if="index + 1 != productDetail.length">|</span>
+            </nav>
+          </section>
+          <!--产品详情-->
+          <div v-if="tabshow == '1'" class="list">
+            <div class="toDucument">
+              <!--产品详情投不展示图-->
+              <!-- <img style="margin-top: 10px;width: 100%;height: 210px;" ng-src="{{proInfo.imgInfo_01}}?{{vo.rondom}}" /> -->
+              <!--保障计划-->
+            </div>
+          </div>
+
+          <!--公司简介-->
+          <div v-if="tabshow == '2'" class="list">
+            <div class="toDucument">
+              <img
+                style="margin-top: 10px;width: 100%;"
+                src="https://axbucket01-10066809.cos.ap-shanghai.myqcloud.com/ax_product/aboutUs/001.jpg"
+              /><br />
+              <img
+                style="margin-top: 10px;width: 100%;"
+                src="https://axbucket01-10066809.cos.ap-shanghai.myqcloud.com/ax_product/aboutUs/002.jpg"
+              /><br />
+              <img
+                style="margin-top: 10px;width: 100%;"
+                src="https://axbucket01-10066809.cos.ap-shanghai.myqcloud.com/ax_product/aboutUs/003.jpg"
+              />
+            </div>
+          </div>
+          <!--理赔流程-->
+          <div v-if="tabshow == '3'" class="list">
+            <div class="toDucument">
+              <img
+                style="margin-top: 10px;width: 100%;"
+                src="https://axbucket01-10066809.cos.ap-shanghai.myqcloud.com/ax_product/aboutUs/301.png"
+              /><br />
+            </div>
+          </div>
+        </div>
+      </section>
+    </AppContent>
+  </page>
+</template>
+
+<script>
+import Insurant from "@/components/production/Insurant.vue";
+import AddInsurant from "@/components/production/AddInsurant.vue";
+export default {
+  components: { Insurant, AddInsurant },
+  props: {},
+  data() {
+    return {
+      productionItem: {},
+      //产品介绍的头部栏
+      productDetail: [
+        {
+          desc: "产品详情",
+          code: "1"
+        },
+        {
+          desc: "公司简介",
+          code: "2"
+        },
+        {
+          desc: "理赔流程",
+          code: "3"
+        }
+      ],
+      productMessage: "", //产品信息
+      tabshow: "1", //默认选项是产品详情的code值
+      mainlist: [] //主险列表
+    };
+  },
+  computed: {},
+  watch: {},
+  created() {
+    console.log(this.$route.params);
+    this.productionItem = this.$route.params;
+    this.getProductDetails();
+  },
+  methods: {
+    // 返回
+    goBack() {
+      this.back();
+    },
+    //获取产品的详情
+    getProductDetails() {
+      const params = {
+        agentDto: {
+          ldcom: {
+            comcode: "86010000",
+            id: "f4c89affbc2a4396a3ef511449cec344"
+          },
+          agent: {
+            personId: "d272a135bde84e768cb098d86a42035a",
+            channelId: "01",
+            qualificationId: ""
+          }
+        },
+        productDto: {
+          orgCode: "86010000",
+          productCode: this.productionItem.productCode
+        }
+      };
+      // http
+      utils.http
+        .post(interfaces.production.productDetail, params)
+        .then(data => {
+          //成功获取数据
+          console.log(data);
+          this.productMessage = data.productDefList[0];
+          this.mainlist.push(this.productMessage);
+          console.log(this.mainlist);
+        });
+    },
+    //详情的部分的切换
+    newSwitch(code) {
+      this.tabshow = code;
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.app-bar {
+  .icon {
+    height: auto;
+    &.icon-back {
+      width: 11.5px;
+    }
+  }
+}
+.app-content {
+  .product_img {
+    position: relative;
+    img {
+      width: 100%;
+      height: 210px;
+    }
+    .product_brief {
+      color: white;
+      position: absolute;
+      background: #000;
+      opacity: 0.5;
+      bottom: 0px;
+      width: 100%;
+      padding: 10px;
+      text-align: center;
+      span {
+        font-size: 16px;
+      }
+      span:nth-child(3n) {
+        font-size: 13px;
+      }
+    }
+  }
+  #details {
+    background: white;
+    margin-top: -16px;
+    .header_tabs {
+      height: 35px;
+      margin-top: 15px;
+      .tab_item {
+        border-bottom: 3px solid gainsboro;
+        display: inline-block;
+        height: 37px;
+        line-height: 32px;
+        text-align: center;
+        background-color: white;
+        width: 33.33%;
+        margin-top: 8px;
+        span {
+          color: #cccccc;
+          float: right;
+        }
+      }
+      .choosed {
+        border-bottom: 3px solid rgb(201, 159, 99);
+      }
+    }
+  }
+}
+.tt {
+  margin-left: 3%;
+  color: #c99f63;
+  margin-top: 8px;
+  line-height: 30px;
+  font-size: 16px;
+  font-weight: normal;
+}
+</style>

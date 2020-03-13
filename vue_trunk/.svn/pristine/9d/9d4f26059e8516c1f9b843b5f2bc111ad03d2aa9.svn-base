@@ -1,0 +1,8 @@
+NODE_ENV = "development"
+VUE_APP_ENV = "dev"
+VUE_APP_SERVER_URL = "https://devwa.aixin-life.net/com.ifp.ipartner/"
+VUE_APP_PAGE_URL = "https://deva.aixin-life.net/patvue/"
+VUE_APP_COM_ID = "GTO2O20170118"
+VUE_APP_FROM = "wechat"
+VUE_APP_TRANSFER = "GTO2OINTERFACE2017#@!%88"
+VUE_APP_OPEN_OFFICE_URL = "https://officeweb365.aixin-life.net/"

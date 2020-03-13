@@ -1,0 +1,270 @@
+<template>
+  <Page class="insurance-select" :withAppBar="!globalConfig.isWx">
+    <!-- 导航栏 -->
+    <AppBar class="app-bar" v-if="!globalConfig.isWx">
+      <template slot="center">
+        爱心人寿险种选择
+      </template>
+    </AppBar>
+
+    <!-- 主体 -->
+    <AppContent class="app-content">
+      <!-- 主险 -->
+      <div class="main-list">
+        <InsuranceItem
+          v-for="(item, index) in mainInsurancList"
+          :key="index"
+          :itemObj="item"
+          :selectCode="selectMainCode"
+          @handleSelect="handleSelectMain"
+        />
+      </div>
+      <!-- 缴费期间 -->
+      <PayTime
+        @handlePayTime="handlePayTime"
+        :payList="payList"
+        :selectCode="selectPayCode"
+      />
+      <p class="tips-one">*本险种首单基本保额须大于等于50万</p>
+      <!-- 被保人类型 -->
+      <InsurantType
+        @handleInsurantType="handleInsurantType"
+        :insurantTypeList="insurantTypeList"
+        :selectCode="selectInsurantTypeCode"
+      />
+      <p class="tips-two">(需依据体检结果评估被保险人是否获得优选费率)</p>
+      <!-- 附加险 -->
+      <div class="additional-list">
+        <h2>可选计划</h2>
+        <InsuranceItem
+          v-for="(item, index) in additionalInsurancList"
+          :key="index"
+          :itemObj="item"
+          :selectCode="selectAdditionalCode"
+          @handleSelect="handleSelectAdditional"
+        />
+      </div>
+      <!-- 按钮组 -->
+      <div class="btns">
+        <button class="cancel">取消</button>
+        <button class="sure" @click="handleSure">确定</button>
+      </div>
+    </AppContent>
+  </Page>
+</template>
+
+<script>
+import InsuranceItem from "@/components/plan/InsuranceItem";
+import PayTime from "@/components/plan/PayTime";
+import InsurantType from "@/components/plan/InsurantType";
+
+export default {
+  name: "insuranceSelect",
+  components: {
+    InsuranceItem,
+    PayTime,
+    InsurantType
+  },
+  data() {
+    return {
+      //被选择的主险
+      selectMainCode: "",
+      //主险列表
+      mainInsurancList: [
+        // {
+        //   code: "101",
+        //   desc: "爱心人寿挚爱一生尊享版终身寿险（分红型）"
+        // },
+        // {
+        //   code: "102",
+        //   desc: "爱心人寿爱心延喜养老年金保险B款（分红型）"
+        // },
+        // {
+        //   code: "103",
+        //   desc: "爱心人寿聚爱一生终身寿险"
+        // },
+        // {
+        //   code: "104",
+        //   desc: "爱心人寿守护神定期寿险"
+        // },
+        // {
+        //   code: "105",
+        //   desc: "爱心人寿挚爱金生定期寿险"
+        // },
+        // {
+        //   code: "106",
+        //   desc: "爱心人寿臻爱寰球特定疾病全球医疗保险"
+        // }
+      ],
+      //被选择当交费期间
+      selectPayCode: "",
+      //交费列表
+      payList: [
+        // { code: "01", desc: "一次交清" },
+        // { code: "02", desc: "5年期" },
+        // { code: "03", desc: "10年期" },
+        // { code: "04", desc: "15年期" },
+        // { code: "05", desc: "一次交清" },
+        // { code: "06", desc: "5年期" }
+      ],
+      //被选择当被保人类型
+      selectInsurantTypeCode: "",
+      //被保人类型码表
+      insurantTypeList: [
+        { code: "01", desc: "标准" },
+        { code: "02", desc: "优选" }
+      ],
+      //被选择的附加险
+      selectAdditionalCode: "",
+      //附加险列表
+      additionalInsurancList: [
+        // {
+        //   code: "1001",
+        //   desc: "爱心人寿附加投保人豁免保险费重大疾重大疾重大疾重大疾"
+        // },
+        // {
+        //   code: "1002",
+        //   desc: "爱心人寿爱心延喜养老年金保险B款（分红型）"
+        // }
+      ]
+    };
+  },
+  computed: {},
+  watch: {},
+  created() {
+    this.initPage();
+  },
+  methods: {
+    //选择主险
+    handleSelectMain(item) {
+      this.selectMainCode = item.productCode;
+      this.selectPayCode = "";
+      this.selectAdditionalCode = "";
+      //交费期间列表
+      this.payList = item.attList[1].attValueList;
+      //附加险列表
+      this.additionalInsurancList = item.extraList;
+      console.log(item);
+    },
+    //选择交费时间
+    handlePayTime(item) {
+      this.selectPayCode = item.code;
+      console.log(this.selectPayCode);
+    },
+    //选择被保人类型
+    handleInsurantType(item) {
+      this.selectInsurantTypeCode = item.code;
+    },
+    //选择附加险种
+    handleSelectAdditional(item) {
+      this.selectAdditionalCode = item.productCode;
+      this.selectPayCode = "";
+      //交费期间列表
+      // this.payList = item.attList[0].attValueList;
+    },
+    //确定
+    handleSure() {
+      this.back();
+    },
+    //初始化页面
+    initPage() {
+      let applicantBirthday = this.$route.query.applicantBirthday;
+      let insurantBirthday = this.$route.query.insurantBirthday;
+      let insurantSex = this.$route.query.insurantSex;
+      let relation = this.$route.query.relation;
+      let userInfo = this.$store.state.user.userInfo;
+      //初始化页面配置对象
+      let params = {
+        agentDto: {
+          agent: {
+            channelId: userInfo.channelId, //渠道id
+            personId: userInfo.infoId, //登陆人id
+            qualificationId: ""
+          },
+          ldcom: {
+            comcode: "",
+            id: ""
+          }
+        },
+        cusMemberInfo: {
+          holderBrith: applicantBirthday, //投保人生日
+          name: insurantBirthday, //被保人生日
+          relation: relation, //关系
+          sex: insurantSex //被保人性别
+        }
+      };
+      utils.http.post(interfaces.plan.getProductSetting, params).then(res => {
+        this.mainInsurancList = res.productDefList; //主险列表
+      });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.app-bar {
+  .icon {
+    height: auto;
+    &.icon-back {
+      width: 11.5px;
+    }
+  }
+}
+.insurance-select {
+  background: $color-bg;
+  .main-list {
+    background: $color-bg;
+    margin: 0 10px;
+    padding: 14px 20px;
+    box-shadow: 0 0 4px 1px #e5e9f1;
+    border-radius: 0 0 5px 5px;
+  }
+  .tips-one {
+    font-size: 12px;
+    color: #fa7070;
+    margin-left: 30px;
+    margin-bottom: 5px;
+  }
+  .tips-two {
+    font-size: 12px;
+    color: #fa7070;
+    margin-left: 30px;
+    margin-bottom: 10px;
+    margin-top: 10px;
+  }
+  .additional-list {
+    background: $color-bg;
+    margin: 0 10px;
+    padding: 14px 20px;
+    box-shadow: 0 0 4px 1px #e5e9f1;
+    border-radius: 0 0 5px 5px;
+    h2 {
+      font-size: 15px;
+      color: #333333;
+      font-weight: normal;
+      border-bottom: 1px solid #e5e9f1;
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+    }
+  }
+  .btns {
+    padding: 40px 40px 20px 40px;
+    @include display-flex;
+    justify-content: space-around;
+    .sure {
+      background: $color-theme;
+    }
+    .cancel {
+      color: $color-theme;
+    }
+    button {
+      width: 102px;
+      height: 38px;
+      border: 1px solid $color-theme;
+      border-radius: 19px;
+      background: $color-bg;
+      font-size: 18px;
+    }
+  }
+}
+</style>

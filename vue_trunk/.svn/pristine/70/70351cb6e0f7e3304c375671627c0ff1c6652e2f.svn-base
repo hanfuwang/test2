@@ -1,0 +1,181 @@
+<template>
+  <div class="share-wx" @click="shareCancel">
+    <Modal class="dp-model" :show="visible">
+      <div class="bottom">
+        <div class="main">
+          <div
+            class="share friend"
+            v-if="friendScene"
+            @click="transferParentFunc('0')"
+          >
+            <div class="share-img">
+              <img src="../../assets/imgs/common/icon/icon_share_friend.png" />
+            </div>
+            <div class="share-word">微信好友</div>
+          </div>
+          <div
+            class="share moments"
+            v-if="zoneScene"
+            @click="transferParentFunc('1')"
+          >
+            <div class="share-img">
+              <img src="../../assets/imgs/common/icon/icon_share_zone.png" />
+            </div>
+            <div class="share-word">朋友圈</div>
+          </div>
+          <div
+            class="share moments"
+            v-if="duanxinScene"
+            @click="transferParentFunc('2')"
+          >
+            <div class="share-img">
+              <img src="../../assets/imgs/common/icon/icon_share_duanxin.png" />
+            </div>
+            <div class="share-word">短信</div>
+          </div>
+        </div>
+        <div class="cancel" @click="shareCancel">取消</div>
+      </div>
+    </Modal>
+  </div>
+</template>
+<script>
+import Modal from "./ui/Modal";
+export default {
+  data() {
+    return {
+      visible: false, //显示隐藏弹窗
+      friendScene: false, //朋友
+      zoneScene: false, //朋友圈
+      duanxinScene: false //短信
+    };
+  },
+  components: {
+    Modal
+  },
+  props: {
+    //显示隐藏弹窗
+    isOpenWx: {
+      type: Boolean,
+      default: false
+    },
+    //分享场景
+    shareScene: {
+      type: Array,
+      default: function() {
+        return [];
+      }
+    },
+    //分享参数
+    shareObj: {
+      type: Object,
+      default: function() {
+        return {};
+      }
+    }
+  },
+  watch: {
+    isOpenWx(val) {
+      console.log(val);
+      this.visible = val;
+    },
+    shareScene: {
+      handler: function(val) {
+        if (val.includes("friendScene")) {
+          this.friendScene = true;
+        }
+        if (val.includes("zoneScene")) {
+          this.zoneScene = true;
+        }
+        if (val.includes("duanxinScene")) {
+          this.duanxinScene = true;
+        }
+      },
+      immediate: true
+    }
+  },
+  methods: {
+    shareCancel() {
+      this.$emit("shareCancel", this.visible);
+    },
+    //分享
+    transferParentFunc(shareTarget) {
+      //0 好友 1朋友圈
+      if (shareTarget != 2) {
+        let shareObj = this.shareObj;
+        shareObj.shareTarget = shareTarget;
+        utils.native.shareWx(shareObj);
+      } else {
+        this.sendMsg();
+      }
+    },
+    //发送短信
+    sendMsg() {
+      console.log(this.shareObj);
+      // const params = {
+      //   policy: {
+      //     bankAccount: "", //链接
+      //     functionCode: "9",
+      //     mobile: "", //手机号
+      //     orderId: "", //bookid
+      //     policyCode: "", //32位随机码
+      //     randomStr: "" //险种code
+      //   }
+      // };
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.share-wx {
+  .bottom {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100vw;
+    height: 172px;
+    background: white;
+    .main {
+      display: flex;
+      width: 100%;
+      background: rgba(238, 238, 238, 1);
+      height: 124px;
+      .share {
+        height: 124px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding-left: 15px;
+        .share-img {
+          img {
+            height: 60px;
+            width: 60px;
+          }
+        }
+        .share-word {
+          height: 18px;
+          line-height: 18px;
+          text-align: center;
+          font-size: 12px;
+          font-family: PingFangSC-Regular;
+          font-weight: 400;
+          color: rgba(102, 102, 102, 1);
+          padding-top: 6px;
+          width: 60px;
+        }
+      }
+    }
+    .cancel {
+      width: 100vw;
+      height: 48px;
+      background: rgba(255, 255, 255, 1);
+      line-height: 48px;
+      text-align: center;
+      font-size: 16px;
+      font-family: PingFangSC-Regular;
+      font-weight: 400;
+      color: rgba(102, 102, 102, 1);
+    }
+  }
+}
+</style>

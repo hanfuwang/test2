@@ -1,0 +1,112 @@
+<template>
+  <Page class="demo-app" :withAppBar="!globalConfig.isWx">
+    <!-- app-bar -->
+    <AppBar class="app-bar" v-if="!globalConfig.isWx">
+      <img
+        slot="left"
+        src="../../assets/imgs/common/icon/icon_back.png"
+        class="icon icon-back"
+        @click="goBack"
+      />
+      <template slot="center">
+        我是一个标题
+      </template>
+      <img
+        slot="right"
+        src="../../assets/imgs/common/icon/icon_search.png"
+        class="icon icon-search"
+        @click="search"
+      />
+    </AppBar>
+
+    <!-- app-content -->
+    <AppContent
+      class="app-content"
+      needLoadmore
+      :loadmoreOpt="loadmoreOpt"
+      @loadmore="loadmore"
+    >
+      <section class="list">
+        <p class="item" v-for="item of listItemCount" :key="item">
+          我是内容{{ item }}
+        </p>
+      </section>
+    </AppContent>
+  </Page>
+</template>
+
+<script>
+export default {
+  name: "demoApp",
+  data() {
+    return {
+      listItemCount: 0, // 当前list item的个数
+      // 加载更多配置项
+      loadmoreOpt: {
+        loadmoreing: false,
+        loadmoreFinish: false,
+        bottomDistance: 30,
+        loadmoreFinishDesc: "没有更多内容了哦~"
+      }
+    };
+  },
+  computed: {},
+  created() {
+    // 初始化页面
+    this.initPage();
+  },
+  methods: {
+    // 初始化页面
+    initPage() {
+      // 加载更多
+      this.loadmore();
+    },
+    // 返回
+    goBack() {
+      this.back();
+    },
+    // 搜索
+    search() {
+      utils.ui.tips("点击了搜索按钮");
+    },
+    // 加载更多
+    loadmore() {
+      console.log("loadmore");
+      // 设置当前正在加载
+      this.loadmoreOpt.loadmoreing = true;
+      setTimeout(() => {
+        // 设置当前加载完毕
+        this.loadmoreOpt.loadmoreing = false;
+        this.listItemCount += 20;
+
+        // 模拟全部加载完毕
+        if (this.listItemCount >= 80) {
+          this.loadmoreOpt.loadmoreFinish = true;
+        }
+      }, 2000);
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.app-bar {
+  .icon {
+    height: auto;
+    &.icon-back {
+      width: 11.5px;
+    }
+    &.icon-search {
+      width: 20px;
+    }
+  }
+}
+.list {
+  .item {
+    @include lineheight-height(40px);
+    padding: 0 20px;
+    font-size: 14px;
+    border-bottom: 1px solid #cccccc;
+  }
+}
+</style>

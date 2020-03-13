@@ -1,0 +1,60 @@
+// form表单组件公共样式
+$label-font-size: 14px; // label字体大小
+$font-size: 13px; // 正常字体大小
+$font-color: #333333; // 字颜色
+$font-color-dark: #999999; // 字颜色-灰暗
+
+.form-item {
+  position: relative;
+  width: 100%;
+  padding: 0 20px;
+}
+
+.f-wrap {
+  @include display-flex;
+  height: 45px;
+  border-bottom: 1px solid #e7e7e7;
+  transition: border-bottom 0.5s;
+  // 输入时的绿线
+  &.green-line {
+    border-bottom: 1px solid $color-success;
+  }
+  // 非法红色下划线
+  &.red-line {
+    border-bottom: 1px solid $color-error;
+  }
+  // label
+  .f-label {
+    @include display-flex;
+    justify-content: flex-start;
+    margin-right: 20px;
+    span {
+      @include lineheight-height(20px);
+    }
+    .require {
+      margin-top: 5px;
+      margin-right: 5px;
+      width: 8px;
+      font-size: $label-font-size;
+      color: #e60021;
+    }
+    .label {
+      @include overflow-emphasis;
+      letter-spacing: 1px;
+      max-width: 120px;
+      font-size: $label-font-size;
+      color: $font-color;
+    }
+  }
+  // icon
+  .icon {
+    height: auto;
+  }
+  // 右侧label
+  .f-label-right {
+    @include lineheight-height(20px);
+    font-size: $font-size;
+    color: $font-color-dark;
+    white-space: nowrap;
+  }
+}

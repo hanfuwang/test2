@@ -1,0 +1,160 @@
+<template>
+  <section class="ban">
+    <aside class="head">
+      <section @click="card">
+        <!-- <img
+          v-if="agent.sex == 0 && !agent.imgUrl"
+          class="headImg"
+          src="@/assets/imgs/common/icon/icon_male.png"
+        />
+        <img
+          v-if="agent.sex == 1 && !agent.imgUrl"
+          class="headImg"
+          src="@/assets/imgs/common/icon/icon_female.png"
+        /> -->
+        <img
+          v-if="!agent.imgUrl"
+          class="headImg"
+          src="@/assets/imgs/plan/icon/icon_acc.png"
+        />
+
+        <img v-if="agent.imgUrl" src="this.imgUrl" />
+      </section>
+      <div>{{ agent.personName }}</div>
+    </aside>
+    <aside>
+      <a :href="'tel:' + agent.mobile">
+        <img class="phone" src="@/assets/imgs/plan/icon/icon_phone.png" />
+        <nav>{{ agent.mobile }}</nav>
+      </a>
+    </aside>
+
+    <!-- app -->
+    <aside class="away" @click="jumpTb" v-if="!globalConfig.isWx">
+      立即投保
+    </aside>
+    <!-- wx -->
+    <aside class="away" v-else @click="shareWx">
+      分享
+    </aside>
+  </section>
+</template>
+
+<script>
+export default {
+  components: {},
+  data() {
+    return {};
+  },
+  props: ["agent", "shareProductImagePath", "productName"],
+  created() {
+    // this.initPage();
+  },
+  methods: {
+    //跳转投保
+    jumpTb() {
+      utils.native.closePage({ bookId: this.$route.query.bookId });
+    },
+    //微信
+    initWx() {
+      console.log(this.shareProductImagePath);
+      const shareParams = {
+        title: "家庭财务保障规划书", // 分享标题
+        desc: "爱心让家庭更美好, 请点击查看<" + this.productName + ">", // 分享内容
+        link: this.$route.query.timestamp
+          ? window.location.href
+          : window.location.href + "&timestamp=" + Date.parse(new Date()),
+        // 分享链接
+        // imgUrl: globalConfig.pageUrl + "img/share/logo.png" // 分享图标
+        imgUrl: this.shareProductImagePath
+      };
+      console.log(shareParams);
+      utils.wechat
+        .shareFriend(shareParams)
+        .then(() => {
+          // utils.ui.tips("分享成功");
+        })
+        .catch(error => {
+          utils.ui.tips({
+            msg: error,
+            type: "error"
+          });
+        });
+    },
+    //
+    shareWx() {
+      utils.ui.tips("请点开右上角按钮进行分享");
+    },
+    //打开名片页面
+    card() {
+      this.$router.push({
+        name: "personCard",
+        params: { agent: this.agent }
+      });
+    }
+  },
+  watch: {
+    //监听benifitDtoList
+    agent: {
+      handler(newVal) {
+        this.agent = newVal;
+      },
+      // 立即执行
+      immediate: true
+    },
+    shareProductImagePath: {
+      handler(val) {
+        if (val) {
+          this.initWx();
+        }
+      },
+      // 立即执行
+      immediate: true
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.ban {
+  height: 60px;
+  overflow: hidden;
+  background: #f2f2f2;
+  display: flex;
+  aside {
+    height: 60px;
+    line-height: 60px;
+    text-align: center;
+    flex: 1;
+    a {
+      color: #000;
+    }
+    img {
+      float: left;
+      margin: 21px 0;
+    }
+  }
+  .head {
+    .headImg {
+      width: 40px;
+      height: 40px;
+      margin: 10px 10px;
+    }
+    height: 60px;
+    line-height: 60px;
+    text-align: center;
+  }
+  .away {
+    background: #ffcf10;
+    color: #574c20;
+    height: 60px;
+    line-height: 60px;
+    text-align: center;
+  }
+}
+.phone {
+  width: 20px;
+  height: 20px;
+  margin: 10px 10px;
+}
+</style>

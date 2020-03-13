@@ -1,0 +1,220 @@
+/* ------------------------------------------ http请求工具类 ------------------------------------------ */
+
+import axios from "axios";
+import globalConfig from "@/assets/global/globalConfig";
+import DES3 from "@/assets/libs/secret/DES3";
+import { hex_hmac_md5 } from "@/assets/libs/secret/md5";
+import { color as colorLog } from "./log";
+
+// 请求实例
+const instance = axios.create({
+  timeout: globalConfig.timeout,
+  headers: {
+    post: {
+      "Content-Type": ""
+    }
+  }
+});
+
+// 日志打印器
+const logHandler = {
+  // 请求日志打印
+  request(config) {
+    // 开启loading
+    utils.ui.openLoading({ openColor: globalConfig.ui.colorTheme });
+    // 打印日志
+    colorLog(
+      `${config.method} to ${config.reqLogUrl} [${config.reqLogDesc}] =>`,
+      "blue"
+    );
+    console.log(config.data || "无请求参数");
+  },
+  // 返回成功日志打印
+  response(response) {
+    // 关闭loading
+    utils.ui.closeLoading({ closeColor: globalConfig.ui.colorSuccess });
+    // 打印日志
+    const config = response.config;
+    colorLog(
+      `${config.method} to ${config.reqLogUrl} [${config.reqLogDesc}] √`,
+      "green"
+    );
+    console.log(response.data);
+  },
+  // 错误日志打印
+  error(error) {
+    // 关闭loading
+    utils.ui.closeLoading({ closeColor: globalConfig.ui.colorError });
+    // 打印日志
+    const config = JSON.parse(JSON.stringify(error)).config;
+    if (config) {
+      // 非纯js报错
+      colorLog(
+        `${config.method} to ${config.reqLogUrl} [${config.reqLogDesc}] X`,
+        "red"
+      );
+    }
+    utils.ui.tips({
+      msg: error.message,
+      type: "error",
+      icon: true
+    });
+    console.log(error.message);
+  }
+};
+
+// 获取组装的请求params
+function getParams(config) {
+  const requestType = config.url.requestType;
+  const params = {
+    packageList: {
+      packages: {
+        header: {
+          requestType: requestType,
+          comId: globalConfig.comId,
+          from: globalConfig.from,
+          sendTime: utils.format.dateToStr(new Date(), "yyyy-MM-dd HH:mm:ss"), //当前日期时间，格式为"yyyy-MM-dd HH:mm:ss"
+          orderSerial: "orderId",
+          comSerial: "comSerial",
+          version: "V1.0" //当前请求数据的版本
+        },
+        request: ""
+      }
+    }
+  };
+  // 设置request(DES3加密)
+  if (requestType == "AXSCHEDULEBYSAVE" || requestType == "CUSMEMBERSAVE") {
+    // 部分接口特殊处理
+    params.packageList.packages.request = DES3.encrypt(
+      "",
+      JSON.stringify(config.data)
+    );
+  } else {
+    // 普通接口
+    params.packageList.packages.request = DES3.encrypt(
+      "",
+      JSON.stringify(config.data).replace(/\s/g, "")
+    );
+  }
+  return params;
+}
+
+// 根据params编码config
+function encodeConfigByParams(config, params) {
+  const paramStr = JSON.stringify(params);
+  const sign = hex_hmac_md5(globalConfig.transfer, paramStr);
+  config.url = globalConfig.serverUrl + sign + "&com_id=" + globalConfig.comId;
+  config.data = JSON.stringify(paramStr).replace(/[\\]/g, "");
+  config.data = config.data.substr(1);
+  config.data = config.data.substr(0, config.data.length - 1);
+}
+
+// response解码
+function decodeResponse(res) {
+  let data = "";
+  try {
+    // 主res DES3解码
+    const mainRes = JSON.parse(
+      DES3.decrypt("", res.data.packageList.packages.response)
+    );
+    // const requestType = res.data.packageList.packages.header.requestType;
+    // const responseCode = res.data.packageList.packages.header.responseCode;
+    // if (
+    //   requestType == "AXREVIEW" ||
+    //   requestType == "AXMSGVERIFICAT" ||
+    //   responseCode == "1001"
+    // ) {
+    //   // 部分接口特殊处理
+    //   data = res.data.packageList.packages;
+    // } else {
+    // 普通接口
+    data = mainRes;
+    // }
+  } catch (error) {
+    // 打印日志
+    logHandler.error(error);
+  }
+
+  // 赋值解密的data
+  res.data = data;
+}
+
+// 请求拦截器
+instance.interceptors.request.use(
+  config => {
+    // interfaceObj暂存在url字段中
+    const interfaceObj = config.url;
+    // 塞入reqLog字段，以便后续取到
+    config.reqLogUrl = interfaceObj.requestType || interfaceObj.path;
+    config.reqLogDesc = interfaceObj.desc;
+    // 打印日志
+    logHandler.request(config);
+
+    // 处理不同的请求
+    if (interfaceObj.requestType) {
+      // 为与serverUrl约定的请求，带requestType
+      // 根据params编码config
+      encodeConfigByParams(config, getParams(config));
+    } else if (interfaceObj.path) {
+      // 其他请求，带path
+      // 拼接真正的请求路径--不指定请求前缀默认serverUrl
+      config.url = interfaceObj.path.startsWith("http")
+        ? interfaceObj.path
+        : globalConfig.serverUrl + interfaceObj.path;
+    }
+
+    // 返回处理过后的config
+    return config;
+  },
+  error => {
+    // 打印日志
+    logHandler.error(error);
+    // 返回promise
+    return Promise.reject(error.message);
+  }
+);
+
+// 返回拦截器
+instance.interceptors.response.use(
+  response => {
+    if (response.data.packageList) {
+      // 与serverUrl约定的请求需解码
+      decodeResponse(response);
+    }
+    // 打印日志
+    logHandler.response(response);
+    // 返回数据
+    return response.data;
+  },
+  error => {
+    // 打印日志
+    logHandler.error(error);
+    // 返回promise
+    return Promise.reject(error.message);
+  }
+);
+
+/**
+ * get请求
+ * @param {*} interfaceObj 接口对象，interfaces文件夹中定义
+ * @param {*} params 请求参数
+ */
+export const get = (interfaceObj, params) => {
+  return instance.get(interfaceObj, params);
+};
+
+/**
+ * post请求
+ * @param {*} interfaceObj 接口对象，interfaces文件夹中定义
+ * @param {*} params 请求参数
+ */
+export const post = (interfaceObj, params) => {
+  return instance.post(interfaceObj, params);
+};
+
+const http = {
+  get,
+  post
+};
+
+export default http;

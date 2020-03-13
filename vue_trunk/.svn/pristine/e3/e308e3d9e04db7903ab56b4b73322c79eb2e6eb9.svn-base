@@ -1,0 +1,79 @@
+<template>
+  <page class="plan-list" :withAppBar="!globalConfig.isWx">
+    <!-- 导航栏 -->
+    <AppBar class="app-bar" v-if="!globalConfig.isWx">
+      <img
+        slot="left"
+        src="../../assets/imgs/common/icon/icon_back.png"
+        class="icon icon-back"
+        @click="goBack"
+      />
+      <template slot="center">
+        规划书列表
+      </template>
+    </AppBar>
+
+    <!-- 主体 -->
+    <AppContent class="app-content">
+      <!-- 规划书列表 -->
+      <PlanlistItem
+        v-for="(item, index) in dataList"
+        :key="index"
+        @delPlan="delPlan"
+        @viewPlan="viewPlan"
+        :itemObj="item"
+      />
+    </AppContent>
+  </page>
+</template>
+
+<script>
+import PlanlistItem from "@/components/plan/PlanListItem";
+export default {
+  name: "planList",
+  components: {
+    PlanlistItem
+  },
+  data() {
+    return {
+      dataList: [{ index: 1 }, { index: 2 }, { index: 3 }, { index: 4 }] //列表
+    };
+  },
+  computed: {},
+  watch: {},
+  created() {},
+  methods: {
+    // 返回
+    goBack() {
+      this.back();
+    },
+    // 搜索
+    search() {
+      utils.ui.tips("点击了搜索按钮");
+    },
+    //删除计划书
+    delPlan(item) {
+      console.log(item);
+    },
+    //查看计划书
+    viewPlan(item) {
+      console.log(item);
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.app-bar {
+  .icon {
+    height: auto;
+    &.icon-back {
+      width: 11.5px;
+    }
+  }
+}
+
+.plan-list {
+  background: $color-ds;
+}
+</style>

@@ -1,0 +1,201 @@
+<template>
+  <div class="wrap">
+    <div>
+      <p class="box"></p>
+      <h3 class="title">保障责任</h3>
+      <ul class="wrap_ul" v-for="(item, index) in clausesDtoList" :key="index">
+        <li class="son1">
+          <div class="slot"></div>
+          <span>{{ item.productName }} </span>
+          <a herf="#" @click="changeSkip">条款</a>
+        </li>
+        <li v-for="i in item.pdtLiabList" :key="i.liabId">
+          <p>
+            <span>{{ i.liabName.replace(/\s+/g, "") }}</span>
+            <span>
+              <span v-if="i.amount">
+                最高付给<span class="amount">{{ i.amount }}</span
+                >元
+              </span>
+              <span @click="detailPage(i.des)" class="details">详情</span>
+            </span>
+          </p>
+        </li>
+      </ul>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  data() {
+    return {};
+  },
+  props: ["clausesDtoList"],
+  created() {},
+  methods: {
+    //详情页面
+    detailPage(i) {
+      this.$router.push({
+        name: "responsibility",
+        params: {
+          i: i
+        }
+      });
+      this.isShow = true;
+      this.clickModalToClose = true;
+    },
+    changeSkip() {
+      this.$router.push({
+        name: "clause",
+        params: {
+          tk: this.clausesDtoList[0].clausesItemDtoList[0].clausesItemUrl
+        }
+      });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.app-bar {
+  font-family: HYQiHei-DES;
+  .icon {
+    height: auto;
+    &.icon-back {
+      width: 11.5px;
+    }
+  }
+}
+.wrap_ul {
+  list-style: none;
+  padding: 0 15px;
+  border-bottom: 1px solid #cccccc;
+  li {
+    width: 100%;
+    line-height: 47px;
+    letter-spacing: 0;
+    p {
+      width: 100%;
+      position: relative;
+      .details {
+        display: inline-block;
+        width: 45px;
+        height: 23px;
+        color: #ffffff;
+        background: #eb5656;
+        border-radius: 3px;
+        line-height: 23px;
+        text-align: center;
+        position: absolute;
+        top: 10px;
+        right: 0px;
+      }
+      .amount {
+        font-size: 13px;
+        color: #eb5656;
+        text-align: right;
+      }
+    }
+  }
+  .son1 {
+    width: 100%;
+    line-height: 47.7px;
+    font-size: 15px;
+    position: relative;
+    a {
+      font-size: 15px;
+      color: #56a1eb;
+      text-decoration: underline;
+    }
+    span {
+      padding-top: 10px;
+      padding-left: 15px;
+      color: #333333;
+      font-weight: 550;
+      display: inline-block;
+      width: 255px;
+      line-height: 20px;
+    }
+    :last-child {
+      float: right;
+    }
+    .slot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #f7c21e;
+      position: absolute;
+      top: 23px;
+      left: 0px;
+    }
+  }
+}
+.modal {
+  width: 100%;
+  height: 100%;
+  .inner {
+    width: 100%;
+    height: 100%;
+    background: white;
+    overflow: hidden;
+    .content {
+      padding: 0px 20px;
+      margin: 0 auto;
+      .p {
+        letter-spacing: 0;
+        text-align: justify;
+        line-height: 25px;
+      }
+      .h3 {
+        padding-top: 77px;
+        padding-bottom: 15px;
+        font-size: 18px;
+        letter-spacing: 0;
+        text-align: center;
+      }
+      .span {
+        width: 249px;
+        height: 42px;
+        display: inline-block;
+        background-image: linear-gradient(45deg, #ffcc00 0%, #ffda44 100%);
+        border-radius: 29px;
+        text-align: center;
+        line-height: 42px;
+        margin-top: 70px;
+        margin-left: 40px;
+      }
+    }
+  }
+}
+.wrap {
+  margin: 0 auto;
+  margin-bottom: 12.5px;
+  width: 345px;
+  // height: 453px;
+  background: #ffffff;
+  border-radius: 3px;
+  font-family: HYQiHei-DES;
+  font-size: 13px;
+  color: #333333;
+  position: relative;
+  .box {
+    width: 3px;
+    height: 14px;
+    background: #eb5656;
+    border-radius: 8px;
+    position: absolute;
+    top: 18px;
+    left: 20px;
+  }
+  .title {
+    height: 47.5px;
+    width: 100%;
+    line-height: 47.5px;
+    border-bottom: 1px solid #cccccc;
+    font-size: 16px;
+    letter-spacing: 0;
+    padding: 0px 35px;
+  }
+}
+</style>

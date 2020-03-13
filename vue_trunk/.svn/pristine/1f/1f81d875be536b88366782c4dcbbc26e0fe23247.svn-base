@@ -1,0 +1,168 @@
+<template>
+  <section class="applicant">
+    <h2>投保人信息</h2>
+    <ValiForm :form="applicant" :vali="vali">
+      <!-- 关系 -->
+      <FormSelect
+        v-model="insurant.holderRelation"
+        :selectList="relationSelectList"
+        label="是被保险人的"
+        placeholder="请选择"
+        @confirm="changeRelation"
+      ></FormSelect>
+      <!-- 姓名 -->
+      <FormInput
+        v-model="applicant.name"
+        label="姓名"
+        placeholder="请选择客户"
+        :iconSrc="iconSrc"
+        @iconClick="chooseCustomer"
+        :disabled="true"
+      ></FormInput>
+      <!-- 性别 -->
+      <FormRadio
+        v-model="applicant.sex"
+        label="性别"
+        :selectList="sexSelectList"
+        :disabled="
+          applicant.isoldCustomer == '1' || insurant.holderRelation == '00'
+        "
+        @input="handlerRadioClick"
+      ></FormRadio>
+      <!-- 生日 -->
+      <FormDatepicker
+        label="出生日期"
+        placeholder="请选择生日"
+        v-model="applicant.birthdate"
+        :disabled="
+          applicant.isoldCustomer == '1' || insurant.holderRelation == '00'
+        "
+        @input="handlerDateClick"
+      ></FormDatepicker>
+      <FormSelector
+        :selectData.sync="applicant.cdOccupation"
+        type="job"
+        label="职业"
+        placeholder="请选择职业"
+        @select="jobSelect"
+        ref="jobSelector"
+        :disabled="insurant.holderRelation == '00'"
+      ></FormSelector>
+    </ValiForm>
+  </section>
+</template>
+
+<script>
+import ValiForm from "@/components/common/form/ValiForm";
+import FormInput from "@/components/common/form/FormInput";
+import FormRadio from "@/components/common/form/FormRadio";
+import FormDatepicker from "@/components/common/form/FormDatepicker";
+import FormSelect from "@/components/common/form/FormSelect";
+import FormSelector from "@/components/common/form/FormSelector";
+import { mapState } from "vuex";
+export default {
+  name: "applicant",
+  components: {
+    FormInput,
+    FormRadio,
+    FormDatepicker,
+    ValiForm,
+    FormSelect,
+    FormSelector
+  },
+  props: {},
+  data() {
+    return {
+      //性别码表
+      sexSelectList: [],
+      //关系码表
+      relationSelectList: [],
+      //客户小图标
+      iconSrc: require("@/assets/imgs/common/icon/icon_search.png"),
+      // applicant验证对象
+      vali: {
+        status: false,
+        unlegalValiList: []
+      }
+    };
+  },
+  computed: {
+    ...mapState({
+      applicant: state => state.plan.applicant,
+      insurant: state => state.plan.insurant
+    })
+  },
+  watch: {},
+  created() {
+    this.initCodeList();
+  },
+  methods: {
+    //职业选择回掉
+    jobSelect(v) {
+      this.$emit("jobSelect", v);
+    },
+    //性别选择回掉
+    handlerRadioClick(item) {
+      // console.log(item);
+      this.$emit("sexSelect", item);
+    },
+    //出生日期选择
+    handlerDateClick(w) {
+      // console.log(w);
+      this.$emit("birthDaySelect", w);
+    },
+    //选择客户
+    chooseCustomer() {
+      //关键字清空
+      this.$store.commit("plan/setState", {
+        attr: "cusQueryForm",
+        data: {}
+      });
+      if (this.insurant.holderRelation == "00") return;
+      this.$emit("chooseApplicant");
+    },
+    //选择关系
+    changeRelation() {
+      if (this.insurant.name == "") {
+        this.$nextTick(() => {
+          this.insurant.holderRelation = "";
+          utils.ui.confirm("请先选择被保人");
+        });
+        return;
+      } else {
+        this.$nextTick(() => {
+          this.$emit("changeRelation", this.insurant.holderRelation);
+        });
+      }
+    },
+    //初始化码表
+    async initCodeList() {
+      console.log(this.insurant.holderRelation);
+      //关系码表
+      this.relationSelectList = await utils.code.getCode(
+        "app-member-relationship"
+      );
+      //性别码表
+      let sexSelectList = await utils.code.getCode("sys_user_sex");
+      this.sexSelectList = sexSelectList.filter(item => {
+        return item.code != "2";
+      });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.applicant {
+  margin: 8px 0;
+  h2 {
+    @include lineheight-height(37px);
+    margin: 0 20px;
+    padding: 0 15px;
+    background: $color-ds;
+    font-size: 14px;
+    color: #333333;
+    font-weight: normal;
+  }
+}
+</style>

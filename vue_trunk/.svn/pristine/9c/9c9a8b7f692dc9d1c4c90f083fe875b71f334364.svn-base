@@ -1,0 +1,414 @@
+<template>
+  <section class="additional-risk">
+    <div v-for="(item, index) in AllRiskList" :key="index">
+      <div @click="handleSelectRisk(index)">
+        <span class="circle" v-if="item.productName != ''"></span>
+        <span class="desc">{{ item.productName }}</span>
+      </div>
+
+      <!--附加险按钮配置 -->
+      <div v-show="item.isSelect">
+        <!-- 配置选项-->
+        <!--基本保额 爱安享 B -->
+        <FormInput
+          v-if="item.productCode == 'ATRR03'"
+          label="基本保险金额"
+          rightLabel="1,000,000"
+          type="number"
+        />
+        <content v-for="(etl, index) in item.attList" :key="index">
+          <div>
+            <!--基本保额 爱安康  爱倍至 -->
+            <FormInput
+              v-if="
+                etl.attCode == 'amount' &&
+                  (item.productCode == 'ATCR03' || item.productCode == 'ATCR04')
+              "
+              :label="etl.attName"
+              v-model="etl.attValue"
+              disabled
+              rightLabel="元"
+              type="number"
+            />
+            <!--基本保额  -->
+            <FormInput
+              v-if="
+                etl.attCode == 'amount' &&
+                  (item.productCode != 'ATCR03' &&
+                    item.productCode != 'ATCR04' &&
+                    item.isHuoMian != '1')
+              "
+              :label="etl.attName"
+              v-model="etl.attValue"
+              rightLabel="元"
+              type="number"
+            />
+          </div>
+          <!--附加险按钮配置 -->
+          <RiskSettingSelect
+            :label="etl.attName"
+            :list="etl.attValueList"
+            :selectCode="etl.attValue"
+            @handle="SelectEtl"
+            v-if="etl.attValueList.length > 0"
+          />
+        </content>
+      </div>
+    </div>
+  </section>
+</template>
+
+<script>
+import RiskSettingSelect from "./RiskSettingSelect";
+import FormInput from "@/components/common/form/FormInput";
+import { mapState } from "vuex";
+
+export default {
+  name: "additionalRisk",
+  components: { RiskSettingSelect, FormInput },
+  props: {
+    //传进来的险种信息 附带附加险
+    SelectMain: {
+      type: Object,
+      default: function() {
+        return {};
+      }
+    },
+    //传进来的主险选项
+    mainSetting: {
+      type: Object,
+      default: function() {
+        return {};
+      }
+    }
+  },
+  data() {
+    return {
+      AllRiskList: [], //传递过来的附加险
+      MainSettingList: [], //主险选项
+      //附加险种配置
+      selectRiskCode: "" //选中附加险code
+    };
+  },
+  computed: {
+    ...mapState({
+      mainProposalProductList: state => state.plan.mainProposalProductList, //主险列表
+      riskProposalProductList: state => state.plan.riskProposalProductList, //附加险列表
+      insurant: state => state.plan.insurant //被保人信息
+    })
+  },
+  watch: {
+    MainSettingList: {
+      //监听主险按钮选项变化
+      handler(newVal, oldVal) {
+        console.log(newVal, oldVal);
+        this.MainSettingList = newVal;
+        for (let k in this.AllRiskList) {
+          if (
+            this.AllRiskList[k].isSelect &&
+            (this.AllRiskList[k].isHuoMian == "1" ||
+              this.AllRiskList[k].productCode == "ATCR03" ||
+              this.AllRiskList[k].productCode == "ATCR04")
+          ) {
+            this.DealHuoMian(this.AllRiskList[k]);
+          }
+        }
+      },
+      deep: true
+    },
+    "SelectMain.productCode": {
+      //监听主险变化  附加险列表重新初始化
+      handler(newval, oldval) {
+        console.log(newval, oldval);
+        this.AllRiskList = this.SelectMain.extraList;
+        this.initIsSelect(); //初始化附加险选中及豁免险标识
+      },
+      deep: true
+    }
+  },
+  created() {
+    console.log(this.SelectMain);
+    //传递过来的附加险重新赋值  深拷贝
+    this.AllRiskList = JSON.parse(JSON.stringify(this.SelectMain.extraList));
+    //主险选项
+    this.MainSettingList = this.mainSetting;
+    this.initIsSelect(); //初始化附加险选中及豁免险标识
+  },
+  methods: {
+    initIsSelect() {
+      this.AllRiskList.map(
+        item => ((item.isSelect = false), (item.isHuoMian = "0"))
+      );
+    },
+    handleSelectRisk(num) {
+      this.AllRiskList.forEach((item, index) => {
+        if (index == num) {
+          item.isSelect = !item.isSelect;
+          if (item.isSelect) this.selectRiskCode = item.productCode;
+          item.additional.forEach(element => {
+            //豁免险处理
+            if (element.key == "huomian" && element.value == "yes") {
+              item.isHuoMian = "1";
+              this.DealHuoMian(item);
+            }
+          });
+          if (item.productCode == "ATCR03" || item.productCode == "ATCR04") {
+            this.DealHuoMian(item);
+          }
+          //赋默认值
+          item.attList.forEach(data => {
+            if (data.attValueList[0] != undefined) {
+              if (!data.attValue) {
+                data.attValue = data.attValueList[0].code;
+              }
+            } else {
+              if (!data.attValue) {
+                data.attValue = item.baseAmount;
+              }
+            }
+            //随意保附加险处理
+            if (item.productCode == "ATMR01") {
+              if (data.attCode == "policyPeriod") {
+                if (data.attValueList.length > 1) {
+                  if (this.SelectMain.productCode == "ATIB01") {
+                    data.attValueList.splice(1, 1);
+                    data.attValue = data.attValueList[0].code;
+                  } else {
+                    data.attValueList.splice(0, 1);
+                    data.attValue = data.attValueList[0].code;
+                  }
+                }
+              }
+            }
+            if (data.attCode == "policyPeriod") {
+              data.attName = "保险期间";
+            } else if (data.attCode == "payPeriod") {
+              data.attName = "交费期间";
+            } else if (data.attCode == "payMode") {
+              data.attName = "交费频次";
+            } else if (data.attCode == "amount") {
+              data.attName = "基本保险金额";
+            } else if (data.attCode == "premium") {
+              data.attName = "保险费";
+            } else if (data.attCode == "rank") {
+              data.attName = "保障计划";
+            } else if (data.attCode == "drawMode") {
+              data.attName = "领取方式";
+            } else if (data.attCode == "drawStartAge") {
+              data.attName = "年金开始领取年龄";
+            } else if (data.attCode == "drawFreq") {
+              data.attName = "年金领取频率";
+            } else if (data.attCode == "exceptAmt") {
+              data.attName = "次免赔额";
+            } else if (data.attCode == "claimRate") {
+              data.attName = "赔付比例";
+            }
+          });
+          this.$forceUpdate();
+          console.log(item);
+        }
+      });
+    },
+    isContains(str, substr) {
+      return new RegExp(substr).test(str);
+    },
+    //获得周岁年龄
+    GetAge(strBirthday) {
+      let returnAge;
+      let strBirthdayArr = strBirthday.split("-");
+      let birthYear = strBirthdayArr[0];
+      let birthMonth = strBirthdayArr[1];
+      let birthDay = strBirthdayArr[2];
+
+      let d = new Date();
+      let nowYear = d.getFullYear();
+      let nowMonth = d.getMonth() + 1;
+      let nowDay = d.getDate();
+
+      if (nowYear == birthYear) {
+        returnAge = 0; //同年 则为0岁
+      } else {
+        let ageDiff = nowYear - birthYear; //年之差
+        if (ageDiff > 0) {
+          if (nowMonth == birthMonth) {
+            let dayDiff = nowDay - birthDay; //日之差
+            if (dayDiff < 0) {
+              returnAge = ageDiff - 1;
+            } else {
+              returnAge = ageDiff;
+            }
+          } else {
+            let monthDiff = nowMonth - birthMonth; //月之差
+            if (monthDiff < 0) {
+              returnAge = ageDiff - 1;
+            } else {
+              returnAge = ageDiff;
+            }
+          }
+        } else {
+          returnAge = -1; //返回-1 表示出生日期输入错误 晚于今天
+        }
+      }
+      return returnAge; //返回周岁年龄
+    },
+    DealHuoMian(data) {
+      // 处理豁免险
+      //交费期间预处理
+      let productTerm = [];
+      productTerm.push({ code: "single", text: "一次交清" });
+      for (let n = 1; n <= 110; n++) {
+        if (productTerm.length <= 110) {
+          productTerm.push({ code: "term_" + n, text: n + "年期" });
+        }
+      }
+      //处理逻辑
+      console.log(this.MainSettingList);
+      if (data.attList == undefined) return;
+      data.attList.forEach(val => {
+        //缴费方式
+        if (val.attCode == "payMode") {
+          this.SelectMain.attList.filter(key => {
+            if (key.attCode == "payMode") {
+              val.attValueList =
+                key.attValueList &&
+                key.attValueList.filter(item => {
+                  return this.MainSettingList.payMode.includes(item.code);
+                });
+              val.attValue = this.MainSettingList.payMode;
+              val.attText = key.attText;
+            }
+          });
+          //交费期限
+        } else if (val.attCode == "payPeriod") {
+          this.SelectMain.attList.filter(key => {
+            if (key.attCode == "payPeriod") {
+              //几年期
+              if (this.isContains(this.MainSettingList.payPeriod, "term_")) {
+                let numl = parseInt(
+                  this.MainSettingList.payPeriod.replace("term_", "")
+                );
+                val.attValue = "term_" + (numl - 1);
+                val.attText = numl - 1 + "年期";
+              } else if (
+                //至多少岁
+                this.isContains(this.MainSettingList.payPeriod, "to_") &&
+                !this.isContains(this.MainSettingList.payPeriod, "to_full")
+              ) {
+                let agel = parseInt(
+                  this.MainSettingList.payPeriod.replace("to_", "")
+                );
+                let age = this.GetAge(this.insurant.birthdate);
+                val.attValue = "term_" + (agel - age - 1);
+                val.attText = agel - age - 1 + "年期";
+              } else if (
+                this.isContains(this.MainSettingList.payPeriod, "single")
+              ) {
+                //暂时处理一次交清
+                val.attValue = "single";
+                val.attText = "一次交清";
+              }
+              val.attValueList = [];
+              if (
+                data.productCode == "ATCR03" ||
+                data.productCode == "ATCR04"
+              ) {
+                //几年期
+                if (this.isContains(this.MainSettingList.payPeriod, "term_")) {
+                  let numl = parseInt(
+                    this.MainSettingList.payPeriod.replace("term_", "")
+                  );
+                  val.attValue = "term_" + numl;
+                  val.attText = numl + "年期";
+                  if (numl == 20) {
+                    val.attValue = ["term_" + numl, "term_" + (numl - 1)];
+                    val.attValueList = productTerm.filter(item => {
+                      return val.attValue.includes(item.code);
+                    });
+                    val.attValue = "term_" + numl;
+                  } else {
+                    val.attValueList = productTerm.filter(item => {
+                      return val.attValue.includes(item.code);
+                    });
+                  }
+                } else if (
+                  this.isContains(this.MainSettingList.payPeriod, "single")
+                ) {
+                  //暂时处理一次交清
+                  val.attValue = "single";
+                  val.attText = "一次交清";
+                  val.attValueList = productTerm.filter(item => {
+                    return val.attValue.includes(item.code);
+                  });
+                }
+              } else {
+                val.attValueList = productTerm.filter(item => {
+                  return val.attValue.includes(item.code);
+                });
+              }
+            }
+          });
+          console.log(val);
+          //保险期间
+        } else if (val.attCode == "policyPeriod") {
+          this.SelectMain.attList.filter(key => {
+            if (key.attCode == "policyPeriod") {
+              val.attValueList =
+                key.attValueList &&
+                key.attValueList.filter(item => {
+                  return this.MainSettingList.policyPeriod.includes(item.code);
+                });
+              val.attValue = this.MainSettingList.policyPeriod;
+              val.attText = key.attText;
+            }
+          });
+        } else if (val.attCode == "amount") {
+          val.attValue = this.MainSettingList.amount;
+        }
+      });
+    },
+    SelectEtl(item) {
+      console.log(item);
+      let SelectRisk = this.AllRiskList.filter(val => {
+        if (this.selectRiskCode == val.productCode) return val;
+      });
+      SelectRisk[0].attList.forEach(key => {
+        key.attValueList.forEach(val => {
+          if (val.text == item.text) key.attValue = item.code;
+          this.$forceUpdate();
+        });
+      });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/assets/css/common/form.scss";
+.additional-risk {
+  @include overflow-emphasis;
+  width: 320px;
+  margin: 5px 0;
+  &.active {
+    .circle {
+      @include small-circle(12px, 4px, solid, #4ac4a3);
+    }
+    .desc {
+      color: $font-color;
+    }
+  }
+  // 圆圈
+  .circle {
+    @include small-circle(12px, 1px, solid, #4ac4a3);
+    border-radius: 50%;
+    margin-right: 20px;
+    transition: border-width 0.2s ease-out;
+    display: inline-block;
+  }
+  // 描述
+  .desc {
+    @include overflow-emphasis;
+    font-size: $font-size;
+    color: #333;
+  }
+}
+</style>

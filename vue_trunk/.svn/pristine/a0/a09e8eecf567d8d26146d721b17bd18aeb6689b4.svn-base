@@ -1,0 +1,151 @@
+/* ------------------------------------------ ui相关工具类 ------------------------------------------ */
+
+import store from "@/stores";
+/**
+ * 获取浏览器视口宽度
+ */
+export const getClientWidth = () => {
+  let clientWidth = 0;
+  if (document.compatMode == "CSS1Compat") {
+    clientWidth = document.documentElement.clientWidth;
+  } else {
+    clientWidth = document.body.clientWidth;
+  }
+  return clientWidth;
+};
+
+/**
+ * 获取浏览器视口高度
+ */
+export const getClientHeight = () => {
+  let clientHeight = 0;
+  if (document.compatMode == "CSS1Compat") {
+    clientHeight = document.documentElement.clientHeight;
+  } else {
+    clientHeight = document.body.clientHeight;
+  }
+  return clientHeight;
+};
+
+/**
+ * 获取当前页面总高度
+ */
+export const getScrollHeight = () => {
+  let scrollHeight = 0,
+    bodyScrollHeight = 0,
+    documentScrollHeight = 0;
+  if (document.body) {
+    bodyScrollHeight = document.body.scrollHeight;
+  }
+  if (document.documentElement) {
+    documentScrollHeight = document.documentElement.scrollHeight;
+  }
+  scrollHeight =
+    bodyScrollHeight - documentScrollHeight > 0
+      ? bodyScrollHeight
+      : documentScrollHeight;
+  return scrollHeight;
+};
+
+/**
+ * 获取当前页面滚动高度
+ */
+export const getScrollTop = () => {
+  let scrollTop = 0,
+    bodyScrollTop = 0,
+    documentScrollTop = 0;
+  if (document.body) {
+    bodyScrollTop = document.body.scrollTop;
+  }
+  if (document.documentElement) {
+    documentScrollTop = document.documentElement.scrollTop;
+  }
+  scrollTop =
+    bodyScrollTop - documentScrollTop > 0 ? bodyScrollTop : documentScrollTop;
+  return scrollTop;
+};
+
+/**
+ * 全局confirm框
+ * @param {*} CP confirm对象或msg，详见stores/modules/global.js
+ */
+export const confirm = (confirm = {}) => {
+  const storeConfirm = store.state.ui.confirm;
+  if (typeof confirm === "string") {
+    storeConfirm.msg = confirm;
+    storeConfirm.clickModalToClose = false;
+  } else {
+    storeConfirm.msg = confirm.msg;
+    storeConfirm.clickModalToClose = confirm.clickModalToClose;
+  }
+  storeConfirm.btnList = confirm.btnList || [
+    {
+      msg: "确定"
+    }
+  ];
+
+  storeConfirm.show = true;
+};
+
+/**
+ * 显示全局loading
+ * @param {*} openParams 开启loading的参数
+ */
+export const openLoading = (openParams = {}) => {
+  const storeLoading = store.state.ui.loading;
+  // 每次开启重置loading颜色
+  storeLoading.color = null;
+
+  // 带自定义颜色开启
+  openParams.openColor && (storeLoading.color = openParams.openColor);
+
+  storeLoading.show = true;
+};
+
+/**
+ * 关闭全局loading
+ * @param {*} closeParams 关闭loading的参数
+ */
+export const closeLoading = (closeParams = {}) => {
+  const storeLoading = store.state.ui.loading;
+
+  // 带自定义颜色关闭
+  closeParams.closeColor && (storeLoading.color = closeParams.closeColor);
+
+  storeLoading.show = false;
+};
+
+/**
+ * 全局tips
+ * @param {*} tips 提示参数
+ */
+export const tips = (tips = {}) => {
+  const storeTips = store.state.ui.tips;
+  if (typeof tips === "string") {
+    // string类型走默认配置
+    tips = {
+      msg: tips,
+      type: "success"
+    };
+  }
+  storeTips.msg = tips.msg;
+  storeTips.during = tips.during;
+  storeTips.type = tips.type;
+  storeTips.icon = tips.icon === undefined ? true : tips.icon; // 不指定icon默认显示
+
+  storeTips.show = true;
+};
+
+const ui = {
+  getClientWidth,
+  getClientHeight,
+  getScrollHeight,
+  getScrollTop,
+
+  confirm,
+  openLoading,
+  closeLoading,
+  tips
+};
+
+export default ui;

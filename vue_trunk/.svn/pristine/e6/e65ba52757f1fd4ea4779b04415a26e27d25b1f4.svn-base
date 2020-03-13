@@ -1,0 +1,22 @@
+/* ------------------------------------------ global接口 ------------------------------------------ */
+
+const global = {
+  statistical: {
+    requestType: "AXQUERYQUESTIONS",
+    desc: "用于测试的接口"
+  },
+  getIp: {
+    path: "https://wxd.rhassurance.com/com.ifp.ipartner/weixin/ip?",
+    desc: "获取用户ip"
+  },
+  getValiCode: {
+    requestType: "AXMSGVERIFICAT",
+    desc: "发送短信验证码"
+  },
+  valiValiCode: {
+    requestType: "AXMSGVERIFICAT",
+    desc: "验证短信验证码"
+  }
+};
+
+export default global;

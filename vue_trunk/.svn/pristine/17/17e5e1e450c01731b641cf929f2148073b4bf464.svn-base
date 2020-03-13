@@ -1,0 +1,68 @@
+/* ------------------------------------------ format格式化工具 ------------------------------------------ */
+
+/**
+ * 日期字符串转日期对象
+ * @param {*} str 日期字符串
+ */
+export const strToDate = str => {
+  return new Date(str.replace(/\.|-/g, "/"));
+};
+
+/**
+ * 日期对象转日期字符串
+ * @param {*} date 日期对象
+ * @param {*} pattern 转换格式，默认yyyy-MM-dd HH:mm:ss
+ */
+export const dateToStr = (date, pattern) => {
+  if (!pattern) {
+    pattern = "yyyy-MM-dd HH:mm:ss";
+  }
+  const o = {
+    "M+": date.getMonth() + 1,
+    "d+": date.getDate(),
+    "H+": date.getHours(),
+    "m+": date.getMinutes(),
+    "s+": date.getSeconds(),
+    "q+": Math.floor((date.getMonth() + 3) / 3),
+    S: date.getMilliseconds()
+  };
+  if (/(y+)/.test(pattern)) {
+    pattern = pattern.replace(
+      RegExp.$1,
+      (date.getFullYear() + "").substr(4 - RegExp.$1.length)
+    );
+  }
+  for (const k in o) {
+    if (new RegExp("(" + k + ")").test(pattern)) {
+      const v = o[k];
+      pattern = pattern.replace(
+        RegExp.$1,
+        RegExp.$1.length === 1 ? v : ("00" + v).substr(("" + v).length)
+      );
+    }
+  }
+  return pattern;
+};
+/**
+ * 根据时间戳判断是否大于等于30天
+ * @param {*} publishtime 接收的时间戳
+ */
+export const getDateTimeBefor = publishtime => {
+  var currTime = Date.parse(new Date());
+  var time = parseInt(currTime) - parseInt(publishtime);
+  //秒转天数
+  var days = time / 1000 / 3600 / 24;
+  console.log(days);
+  if (30 <= days) {
+    return true;
+  } else {
+    return false;
+  }
+};
+
+const format = {
+  strToDate,
+  dateToStr,
+  getDateTimeBefor
+};
+export default format;

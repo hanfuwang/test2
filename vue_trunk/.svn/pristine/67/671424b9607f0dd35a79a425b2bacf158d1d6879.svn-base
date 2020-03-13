@@ -1,0 +1,201 @@
+<template>
+  <Page class="demo-form">
+    <ValiForm :form="form" :vali="vali">
+      <FormInput
+        v-model="form.name"
+        label="姓名"
+        placeholder="请输入姓名"
+        :rules="rules.name"
+      ></FormInput>
+      <FormRadio
+        v-model="form.sex"
+        label="性别"
+        :rules="rules.sex"
+        :selectList="sexSelectList"
+      ></FormRadio>
+      <FormRadio
+        v-model="form.type"
+        label="客户类型"
+        :rules="rules.type"
+        :selectList="typeList"
+      ></FormRadio>
+      <FormSelect
+        v-model="form.occupation"
+        :selectList="occupationSelectList"
+        label="职业"
+        placeholder="请选择职业"
+      ></FormSelect>
+      <FormDatepicker
+        label="生日"
+        placeholder="请选择生日"
+        v-model="form.birthday"
+        :rules="rules.birthday"
+      ></FormDatepicker>
+    </ValiForm>
+
+    <button
+      class="theme-btn"
+      :class="{ disabled: !vali.status }"
+      @click="submitForm"
+    >
+      提交
+    </button>
+  </Page>
+</template>
+
+<script>
+import ValiForm from "@/components/common/form/ValiForm";
+import FormInput from "@/components/common/form/FormInput";
+import FormRadio from "@/components/common/form/FormRadio";
+import FormDatepicker from "@/components/common/form/FormDatepicker";
+import FormSelect from "@/components/common/form/FormSelect";
+import { mapState } from "vuex";
+export default {
+  name: "demoForm",
+  components: {
+    ValiForm,
+    FormInput,
+    FormRadio,
+    FormDatepicker,
+    FormSelect
+  },
+  data() {
+    return {
+      // form表单
+      form: {
+        name: "",
+        sex: "0",
+        birthday: "",
+        type: "0", //客户类型
+        occupation: "" //职业
+      },
+      id: this.$route.query.id,
+      typeList: [
+        {
+          code: "0",
+          desc: "老客户"
+        },
+        {
+          code: "1",
+          desc: "新客户"
+        }
+      ],
+      //职业码表
+      occupationSelectList: [
+        {
+          code: "00001",
+          desc: "精算师"
+        },
+        {
+          code: "00002",
+          desc: "保险代理人"
+        }
+      ],
+      // form验证对象
+      vali: {
+        status: false,
+        unlegalValiList: []
+      },
+      // 银行网点对象
+      bankWebsite: {
+        agentcom: "",
+        bankName: ""
+      },
+      // 校验规则
+      rules: {
+        name: [
+          {
+            regExp: "require",
+            msg: "姓名不能为空"
+          }
+        ],
+        sex: [
+          {
+            regExp: "require",
+            msg: "性别不能为空"
+          }
+        ],
+        type: [
+          {
+            regExp: "require",
+            msg: "客户不能为空"
+          }
+        ],
+        birthday: [
+          {
+            regExp: "require",
+            msg: "生日不能为空"
+          }
+        ],
+        occupation: [
+          {
+            regExp: "require",
+            msg: "职业不能为空"
+          }
+        ]
+      },
+      // 码表
+      sexSelectList: globalCode.sex
+    };
+  },
+  computed: {
+    ...mapState({
+      insurant: state => state.plan.insurant,
+      applicant: state => state.plan.applicant
+    })
+  },
+  watch: {},
+
+  methods: {
+    submitForm() {
+      // 根据vali对象判断当前form元素是否全部输入合法
+      if (!this.vali.status) {
+        // utils.ui.confirm(this.vali.unlegalValiList[0].msg);
+        return;
+      } else {
+        if (this.id == "0") {
+          this.$store.commit("plan/setState", {
+            attr: "insurant",
+            data: {
+              name: this.form.name,
+              sex: this.form.sex,
+              birthday: this.form.birthday,
+              occupation: this.form.occupation,
+              isNew: this.form.type == "0" ? false : true
+            }
+          });
+          this.$store.commit("plan/setState", {
+            attr: "applicant",
+            data: {
+              name: "",
+              sex: "0", //性别
+              birthday: "",
+              occupation: "",
+              relation: "", //关系
+              isNew: true //默认是新客户
+            }
+          });
+        } else {
+          //投保人
+          this.$store.commit("plan/setState", {
+            attr: "applicant",
+            data: {
+              name: this.form.name,
+              sex: this.form.sex,
+              birthday: this.form.birthday,
+              occupation: this.form.occupation,
+              relation: this.applicant.relation, //关系
+              isNew: this.form.type == "0" ? false : true
+            }
+          });
+        }
+        this.back();
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/assets/css/demo/index.scss";
+</style>

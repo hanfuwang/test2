@@ -1,0 +1,524 @@
+<template>
+  <Page class="make-plan" :withAppBar="!globalConfig.isWx">
+    <!-- 导航栏 -->
+    <AppBar class="app-bar" v-if="!globalConfig.isWx">
+      <img
+        slot="left"
+        src="../../assets/imgs/common/icon/icon_back.png"
+        class="icon icon-back"
+        @click="goBack"
+      />
+      <template slot="center">
+        制作规划书
+      </template>
+    </AppBar>
+
+    <!-- 主体 -->
+    <AppContent class="app-content">
+      <!-- 被保人信息 -->
+      <Insurant
+        ref="insurantRef"
+        @chooseInsurant="chooseInsurant"
+        @jobSelect="jobSelect"
+      />
+
+      <!-- 投保人信息 -->
+      <Applicant
+        ref="applicantRef"
+        @chooseApplicant="chooseApplicant"
+        @changeRelation="changeRelation"
+      />
+
+      <!-- 险种信息 -->
+      <ProductMsg @addProduct="addProduct" @delRisk="delRisk" />
+
+      <!-- 按钮组 -->
+      <RiskSaveButton v-if="mainProposalProductList.length != 0" />
+    </AppContent>
+  </Page>
+</template>
+
+<script>
+import Applicant from "@/components/plan/Applicant";
+import Insurant from "@/components/plan/Insurant";
+import ProductMsg from "@/components/plan/ProductMsg";
+import RiskSaveButton from "@/components/plan/RiskSaveButton";
+import { mapState } from "vuex";
+export default {
+  name: "makePlan",
+  components: {
+    Applicant,
+    Insurant,
+    ProductMsg,
+    RiskSaveButton
+  },
+  computed: {
+    ...mapState({
+      insurant: state => state.plan.insurant, //被保人
+      applicant: state => state.plan.applicant, //投保人
+      mainProposalProductList: state => state.plan.mainProposalProductList, //主险列表
+      riskProposalProductList: state => state.plan.riskProposalProductList, //附加险列表
+      totalPremium: state => state.plan.totalPremium, //总保费
+      totalAmount: state => state.plan.totalAmount, //总保额
+      userInfo: state => state.user.userInfo //用户信息
+    })
+  },
+  data() {
+    return {};
+  },
+  watch: {},
+  activated() {
+    this.initPage();
+  },
+  methods: {
+    //初始化页面
+    initPage() {
+      //有主险，就要保费试算
+      if (this.mainProposalProductList.length != 0) {
+        this.calcPremium();
+      }
+    },
+    //保费试算
+    calcPremium() {
+      const params = this.initCalcParams();
+      // console.log(params);
+      utils.http.post(interfaces.plan.premiumCalc, params).then(res => {
+        const data = res.trialPremiumMobile.insurantProductList[0];
+        if (data.checkResult.isPass == "true") {
+          //总保费
+          this.$store.commit("plan/setState", {
+            attr: "totalPremium",
+            data: data.plan.totalPremium
+          });
+          //总保额
+          this.$store.commit("plan/setState", {
+            attr: "totalAmount",
+            data: data.plan.totalAmount
+          });
+        } else {
+          //规则错误
+          var errorMsg = "";
+          data.checkResult.reasonList.forEach(item => {
+            errorMsg += item.info + "<br/>";
+          });
+          utils.ui.confirm(errorMsg);
+        }
+      });
+    },
+    //保费试算参数拼接
+    initCalcParams() {
+      //处理主险配置
+      let mainProposalProductItem = JSON.parse(
+        JSON.stringify(this.mainProposalProductList[0])
+      ); //主险项
+      let attList = mainProposalProductItem.attList; //主险的配置项
+      let mainSetting = {
+        shebao: mainProposalProductItem.shebao || this.insurant.shebao,
+        premiumDes: mainProposalProductItem.premium
+      };
+      attList.forEach(element => {
+        switch (element.attCode) {
+          case "drawMode": //领取方式
+            mainSetting.drawMode = element.attValue;
+            break;
+          case "policyPeriod": //保险期限
+            mainSetting.policyPeriod = element.attValue;
+            break;
+          case "payPeriod": //交费期间
+            mainSetting.payPeriod = element.attValue;
+            break;
+          case "payMode": //缴费方式
+            mainSetting.payMode = element.attValue;
+            break;
+        }
+      });
+      //处理投保人
+      let applicant = JSON.parse(JSON.stringify(this.applicant));
+      applicant.birthdate = new Date(applicant.birthdate);
+      applicant.birthday = new Date(applicant.birthdate);
+      applicant.jobLevel = applicant.cdOccupation.occupationRiskLevel;
+      applicant.job = applicant.cdOccupation.occupationCode;
+
+      //处理被保人
+      let insurant = JSON.parse(JSON.stringify(this.insurant));
+      insurant.birthdate = new Date(insurant.birthdate);
+      insurant.birthday = new Date(insurant.birthdate);
+      insurant.jobLevel = insurant.cdOccupation.occupationRiskLevel;
+      insurant.job = insurant.cdOccupation.occupationCode;
+      //处理附加险种
+      mainProposalProductItem.extraList = this.riskProposalProductList;
+      mainProposalProductItem.extraList.forEach(item => {
+        item.premiumDes = item.premium;
+        item.isSelect = true;
+        item.attList.forEach(el => {
+          switch (el.attCode) {
+            case "exceptAmt": //次免赔额
+              item.exceptAmt = el.attValue;
+              break;
+            case "claimRate": //次免赔额
+              item.claimRate = el.attValue;
+              break;
+            case "policyPeriod": //保险期限
+              item.policyPeriod = el.attValue;
+              break;
+            case "payPeriod": //交费期间
+              item.payPeriod = el.attValue;
+              break;
+            case "payMode": //缴费方式
+              item.payMode = el.attValue;
+              break;
+          }
+        });
+      });
+      let params = {
+        proposalPlan: {
+          bookId: this.mainProposalProductList[0].bookId,
+          holder: applicant, //投保人
+          insurantProductList: [
+            {
+              insurant: insurant, //被保人
+              insuredId: "",
+              planId: "",
+              planInsureDate: "",
+              productList: [
+                Object.assign(mainProposalProductItem, mainSetting)
+              ], //主险种
+              proposalId: "",
+              totalPremium: "0"
+            }
+          ], //主险
+          orgAgent: {
+            agent: {
+              email: "",
+              mobile: "",
+              personCode: "",
+              personId: "",
+              personName: "",
+              sex: "",
+              telephone: ""
+            },
+            channel: "iwechat1",
+            deviceNo: "572032449254344960",
+            loginCode: "",
+            openId: "oT-9Av8nXoxn3qnlDjopfnu8VHyI",
+            token: ""
+          },
+          totalAmount: this.totalAmount,
+          totalPremium: this.totalPremium
+        }
+      };
+      return params;
+    },
+    // 返回
+    goBack() {
+      //this.go("planList");
+      this.back();
+    },
+    //添加险种
+    addProduct() {
+      if (!this.isMsgEmpty()) return;
+      let additionalCode = "";
+      this.riskProposalProductList.forEach(item => {
+        if (item.productCode === "ATCR01") {
+          additionalCode = "ATCR01";
+        }
+      });
+      if (this.insurant.holderRelation == "00" && additionalCode == "ATCR01") {
+        utils.ui.confirm("选择豁免险种投被保人不能是同一人");
+        return;
+      }
+      let applicant = this.applicant; //投保人信息
+      let insurant = this.insurant; //被保人信息
+      this.goWithQuery("insuranceSelect", {
+        applicantBirthday: applicant.birthdate, //投保人生日
+        insurantBirthday: insurant.birthdate, //被保人生日
+        insurantSex: insurant.sex, //被保人性别
+        holderRelation: applicant.holderRelation //关系
+      });
+    },
+    //删除险种
+    delRisk(data) {
+      if (data.deltType == "main") {
+        //删除的是主险种
+        //主险清空
+        utils.ui.confirm({
+          msg: "确定删除吗？",
+          btnList: [
+            {
+              msg: "取消",
+              cb: () => {
+                // utils.ui.tips("继续保持");
+              }
+            },
+            {
+              msg: "确定",
+              cb: () => {
+                this.$store.commit("plan/setState", {
+                  attr: "mainProposalProductList",
+                  data: []
+                });
+                //附加清空
+                this.$store.commit("plan/setState", {
+                  attr: "riskProposalProductList",
+                  data: []
+                });
+                //总保费清空
+                this.$store.commit("plan/setState", {
+                  attr: "totalPremium",
+                  data: ""
+                });
+                //总保额清空
+                this.$store.commit("plan/setState", {
+                  attr: "totalAmount",
+                  data: ""
+                });
+              }
+            }
+          ]
+        });
+      } else {
+        //删除的是附加险种
+        //附加重置
+        utils.ui.confirm({
+          msg: "确定删除吗？",
+          btnList: [
+            {
+              msg: "取消",
+              cb: () => {
+                // utils.ui.tips("继续保持");
+              }
+            },
+            {
+              msg: "确定",
+              cb: () => {
+                this.$store.commit("plan/setState", {
+                  attr: "riskProposalProductList",
+                  data: this.riskProposalProductList.filter((item, index) => {
+                    return index != data.delIndex;
+                  })
+                });
+                //重新试算
+                this.calcPremium();
+              }
+            }
+          ]
+        });
+      }
+    },
+    //选择关系
+    changeRelation(holderRelation) {
+      let isSelf = holderRelation == "00" ? true : false; //是否是本人
+      if (isSelf) {
+        //本人
+        this.$nextTick(() => {
+          let insurant = JSON.parse(JSON.stringify(this.insurant));
+          delete insurant.holderRelation;
+          this.$store.commit("plan/setState", {
+            attr: "applicant",
+            data: insurant
+          });
+        });
+      } else {
+        //非本人
+        this.$nextTick(() => {
+          this.$store.commit("plan/setState", {
+            attr: "applicant",
+            data: {
+              name: "",
+              sex: "0", //性别
+              birthdate: "",
+              //职业信息
+              cdOccupation: {
+                occupationCode: "",
+                occupationLevel: "",
+                occupationName: "",
+                occupationRiskLevel: "",
+                occupationRiskMetical: ""
+              },
+              isoldCustomer: "0" //默认是新客户
+            }
+          });
+        });
+        this.chooseApplicant();
+      }
+    },
+    //选择被保人
+    chooseInsurant() {
+      this.goWithQuery("chooseCustomer", { id: 0 });
+    },
+    //选择投保人
+    async chooseApplicant() {
+      if (this.insurant.name == "") {
+        utils.ui.confirm("请先选择被保人");
+        return;
+      }
+      if (this.applicant.holderRelation == "") {
+        utils.ui.confirm("请先选择关系");
+        return;
+      }
+      if (this.applicant.holderRelation == "00") return;
+      if (
+        //选择亲属（妻子、子女）
+        this.insurant.holderRelation == "01" ||
+        this.insurant.holderRelation == "03"
+      ) {
+        //获取客户列表
+        const data = await this.getApplicant().catch();
+        if (data && data.length === 1 && data[0].value.length === 1) {
+          //只有一个获取客户详情
+          const detailCus = await this.getCusDetail(
+            data[0].value[0].infoId
+          ).catch();
+          if (!detailCus) return;
+          this.$store.commit("plan/setState", {
+            attr: "applicant",
+            data: {
+              name: detailCus.name,
+              sex: detailCus.sex, //性别
+              birthdate: String(detailCus.birthday).replace(/\s\s*$/, "")
+                ? String(detailCus.birthday).substr(0, 10)
+                : "",
+              //职业信息
+              cdOccupation: {
+                occupationCode: detailCus.profession,
+                occupationLevel: "",
+                occupationName: detailCus.professionName,
+                occupationRiskLevel: detailCus.professionLevel,
+                occupationRiskMetical: ""
+              },
+              isoldCustomer: detailCus.category, //默认是新客户
+              isSocialInsurance: detailCus.isSocialInsurance,
+              infoId: detailCus.infoId //客户id
+            }
+          });
+        } else {
+          this.goWithQuery("chooseCustomer", { id: 1 });
+        }
+      } else {
+        this.goWithQuery("chooseCustomer", { id: 1 });
+      }
+    },
+    //校验投、被保人信息
+    isMsgEmpty() {
+      let applicantBirthday = utils.format.getAge(this.applicant.birthdate);
+      if (this.insurant.name == "") {
+        utils.ui.confirm("请先选择被保人");
+        return false;
+      }
+      if (this.insurant.birthdate == "") {
+        utils.ui.confirm("请选择被保人出生日期");
+        return false;
+      }
+
+      if (this.insurant.cdOccupation.occupationCode == "") {
+        utils.ui.confirm("请选择被保人职业");
+        return false;
+      }
+      if (this.insurant.holderRelation == "") {
+        utils.ui.confirm("请选择关系");
+        return false;
+      }
+      if (this.applicant.name == "") {
+        utils.ui.confirm("请选择投保人");
+        return false;
+      }
+      if (this.applicant.birthdate == "") {
+        utils.ui.confirm("请选择投保人出生日期");
+        return false;
+      }
+      if (applicantBirthday < 16) {
+        utils.ui.confirm("投保人年龄不能小于16岁");
+        return false;
+      }
+      if (this.insurant.cdOccupation.occupationCode == "") {
+        utils.ui.confirm("请选择投保人职业");
+        return false;
+      }
+
+      return true;
+    },
+    //被保人职业选择 重新试算保费
+    jobSelect() {
+      if (this.mainProposalProductList.length != 0) {
+        this.calcPremium();
+      }
+    },
+    //获取投保人信息（针对亲属）
+    getApplicant() {
+      console.log(this.insurant.sex);
+      const params = {
+        agentCode: globalConfig.isWx
+          ? this.userInfo.weChatAgenctDTO.agentCode
+          : this.userInfo.user.agentCode, //代理人工号
+        personId: globalConfig.isWx
+          ? this.userInfo && this.userInfo.weChatAgenctDTO.infoId
+          : this.userInfo && this.userInfo.user && this.userInfo.user.personId,
+        // personId: "227c77c30a404845b2514ecde2fe1efd",
+        // personId: "227c77c30a404845b2514ecde2fe1efd",
+        infoId: this.insurant.customerId || this.insurant.infoId,
+        attrKey: this.insurant.holderRelation, //客户关系
+        infoId2: "", //客户2主键id
+        flag: "3", //模块标识  1.客户管理转介绍 2.投保客户列表 3.建议书 4.财务分析 5.客户管理 6.日程 7.健康管理
+        name: "",
+        startNum: 0, //请求数据开始的位置0、10、1...
+        pageSize: 20, //请求数据一次的条数
+        sex:
+          this.insurant.holderRelation === "01"
+            ? this.insurant.sex == "1"
+              ? "0"
+              : "1"
+            : undefined,
+        isShowFamly: "1" //是否显示本人及家庭成员 0-不显示 1-显示
+      };
+      //请求的方法体
+      //CUSMEMBERLIST;
+      return new Promise(resolve => {
+        utils.http.post(interfaces.plan.getCustomerList, params).then(res => {
+          resolve(res.returnMap);
+        });
+      });
+    },
+    //获取客户详情
+    getCusDetail(infoId) {
+      const params = {
+        infoId
+      };
+      return new Promise(resolve => {
+        utils.http.post(interfaces.plan.queryMember, params).then(res => {
+          resolve(res.cusMemberInfoList[0]);
+        });
+      });
+    }
+  },
+  beforeRouteLeave(to, from, next) {
+    if (
+      this.$refs.applicantRef.$refs.jobSelector.showSelector ||
+      this.$refs.insurantRef.$refs.jobSelector.showSelector
+    ) {
+      // 有选择器为打开状态，先关闭
+      this.$refs.applicantRef.$refs.jobSelector.close();
+      this.$refs.insurantRef.$refs.jobSelector.close();
+      next(false);
+    } else {
+      next();
+    }
+  }
+
+  // activated() {
+  //   this.$router.go(0);
+  // }
+};
+</script>
+
+<style lang="scss" scoped>
+.make-plan {
+  .app-bar {
+    .icon {
+      height: auto;
+      &.icon-back {
+        width: 11.5px;
+      }
+    }
+  }
+}
+</style>

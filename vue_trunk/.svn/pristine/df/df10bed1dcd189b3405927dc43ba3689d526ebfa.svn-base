@@ -1,0 +1,130 @@
+<template>
+  <Page class="demo-ui demo-page">
+    <div class="btn-wrap">
+      <button class="btn" @click="confirm">
+        confirm框
+      </button>
+      <button class="btn" @click="confirm('btn')">
+        定制按钮的confirm框
+      </button>
+      <div class="fgx"></div>
+
+      <button class="btn" @click="loading">
+        loading
+      </button>
+      <button class="btn" @click="loading('colorful')">
+        变色loading
+      </button>
+      <div class="fgx"></div>
+
+      <button class="btn" @click="tips('success')">
+        成功提示
+      </button>
+      <button class="btn" @click="tips('error')">
+        错误提示
+      </button>
+      <button class="btn" @click="tips('warn')">
+        警告提示
+      </button>
+      <button class="btn" @click="tips('long')">
+        长提示
+      </button>
+    </div>
+
+    <section>
+      <NumberSlider v-model="number" :max="77" :min="11"></NumberSlider>
+      当前拖动的值为：{{ number }}
+    </section>
+  </Page>
+</template>
+
+<script>
+import NumberSlider from "@/components/common/ui/NumberSlider";
+
+export default {
+  name: "demoUi",
+  components: {
+    NumberSlider
+  },
+  data() {
+    return {
+      number: 21
+    };
+  },
+  methods: {
+    // confirm
+    confirm(type) {
+      if (type === "btn") {
+        utils.ui.confirm({
+          msg: "你好啊",
+          btnList: [
+            {
+              msg: "不好",
+              cb: () => {
+                utils.ui.tips("那就好起来");
+              }
+            },
+            {
+              msg: "好",
+              cb: () => {
+                utils.ui.tips("继续保持");
+              }
+            }
+          ]
+        });
+      } else {
+        utils.ui.confirm("你好啊");
+      }
+    },
+
+    // loading
+    loading(type) {
+      if (type === "colorful") {
+        utils.ui.openLoading({
+          openColor: "#ffcc00"
+        });
+        setTimeout(() => {
+          utils.ui.openLoading({
+            openColor: "red"
+          });
+        }, 2000);
+        setTimeout(() => {
+          utils.ui.closeLoading({
+            closeColor: "green"
+          });
+        }, 4000);
+      } else {
+        utils.ui.openLoading();
+        setTimeout(() => {
+          utils.ui.closeLoading();
+        }, 2000);
+      }
+    },
+
+    // tips
+    tips(type) {
+      if (type === "long") {
+        const msg =
+          "icon是一种图标格式，用于系统图标、软件图标等，这种图标扩展名为*.icon、*.ico。常见的软件或windows桌面上的那些图标一般都是ICON格式的。";
+        utils.ui.tips(msg);
+      } else {
+        const msg = `我是一段${type}类型的提示`;
+        utils.ui.tips({
+          msg: msg,
+          type: type,
+          icon: true
+        });
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/assets/css/demo/index.scss";
+.fgx {
+  margin: 10px auto;
+  width: 90vw;
+  border-top: 1px solid $color-theme;
+}
+</style>

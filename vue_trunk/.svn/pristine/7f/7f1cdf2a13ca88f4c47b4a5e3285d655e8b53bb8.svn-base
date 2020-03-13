@@ -1,0 +1,149 @@
+<template>
+  <section class="applicant">
+    <h2>投保人信息</h2>
+    <ValiForm :form="applicant" :vali="vali">
+      <!-- 关系 -->
+      <FormSelect
+        v-model="applicant.relation"
+        :selectList="relationSelectList"
+        label="是被保险人的"
+        placeholder="请选择"
+        @confirm="changeRelation"
+      ></FormSelect>
+      <!-- 姓名 -->
+      <FormInput
+        v-model="applicant.name"
+        label="姓名"
+        placeholder="请选择客户"
+        :iconSrc="iconSrc"
+        @iconClick="chooseCustomer"
+        :disabled="true"
+      ></FormInput>
+      <!-- 性别 -->
+      <FormRadio
+        v-model="applicant.sex"
+        label="性别"
+        :selectList="sexSelectList"
+        :disabled="!applicant.isNew || applicant.relation == '00'"
+      ></FormRadio>
+      <!-- 生日 -->
+      <FormDatepicker
+        label="出生日期"
+        placeholder="请选择生日"
+        v-model="applicant.birthday"
+        :disabled="!applicant.isNew || applicant.relation == '00'"
+      ></FormDatepicker>
+      <!-- 职业 -->
+      <FormSelect
+        v-model="applicant.occupation"
+        :selectList="occupationSelectList"
+        label="职业"
+        placeholder="请选择职业"
+        :disabled="applicant.relation == '00'"
+      ></FormSelect>
+    </ValiForm>
+  </section>
+</template>
+
+<script>
+import ValiForm from "@/components/common/form/ValiForm";
+import FormInput from "@/components/common/form/FormInput";
+import FormRadio from "@/components/common/form/FormRadio";
+import FormDatepicker from "@/components/common/form/FormDatepicker";
+import FormSelect from "@/components/common/form/FormSelect";
+import { mapState } from "vuex";
+export default {
+  name: "applicant",
+  components: {
+    FormInput,
+    FormRadio,
+    FormDatepicker,
+    ValiForm,
+    FormSelect
+  },
+  props: {},
+  data() {
+    return {
+      //性别码表
+      sexSelectList: [],
+      //职业码表
+      occupationSelectList: [
+        {
+          code: "00001",
+          desc: "精算师"
+        },
+        {
+          code: "00002",
+          desc: "保险代理人"
+        }
+      ],
+      //关系码表
+      relationSelectList: [],
+      //客户小图标
+      iconSrc: require("@/assets/imgs/common/icon/icon_search.png"),
+      // applicant验证对象
+      vali: {
+        status: false,
+        unlegalValiList: []
+      }
+    };
+  },
+  computed: {
+    ...mapState({
+      applicant: state => state.plan.applicant,
+      insurant: state => state.plan.insurant
+    })
+  },
+  watch: {},
+  created() {
+    this.initCodeList();
+  },
+  methods: {
+    //选择客户
+    chooseCustomer() {
+      this.$emit("chooseApplicant");
+    },
+    //选择关系
+    changeRelation() {
+      if (this.insurant.name == "") {
+        this.$nextTick(() => {
+          this.applicant.relation = "";
+          utils.ui.confirm("请先选择被保人");
+        });
+        return;
+      } else {
+        this.$nextTick(() => {
+          this.$emit("changeRelation", this.applicant.relation);
+        });
+      }
+    },
+    //初始化码表
+    async initCodeList() {
+      //关系码表
+      this.relationSelectList = await utils.code.getCode(
+        "app-member-relationship"
+      );
+      //性别码表
+      let sexSelectList = await utils.code.getCode("sys_user_sex");
+      this.sexSelectList = sexSelectList.filter(item => {
+        return item.code != "2";
+      });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.applicant {
+  margin: 8px 0;
+  h2 {
+    @include lineheight-height(37px);
+    margin: 0 20px;
+    padding: 0 15px;
+    background: $color-ds;
+    font-size: 14px;
+    color: #333333;
+    font-weight: normal;
+  }
+}
+</style>

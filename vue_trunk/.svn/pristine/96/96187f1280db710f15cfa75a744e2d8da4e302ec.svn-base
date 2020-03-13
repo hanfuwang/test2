@@ -1,0 +1,108 @@
+<template>
+  <Page class="demo-jssdk demo-page">
+    <h4 class="tips">
+      单页应用在页面切换时需重新jssdk config注入配置项
+    </h4>
+    <div class="btn-wrap">
+      <!-- <button class="btn" @click="config">
+        jssdk config注入
+      </button> -->
+      <button class="btn" @click="hideMenuItems">
+        隐藏菜单
+      </button>
+      <button class="btn" @click="showMenuItems">
+        显示菜单
+      </button>
+      <button class="btn" @click="shareFriend">
+        自定义分享给朋友
+      </button>
+      <button class="btn" @click="shareMoment">
+        自定义分享到朋友圈
+      </button>
+    </div>
+  </Page>
+</template>
+
+<script>
+export default {
+  name: "demoJssdk",
+  data() {
+    return {};
+  },
+  computed: {},
+  created() {},
+  methods: {
+    // jssdk config
+    async config() {
+      let error = "";
+
+      const res = await utils.wechat.config().catch(err => {
+        error = err;
+      });
+      if (res) {
+        utils.ui.tips("jssdk config注入成功");
+      } else {
+        utils.ui.tips({
+          msg: error,
+          type: "error"
+        });
+      }
+    },
+
+    // 隐藏菜单
+    hideMenuItems() {
+      utils.wechat.hideMenuItems();
+    },
+
+    // 显示菜单
+    showMenuItems() {
+      utils.wechat.showMenuItems();
+    },
+
+    // 自定义分享给朋友
+    shareFriend() {
+      const shareParams = {
+        title: "我是自定义分享给朋友的标题", // 分享标题
+        desc: "我是自定义分享给朋友的内容", // 分享内容
+        link: window.location.href, // 分享链接
+        imgUrl: globalConfig.pageUrl + "img/share/logo.png" // 分享图标
+      };
+      utils.wechat
+        .shareFriend(shareParams)
+        .then(() => {
+          utils.ui.tips("自定义分享给朋友成功，现在可以点击右上角进行分享了");
+        })
+        .catch(error => {
+          utils.ui.tips({
+            msg: error,
+            type: "error"
+          });
+        });
+    },
+
+    // 自定义分享到朋友圈
+    shareMoment() {
+      const shareParams = {
+        title: "我是自定义分享到朋友圈的标题", // 分享标题
+        link: window.location.href, // 分享链接
+        imgUrl: globalConfig.pageUrl + "img/share/logo.png" // 分享图标
+      };
+      utils.wechat
+        .shareMoment(shareParams)
+        .then(() => {
+          utils.ui.tips("自定义分享到朋友圈成功，现在可以点击右上角进行分享了");
+        })
+        .catch(error => {
+          utils.ui.tips({
+            msg: error,
+            type: "error"
+          });
+        });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/assets/css/demo/index.scss";
+</style>

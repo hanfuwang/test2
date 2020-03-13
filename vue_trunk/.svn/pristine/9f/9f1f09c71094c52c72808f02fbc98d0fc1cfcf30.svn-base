@@ -1,0 +1,79 @@
+<template>
+  <page class="demo-app" :withAppBar="!globalConfig.isWx">
+    <AppBar class="app-bar" v-if="!globalConfig.isWx" :rightWidth="rightWidth">
+      <img
+        slot="left"
+        src="../../assets/imgs/common/icon/icon_goback.png"
+        class="icon icon-back"
+        @click="goBack"
+      />
+      <template slot="center">
+        爱心人寿家庭保障规划书
+      </template>
+    </AppBar>
+    <AppContent class="app-content">
+      <p class="title">责任详情</p>
+      <div class="p">{{ index }}</div>
+      <span class="span" @click="goBack">确定</span>
+    </AppContent>
+  </page>
+</template>
+
+<script>
+export default {
+  name: "Responsibility",
+  data() {
+    return {
+      index: "",
+      rightWidth: 50
+    };
+  },
+  created() {
+    this.index = this.$route.params.i;
+  },
+  methods: {
+    goBack() {
+      this.back();
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.app-bar {
+  font-family: HYQiHei-DES;
+  .icon {
+    height: auto;
+    &.icon-back {
+      width: 11.5px;
+    }
+  }
+}
+.app-content {
+  font-family: HYQiHei-DES;
+  padding: 0 18px;
+  .title {
+    font-size: 18px;
+    letter-spacing: 0;
+    text-align: center;
+    padding: 15px 0px;
+  }
+  .p {
+    font-size: 13px;
+    color: #333333;
+    letter-spacing: 0;
+    text-align: justify;
+    line-height: 25px;
+  }
+  .span {
+    width: 249px;
+    height: 42px;
+    display: inline-block;
+    background-image: linear-gradient(45deg, #ffcc00 0%, #ffda44 100%);
+    border-radius: 29px;
+    text-align: center;
+    line-height: 42px;
+    margin: 70px 0px 40px 40px;
+  }
+}
+</style>

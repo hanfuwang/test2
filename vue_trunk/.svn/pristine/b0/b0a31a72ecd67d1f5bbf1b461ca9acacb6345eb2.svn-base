@@ -1,0 +1,187 @@
+<template>
+  <Page class="plan-list" :withAppBar="!globalConfig.isWx">
+    <!-- 导航栏 -->
+    <AppBar class="app-bar" v-if="!globalConfig.isWx">
+      <img
+        slot="left"
+        src="../../assets/imgs/common/icon/icon_goback.png"
+        class="icon icon-back"
+      />
+      <!-- AXPROPOSALSHARE -->
+      <template slot="center">
+        爱心人寿家庭保障规划
+      </template>
+      <img slot="right" src="../../assets/imgs/common/icon/icon_test.png" />
+    </AppBar>
+    <!-- 主体 -->
+    <AppContent class="app-content" style="background: #F7C21E;">
+      <nav class="nav">
+        <ul v-for="item in Navarr" :key="item.e">
+          <li
+            :v-model="identifier"
+            :class="{ identifier: item.e == identifier }"
+            @click="identifier = item.e"
+          >
+            {{ item.c }}
+          </li>
+        </ul>
+      </nav>
+      <div class="message">
+        <span>被保人:</span>
+        <span>{{ insurant.name }}</span>
+        <span>{{ insurant.sex }}</span>
+        <span>{{ insurant.age }}岁</span><span>有社保</span>
+      </div>
+      <!-- 投保险种 -->
+      <ParticularsInsurant :productList="productList" />
+      <!-- 保障责任 -->
+      <Guarantee></Guarantee>
+      <!-- 利益演示 -->
+      <Benefit
+        :benifitDtoList="benifitDtoList"
+        :benifitOutLineItemDtoList="benifitOutLineItemDtoList"
+      ></Benefit>
+      <!-- 风险提示 -->
+      <RiskWarning></RiskWarning>
+      <!-- 底部 -->
+      <Gopolicy :agent="agent"></Gopolicy>
+    </AppContent>
+  </Page>
+</template>
+
+<script>
+import Guarantee from "@/components/plan/Guarantee";
+import Benefit from "@/components/plan/Benefit";
+import RiskWarning from "@/components/plan/RiskWarning";
+import Gopolicy from "@/components/plan/Gopolicy";
+import ParticularsInsurant from "@/components/plan/ParticularsInsurant";
+export default {
+  components: {
+    Guarantee,
+    Benefit,
+    RiskWarning,
+    Gopolicy,
+    ParticularsInsurant
+  },
+  data() {
+    return {
+      identifier: "project",
+      insurant: {}, //被保人信息
+      productList: {}, //投保险种列表
+      agent: {}, //规划师信息
+      benifitOutLineItemDtoList: [], //利益演示表
+      benifitDtoList: [], //利益演示
+      Navarr: [
+        {
+          c: "保障规划",
+          e: "project"
+        },
+        {
+          c: "产品介绍",
+          e: "product"
+        },
+        {
+          c: "公司介绍",
+          e: "company"
+        },
+        {
+          c: "理赔流程",
+          e: "flow"
+        }
+      ]
+    };
+  },
+  created() {
+    this.loadata();
+  },
+  methods: {
+    loadata() {
+      const params = {
+        proposalPlan: {
+          bookId: "00ececda4af84a07be058b20541cd829"
+        }
+      };
+      utils.http.post(interfaces.plan.queryPlan, params).then(res => {
+        console.log(res);
+        this.insurant =
+          res.proposalViewDto.insurantProductList[0].plan.insurant;
+        this.productList =
+          res.proposalViewDto.insurantProductList[0].plan.productList;
+        console.log(this.productList);
+        //规划师信息
+        this.agent = res.proposalViewDto.orgAgent.agent;
+        console.log(this.agent);
+        //利益演示表
+        this.benifitOutLineItemDtoList =
+          res.proposalViewDto.benifitOutLineDtoList[0].benifitOutLineItemDtoList;
+        console.log(this.benifitOutLineItemDtoList);
+        //利益演示
+        this.benifitDtoList =
+          res.proposalViewDto.benifitDtoList[0].benifitOutLineItemDtoList;
+        console.log(this.benifitDtoList);
+      });
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.app-bar {
+  font-family: HYQiHei-DES;
+  .icon {
+    height: auto;
+    &.icon-back {
+      width: 11.5px;
+    }
+  }
+}
+ul {
+  padding-left: 20px;
+  li {
+    list-style: none;
+    font-size: 15px;
+    color: #333333;
+    float: left;
+    margin-right: 20px;
+  }
+}
+.nav {
+  height: 47px;
+  background: #f8f8f8;
+  line-height: 47px;
+  .identifier {
+    color: #f7c21e;
+    border-bottom: 2px solid #eb5656;
+  }
+}
+.message {
+  width: 292px;
+  height: 37px;
+  background: #ffffff;
+  border-radius: 27.5px;
+  margin-top: 26px;
+  margin-bottom: 20px;
+  margin-left: 24px;
+  padding: 0 26px;
+  line-height: 37px;
+  :first-child {
+    font-family: HYQiHei-DES;
+    font-size: 14px;
+    color: #333333;
+    letter-spacing: 0;
+  }
+  span {
+    font-size: 14px;
+    color: #333333;
+    padding-left: 10px;
+  }
+}
+.plan-list {
+  background: $color-ds;
+  .empty {
+    text-align: center;
+    margin-top: 20px;
+    color: #999;
+    font-size: 14px;
+  }
+}
+</style>

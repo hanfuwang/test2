@@ -1,0 +1,76 @@
+<template>
+  <section class="ban">
+    <aside class="head">
+      <img
+        v-if="agent.sex == 0 && !agent.imgUrl"
+        class="headImg"
+        src="@/assets/imgs/common/icon/icon_male.png"
+      />
+      <img
+        v-if="agent.sex == 1 && !agent.imgUrl"
+        class="headImg"
+        src="@/assets/imgs/common/icon/icon_female.png"
+      />
+      <img v-if="agent.imgUrl" src="this.imgUrl" />
+      <div>{{ agent.personName }}</div>
+    </aside>
+    <aside>
+      <img src="@/assets/imgs/plan/icon/icon_phone.png" />
+      <nav>{{ agent.mobile }}</nav>
+    </aside>
+    <aside class="away">
+      立即投保
+    </aside>
+  </section>
+</template>
+
+<script>
+export default {
+  components: {},
+  data() {
+    return {};
+  },
+  props: ["agent"],
+  created() {
+    console.log(this.agent);
+  },
+  methods: {}
+};
+</script>
+
+<style lang="scss" scoped>
+.ban {
+  margin-top: 20px;
+  height: 60px;
+  overflow: hidden;
+  background: #f2f2f2;
+  display: flex;
+  aside {
+    height: 60px;
+    line-height: 60px;
+    text-align: center;
+    flex: 1;
+    img {
+      float: left;
+      margin: 21px 0;
+    }
+  }
+  .head {
+    .headImg {
+      width: 40px;
+      height: 40px;
+      margin: 10px 10px;
+    }
+    height: 60px;
+    line-height: 60px;
+    text-align: center;
+  }
+  .away {
+    background: #ffcf10;
+    color: #574c20;
+    height: 60px;
+    line-height: 60px;
+    text-align: center;
+  }
+}
+</style>

@@ -1,0 +1,72 @@
+<template>
+  <page class="change-mobile">
+    <!-- vf -->
+    <ValiForm class="vf" ref="vf">
+      <!-- 手机号 -->
+      <FormInput
+        v-model="form.aMobile"
+        type="tel"
+        placeholder="手机号"
+        :rules="rules.aMobile"
+      ></FormInput>
+      <!-- 验证码 -->
+      <FormNumVali
+        v-model="form.aValiCode"
+        :mobile="form.aMobile"
+        placeholder="验证码"
+      ></FormNumVali>
+    </ValiForm>
+
+    <!-- button -->
+    <button class="next-step theme-btn">确定</button>
+  </page>
+</template>
+
+<script>
+import ValiForm from "@/components/common/form/ValiForm";
+import FormInput from "@/components/common/form/FormInput";
+import FormNumVali from "@/components/common/form/FormNumVali";
+
+export default {
+  name: "changeMobile",
+  components: {
+    ValiForm,
+    FormInput,
+    FormNumVali
+  },
+  data() {
+    return {
+      // form
+      form: {
+        aMobile: this.$route.query.mobile || "", // 手机号
+        aValiCode: "" // 验证码
+      },
+      // 规则
+      rules: {
+        aMobile: [
+          {
+            regExp: "require",
+            msg: "手机号码不能为空"
+          },
+          {
+            regExp: "mobile",
+            msg: "您输入的是一个无效的手机号码"
+          }
+        ]
+      }
+    };
+  },
+  computed: {},
+  mounted() {},
+  methods: {}
+};
+</script>
+
+<style lang="scss" scoped>
+.change-mobile {
+  padding-top: 30px;
+}
+.vf {
+  margin-bottom: 80px;
+}
+</style>

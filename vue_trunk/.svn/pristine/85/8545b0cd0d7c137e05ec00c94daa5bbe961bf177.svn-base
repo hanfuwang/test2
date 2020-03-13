@@ -1,0 +1,176 @@
+<template>
+  <section class="insurant">
+    <ValiForm
+      :form="insurant"
+      v-for="(reqpr, index) in mainlist"
+      :key="index"
+      :vali="vali"
+    >
+      <!-- 生日 -->
+      <FormDatepicker
+        placeholder="请选择生日"
+        label="出生日期"
+        v-model="insurant.birthday"
+        :disabled="!insurant.isNew"
+      ></FormDatepicker>
+      <!-- 性别 -->
+      <FormRadio
+        v-model="insurant.sex"
+        label="性别"
+        :selectList="sexSelectList"
+        :disabled="!insurant.isNew"
+      ></FormRadio>
+      <!-- 保险费 -->
+      <FormInput
+        label="保险费"
+        :disabled="true"
+        :rightLabel="'100'"
+      ></FormInput>
+      <!-- 保险期间 -->
+      <FormButton
+        label="保险期间"
+        :disabled="true"
+        :type="'button'"
+        value="终身"
+      ></FormButton>
+      <!-- 交费频次 -->
+      <FormButton
+        label="交费频次"
+        :disabled="true"
+        :type="'button'"
+        value="终身"
+      ></FormButton>
+      <!-- 交费期间 -->
+      <FormButton
+        label="交费期间"
+        :disabled="true"
+        :type="'button'"
+        value="终身"
+      ></FormButton>
+      <!-- 职业 -->
+      <FormSelect
+        v-model="insurant.occupation"
+        :selectList="occupationSelectList"
+        label="职业"
+        placeholder="请选择职业"
+      ></FormSelect>
+    </ValiForm>
+  </section>
+</template>
+
+<script>
+import ValiForm from "@/components/common/form/ValiForm";
+import FormInput from "@/components/common/form/FormInput";
+import FormRadio from "@/components/common/form/FormRadio";
+import FormDatepicker from "@/components/common/form/FormDatepicker";
+import FormSelect from "@/components/common/form/FormSelect";
+import FormButton from "./FormButton";
+import { mapState } from "vuex";
+export default {
+  name: "insurant",
+  components: {
+    ValiForm,
+    FormInput,
+    FormRadio,
+    FormDatepicker,
+    FormSelect,
+    FormButton
+  },
+  props: {
+    mainlist: {
+      //某一个
+      type: Array,
+      default: function() {
+        return [];
+      }
+    }
+  },
+  data() {
+    return {
+      //性别码表
+      sexSelectList: [],
+      //职业码表
+      occupationSelectList: [
+        {
+          code: "00001",
+          desc: "精算师"
+        },
+        {
+          code: "00002",
+          desc: "保险代理人"
+        }
+      ],
+      iconSrc: require("@/assets/imgs/common/icon/icon_search.png"), //客户小图标
+
+      //insurant验证对象
+      vali: {
+        status: false,
+        unlegalValiList: []
+      }
+    };
+  },
+  computed: {
+    ...mapState({
+      insurant: state => state.plan.insurant, //被保人对象
+      applicant: state => state.plan.applicant //投保人对象
+    })
+  },
+  watch: {
+    insurant: {
+      handler(newValue) {
+        if (this.applicant.relation == "00") {
+          console.log(newValue);
+          //关系为本人时，当被保人信息更改投保人同步更新
+          this.$store.commit("plan/setState", {
+            attr: "applicant",
+            data: {
+              name: newValue.name,
+              sex: newValue.sex,
+              birthday: newValue.birthday,
+              occupation: newValue.occupation,
+              isNew: newValue.isNew,
+              relation: "00"
+            }
+          });
+        }
+      },
+      deep: true
+    }
+  },
+  created() {
+    debugger;
+    console.log(this.mainlist);
+    this.initCodeList();
+  },
+  methods: {
+    //选择客户
+    chooseCustomer() {
+      this.$emit("chooseInsurant");
+    },
+    //初始化码表
+    async initCodeList() {
+      //性别码表
+      let sexSelectList = await utils.code.getCode("sys_user_sex");
+      this.sexSelectList = sexSelectList.filter(item => {
+        return item.code != "2";
+      });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.insurant {
+  .vali-form {
+    .form-datepicker /deep/ .form-item {
+      padding: 0px;
+    }
+    .form-item {
+      padding: 0px;
+    }
+    .form-item /deep/ .f-wrap {
+      padding-right: 10px;
+    }
+  }
+}
+</style>

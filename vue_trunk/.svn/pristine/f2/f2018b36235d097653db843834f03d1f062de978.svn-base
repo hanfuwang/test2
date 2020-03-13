@@ -1,0 +1,28 @@
+/* ------------------------------------------ login模块 ------------------------------------------ */
+
+const user = [
+  {
+    name: "login",
+    path: "/login",
+    meta: {
+      title: "登录"
+    },
+    component: () => {
+      return import(/* webpackChunkName: "login" */ "@/views/login/Login.vue");
+    }
+  },
+  {
+    name: "access",
+    path: "/access",
+    meta: {
+      title: "跳转中..."
+    },
+    component: () => {
+      return import(
+        /* webpackChunkName: "access" */ "@/views/login/Access.vue"
+      );
+    }
+  }
+];
+
+export default user;

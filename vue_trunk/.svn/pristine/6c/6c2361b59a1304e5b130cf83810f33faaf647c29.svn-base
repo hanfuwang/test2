@@ -1,0 +1,53 @@
+<template>
+  <page class="illegal-request">
+    <article class="content-wrap">
+      <img
+        class="img"
+        src="../../assets/imgs/global/pic/pic_illegal_request.png"
+      />
+      <p class="msg">{{ msg }}</p>
+    </article>
+  </page>
+</template>
+
+<script>
+export default {
+  name: "illegalRequest",
+  data() {
+    return {
+      msg: "" // 非法信息
+    };
+  },
+  computed: {},
+  created() {
+    // 初始化页面
+    this.initPage();
+  },
+  methods: {
+    // 初始化页面
+    initPage() {
+      this.msg = this.$route.query.msg || "非法请求，请检查链接";
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.illegal-request {
+  @include display-flex;
+  .content-wrap {
+    .img {
+      display: block;
+      width: 200px;
+      height: auto;
+      margin: 0 auto 30px;
+    }
+    .msg {
+      padding: 0 20px;
+      text-align: center;
+      font-size: 13px;
+      color: #999999;
+    }
+  }
+}
+</style>

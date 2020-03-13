@@ -1,0 +1,16 @@
+const plan = {
+  getPlanList: {
+    requestType: "AXPROPOSALLIST",
+    requestDesc: "建议书列表查询"
+  },
+  delPlan: {
+    requestType: "AXPROPOSALDELETE",
+    requestDesc: "删除规划书"
+  },
+  getProductSetting: {
+    requestType: "AXPROPOSEPRODUCTLIST",
+    requestDesc: "获取产品配置"
+  }
+};
+
+export default plan;

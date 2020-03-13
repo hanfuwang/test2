@@ -1,0 +1,659 @@
+<template>
+  <page class="production_detail" :withAppBar="!globalConfig.isWx">
+    <!-- 导航栏 -->
+    <AppBar class="app-bar" v-if="!globalConfig.isWx">
+      <img
+        slot="left"
+        src="@/assets/imgs/common/icon/icon_back.png"
+        class="icon icon-back"
+        @click="goBack"
+      />
+      <template slot="center">
+        {{ productionItem.alias }}
+      </template>
+    </AppBar>
+    <!-- 主体 -->
+    <AppContent class="app-content">
+      <!--险种的图片-->
+      <article class="product_img">
+        <img :src="productionItem.picUrl" alt="" />
+        <div class="product_brief">
+          <span>{{ productionItem.name }}</span>
+          <br />
+          <span>{{ productionItem.productDes }}</span>
+        </div>
+      </article>
+      <!------------------------被保险人主险配置start---------------------------------------------->
+      <div class="tt" style="">保费测算</div>
+      <h2 class="tt">被保险人信息</h2>
+      <!-- 生日 -->
+      <FormDatepicker
+        placeholder="请选择生日"
+        label="出生日期"
+        v-model="insurant.birthday"
+        :disabled="!insurant.isNew"
+      ></FormDatepicker>
+      <!-- 性别 -->
+      <FormRadio
+        v-model="insurant.sex"
+        label="性别"
+        :selectList="sexSelectList"
+        :disabled="!insurant.isNew"
+      ></FormRadio>
+      <!-- 配置选项1----------- 缴费方式 -->
+      <RiskSettingSelect
+        label="领取方式"
+        :list="mainSetting.drawModeList"
+        :selectCode="mainSetting.drawMode"
+        @handle="handleDrawMode"
+        v-if="mainSetting.drawModeList.length != 0"
+      />
+      <!-- 配置选项2----------- 年金开始领取年龄 -->
+      <RiskSettingSelect
+        label="年金开始领取年龄"
+        :list="mainSetting.drawStartAgeList"
+        :selectCode="mainSetting.drawStartAge"
+        @handle="handleDrawStartAge"
+        v-if="mainSetting.drawStartAgeList.length != 0"
+      />
+      <!--配置选项3-------------基本保险金额  -->
+      <div
+        v-if="
+          mainSetting.isAmount &&
+            selectMainCode != 'DTRB03' &&
+            selectMainCode != 'DTCB02'
+        "
+      >
+        <FormInput
+          label="基本保险金额"
+          v-model="mainSetting.amount"
+          rightLabel="元"
+          type="number"
+        />
+      </div>
+      <!--3.1爱心人寿爱心宝宝特定疾病保险固有基本保险金额 -->
+      <div v-if="selectMainCode == 'DTCB02'">
+        <FormInput
+          label="基本保险金额"
+          disabled
+          rightLabel="详见条款（详见附件一）"
+        />
+      </div>
+
+      <!-- 3.2爱心人寿宝宝驾到少儿医疗保险 -->
+      <div v-if="selectMainCode == 'DTRB03'">
+        <FormInput label="基本保险金额" disabled rightLabel="详见条款" />
+      </div>
+
+      <!-- 3.3爱心人寿质子重离子医疗保险 -->
+      <div v-if="selectMainCode == 'ATRB02'">
+        <FormInput label="基本保险金额" disabled rightLabel="1,000,000" />
+      </div>
+      <!--配置选项4-------------保费  -->
+      <div v-if="mainSetting.isPremium">
+        <FormInput
+          label="保险费"
+          v-model="mainSetting.premium"
+          rightLabel="元"
+          type="number"
+        />
+      </div>
+      <!-- 配置选项5----------- 保险期限 -->
+      <RiskSettingSelect
+        label="保险期限"
+        :list="mainSetting.policyPeriodList"
+        :selectCode="mainSetting.policyPeriod"
+        @handle="handlePolicyPeriod"
+        v-if="mainSetting.policyPeriodList.length != 0"
+      />
+      <!-- 配置选项6----------- 交费频次 -->
+      <RiskSettingSelect
+        label="交费频次"
+        :list="mainSetting.payModeList"
+        :selectCode="mainSetting.payMode"
+        @handle="handlePayMode"
+        v-if="mainSetting.payModeList.length != 0"
+      />
+      <!-- 配置选项7----------- 交费期间 -->
+      <RiskSettingSelect
+        label="交费期间"
+        :list="mainSetting.payPeriodList"
+        :selectCode="mainSetting.payPeriod"
+        @handle="handlePayPeriod"
+        v-if="mainSetting.payPeriodList.length != 0"
+      />
+      <p v-if="selectMainCode === 'APWB01'" class="tips-one">
+        *本险种首单基本保额须大于等于50万
+      </p>
+      <!-- 配置选项8----------- 被保人类型 -->
+      <RiskSettingSelect
+        label="被保人类型"
+        :list="mainSetting.gradeList"
+        :selectCode="mainSetting.grade"
+        @handle="handleGrade"
+        v-if="mainSetting.isGrade"
+      />
+      <p v-if="mainSetting.isGrade" class="tips-two">
+        (需依据体检结果评估被保险人是否获得优选费率)
+      </p>
+
+      <!-- 配置选项9----------- 年金领取频率 -->
+      <RiskSettingSelect
+        label="年金领取频率"
+        :list="mainSetting.drawFreqList"
+        :selectCode="mainSetting.drawFreq"
+        @handle="handleDrawFreq"
+        v-if="mainSetting.drawFreqList.length != 0"
+      />
+
+      <!-- 配置选项10----------- 责任类型/保障计划 -->
+      <RiskSettingSelect
+        label="保障计划"
+        :list="mainSetting.rankList"
+        :selectCode="mainSetting.rank"
+        @handle="handleRank"
+        v-if="mainSetting.rankList.length != 0 && selectMainCode === 'ATRB01'"
+      />
+      <RiskSettingRadio
+        label="责任类型"
+        :list="mainSetting.rankList"
+        :selectCode="mainSetting.rank"
+        @handle="handleRank"
+        v-if="mainSetting.rankList.length != 0 && selectMainCode == 'ATRB02'"
+      />
+
+      <!--配置选项11---------- 是否自动续保 -->
+      <div v-if="mainSetting.isXubao && selectMainCode != 'DTCB02'">
+        <FormRadio
+          v-model="mainSetting.xubao"
+          :selectList="yesNoList"
+          label="是否自动续保"
+        ></FormRadio>
+      </div>
+      <!--配置选项12---------- 是否有社保-->
+      <div v-if="mainSetting.isShebao">
+        <FormRadio
+          v-model="mainSetting.shebao"
+          :selectList="yesNoList"
+          label="是否有社保"
+        ></FormRadio>
+      </div>
+      <!--配置选项13---------- 责任列表 -->
+      <div v-if="mainSetting.liabList.length != 0">
+        <RiskSettingLiab :list="mainSetting.liabList" ref="rlb" />
+      </div>
+      <!-- 被保人类型 -->
+
+      <!------------------------主险配置end------------------------------------------------->
+      <!-- 附加险 -->
+      <div class="additional-list" v-if="additionalRiskList.length != 0">
+        <h2>可选计划</h2>
+        <AdditionalRisk
+          :selectMain="selectMain"
+          :mainSetting="mainSetting"
+          :selectMainCode="selectMainCode"
+        />
+      </div>
+      <!-- 按钮组 -->
+      <RiskCalcButton
+        :selectMain="selectMain"
+        :mainSetting="mainSetting"
+        :selectMainCode="selectMainCode"
+      />
+      <!--详情的部分-->
+      <section>
+        <div id="details">
+          <!--<div class="tt" style="color: blue;background: white;line-height: 40px;font-size: 16px;">产品介绍</div>-->
+          <section class="header_tabs">
+            <nav
+              class="tab_item"
+              v-for="(item, index) in productDetail"
+              :key="index"
+              :class="{ choosed: tabshow == item.code }"
+              @click="newSwitch(item.code)"
+            >
+              {{ item.desc }}
+              <span v-if="index + 1 != productDetail.length">|</span>
+            </nav>
+          </section>
+          <!--产品详情-->
+          <div v-if="tabshow == '1'" class="list">
+            <div class="toDucument">
+              <!--产品详情投不展示图-->
+              <!-- <img style="margin-top: 10px;width: 100%;height: 210px;" ng-src="{{proInfo.imgInfo_01}}?{{vo.rondom}}" /> -->
+              <!--保障计划-->
+            </div>
+          </div>
+
+          <!--公司简介-->
+          <div v-if="tabshow == '2'" class="list">
+            <div class="toDucument">
+              <img
+                style="margin-top: 10px;width: 100%;"
+                src="https://axbucket01-10066809.cos.ap-shanghai.myqcloud.com/ax_product/aboutUs/001.jpg"
+              /><br />
+              <img
+                style="margin-top: 10px;width: 100%;"
+                src="https://axbucket01-10066809.cos.ap-shanghai.myqcloud.com/ax_product/aboutUs/002.jpg"
+              /><br />
+              <img
+                style="margin-top: 10px;width: 100%;"
+                src="https://axbucket01-10066809.cos.ap-shanghai.myqcloud.com/ax_product/aboutUs/003.jpg"
+              />
+            </div>
+          </div>
+          <!--理赔流程-->
+          <div v-if="tabshow == '3'" class="list">
+            <div class="toDucument">
+              <img
+                style="margin-top: 10px;width: 100%;"
+                src="https://axbucket01-10066809.cos.ap-shanghai.myqcloud.com/ax_product/aboutUs/301.png"
+              /><br />
+            </div>
+          </div>
+        </div>
+      </section>
+    </AppContent>
+  </page>
+</template>
+
+<script>
+import FormDatepicker from "@/components/common/form/FormDatepicker";
+import FormInput from "@/components/common/form/FormInput";
+import AdditionalRisk from "@/components/plan/AdditionalRisk";
+import RiskSettingSelect from "@/components/plan/RiskSettingSelect";
+import RiskSettingRadio from "@/components/plan/RiskSettingRadio";
+import RiskSettingLiab from "@/components/plan/RiskSettingLiab";
+import FormRadio from "@/components/common/form/FormRadio";
+import { mapState } from "vuex";
+import RiskCalcButton from "@/components/plan/RiskCalcButton";
+export default {
+  components: {
+    FormDatepicker,
+    FormInput,
+    RiskSettingSelect,
+    RiskSettingRadio,
+    RiskSettingLiab,
+    AdditionalRisk,
+    FormRadio,
+    RiskCalcButton
+  },
+  props: {},
+  data() {
+    return {
+      productionItem: {},
+      //产品介绍的头部栏
+      productDetail: [
+        {
+          desc: "产品详情",
+          code: "1"
+        },
+        {
+          desc: "公司简介",
+          code: "2"
+        },
+        {
+          desc: "理赔流程",
+          code: "3"
+        }
+      ],
+      productMessage: "", //产品信息
+      tabshow: "1", //默认选项是产品详情的code值
+      //主险种配置
+      mainSetting: {
+        //领取方式
+        drawMode: "",
+        //领取方式列表
+        drawModeList: [],
+
+        //被选择当保险期限
+        policyPeriod: "",
+        //保险期限列表
+        policyPeriodList: [],
+
+        //被选择的交费期间
+        payPeriod: "",
+        //交费期间列表
+        payPeriodList: [],
+
+        //缴费方式
+        payMode: "",
+        //缴费方式列表
+        payModeList: [],
+
+        //年金开始领取年龄
+        drawStartAge: "",
+        //年金开始领取年龄列表
+        drawStartAgeList: [],
+
+        //年金领取频率
+        drawFreq: "",
+        //年金领取频率列表
+        drawFreqList: [],
+
+        //保障计划/责任类型
+        rank: "",
+        //保障计划/责任类型列表
+        rankList: [],
+
+        //基本保险金额
+        amount: "",
+        //是否有基本保险金额配置
+        isAmount: false,
+
+        //保费
+        premium: "",
+        //是否有保费配置
+        isPremium: false,
+
+        //责任列表
+        liabList: [],
+        //是否有续保配置
+        isXubao: false,
+        //续保
+        xubao: "Y",
+        //是否有社保配置
+        isShebao: false,
+        //社保
+        shebao: "Y",
+        //是否有被保类型配置
+        isGrade: false,
+        //被选择当被保人类型
+        grade: "0",
+        //被保人类型码表
+        gradeList: [{ code: "0", text: "标准" }, { code: "1", text: "优选" }]
+      },
+      //险种的码表
+      selectMainCode: "",
+      //附加险列表
+      additionalRiskList: [],
+      //主险
+      selectMain: {},
+      sexSelectList: [] // 性别
+    };
+  },
+  computed: {
+    ...mapState({
+      riskProposalProductList: state => state.plan.riskProposalProductList, //附件险列表
+      insurant: state => state.plan.insurant, //被保人对象
+      userInfo: state => state.user.userInfo //用户信息
+    })
+  },
+  watch: {},
+  created() {
+    console.log(this.$route.params);
+    this.productionItem = this.$route.params;
+    this.initCodeList();
+    this.getProductDetails();
+  },
+  methods: {
+    // 返回
+    goBack() {
+      this.back();
+    },
+    //获取产品的详情
+    getProductDetails() {
+      const params = {
+        productCode: this.productionItem.productCode,
+        infoId:
+          "557f6da8ce8148e7a4e777824c33f4b0" ||
+          this.userInfo.weChatAgenctDTO.infoId, //规划师工号(Y),
+        orgCode: "86110101" || this.userInfo.weChatAgenctDTO.agentCode, //管理机构(Y),
+        channelId: "" || "01"
+      };
+      // http
+      utils.http
+        .post(interfaces.production.productDetail, params)
+        .then(data => {
+          //成功获取数据
+          console.log(data);
+          this.selectMain = data.productDefList[0];
+          console.log(this.mainlist);
+          this.selectMainCode = data.productDefList[0].productCode;
+          //附加险列表
+          this.additionalRiskList = data.productDefList[0].extraList;
+          this.initMainSetting(this.selectMain);
+          this.sexSelectList();
+        });
+    },
+    //详情的部分的切换
+    newSwitch(code) {
+      this.tabshow = code;
+    },
+    //选择主险初始化主险配置
+    initMainSetting(item) {
+      //主险种配置清空
+      this.mainSetting = {
+        drawMode: "",
+        drawModeList: [],
+        policyPeriod: "",
+        policyPeriodList: [],
+        payPeriod: "",
+        payPeriodList: [],
+        payMode: "",
+        payModeList: [],
+        drawStartAge: "",
+        drawStartAgeList: [],
+        drawFreq: "",
+        drawFreqList: [],
+        rank: "",
+        rankList: [],
+        amount: "",
+        isAmount: false,
+        premium: "",
+        isPremium: false,
+        liabList: [],
+        isXubao: false,
+        xubao: "Y",
+        isShebao: false,
+        shebao: "Y",
+        isGrade: false,
+        grade: "0",
+        gradeList: [{ code: "0", text: "标准" }, { code: "1", text: "优选" }]
+      };
+      //获取配置list
+      item.attList.forEach(element => {
+        switch (element.attCode) {
+          case "drawMode": //领取方式
+            this.mainSetting.drawModeList = element.attValueList;
+            //如果additional节点没有默认值，则设第一个
+            this.mainSetting.drawMode = element.attValueList[0].code;
+            break;
+          case "policyPeriod": //保险期限
+            this.mainSetting.policyPeriodList = element.attValueList;
+            break;
+          case "payPeriod": //交费期间
+            this.mainSetting.payPeriodList = element.attValueList;
+            break;
+          case "payMode": //缴费方式
+            this.mainSetting.payModeList = element.attValueList;
+            break;
+          case "drawStartAge": //年金开始领取年龄
+            this.mainSetting.drawStartAgeList = element.attValueList;
+            break;
+          case "drawFreq": //年金领取频率
+            this.mainSetting.drawFreqList = element.attValueList;
+            break;
+          case "rank": //责任类型
+            this.mainSetting.rankList = element.attValueList;
+            break;
+          case "amount": //基本保险金额
+            if (item.liabList.length == 0) {
+              //无保险责任列表才会有基本保险额
+              this.mainSetting.isAmount = true;
+              this.mainSetting.amount = item.baseAmount;
+            }
+            break;
+          case "premium": //保费
+            this.mainSetting.isPremium = true;
+            this.mainSetting.premium = item.baseAmount;
+            break;
+        }
+      });
+      //获取责任配置list
+      //alert("66");
+      this.mainSetting.liabList = item.liabList;
+
+      //是否有社保配置
+      this.mainSetting.isShebao =
+        this.selectMainCode == "ATRB01" ? true : false;
+      //设置社保默认值
+      this.mainSetting.shebao = this.insurant.shebao == "1" ? "Y" : "N";
+
+      //是否有被保人类型配置
+      this.mainSetting.isGrade = this.selectMainCode == "APWB01" ? true : false;
+
+      //设置默认值
+      item.additional.forEach(element => {
+        switch (element.key) {
+          case "drawMode": //领取方式
+            this.mainSetting.drawMode = element.value.split(",")[0];
+            break;
+          case "policyPeriod": //保险期限
+            this.mainSetting.policyPeriod = element.value.split(",")[0];
+            break;
+          case "payPeriod": //交费期间
+            this.mainSetting.payPeriod = element.value.split(",")[0];
+            break;
+          case "payMode": //缴费方式
+            this.mainSetting.payMode = element.value.split(",")[0];
+            break;
+          case "drawStartAge": //年金开始领取年龄
+            this.mainSetting.drawStartAge = element.value.split(",")[0];
+            break;
+          case "drawFreq": //年金领取频率
+            this.mainSetting.drawFreq = element.value.split(",")[0];
+            break;
+          case "rank_extra": //保障计划
+            this.mainSetting.rank = element.value.split(",")[0];
+            break;
+          case "protectionPlan": //责任类型
+            this.mainSetting.rank = "duty_" + element.value.split(",")[0];
+            console.log(this.mainSetting.rank);
+            break;
+          case "QXFL": //自动续保
+            this.mainSetting.isXubao =
+              element.value === "duanqi" ? true : false;
+            this.mainSetting.xubao = "Y";
+            break;
+          // case "shebao": //有社保配置
+          //   this.mainSetting.isShebao = "Y";
+          //   //console.log(element.value);
+          //   this.mainSetting.shebao = element.value == "yes" ? "Y" : "N";
+          //   break;
+        }
+      });
+    },
+    //初始化码表
+    async initCodeList() {
+      //是或否码表
+      this.yesNoList = await utils.code.getCode("sys_yes_no");
+      let sexSelectList = await utils.code.getCode("sys_user_sex");
+      this.sexSelectList = sexSelectList.filter(item => {
+        return item.code != "2";
+      });
+    },
+    //选择领取方式
+    handleDrawMode(item) {
+      this.mainSetting.drawMode = item.code;
+    },
+    //选择保险期限
+    handlePolicyPeriod(item) {
+      this.mainSetting.policyPeriod = item.code;
+    },
+    //选择交费期间
+    handlePayPeriod(item) {
+      this.mainSetting.payPeriod = item.code;
+    },
+    //选择缴费方式
+    handlePayMode(item) {
+      this.mainSetting.payMode = item.code;
+    },
+    //年金开始领取年龄
+    handleDrawStartAge(item) {
+      this.mainSetting.drawStartAge = item.code;
+    },
+    //年金领取频率
+    handleDrawFreq(item) {
+      this.mainSetting.drawFreq = item.code;
+    },
+    //责任类型
+    handleRank(item) {
+      console.log(item);
+      this.mainSetting.rank = item.code;
+    },
+    //被保人类型
+    handleGrade(item) {
+      this.mainSetting.grade = item.code;
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.app-bar {
+  .icon {
+    height: auto;
+    &.icon-back {
+      width: 11.5px;
+    }
+  }
+}
+.app-content {
+  .product_img {
+    position: relative;
+    img {
+      width: 100%;
+      height: 210px;
+    }
+    .product_brief {
+      color: white;
+      position: absolute;
+      background: #000;
+      opacity: 0.5;
+      bottom: 0px;
+      width: 100%;
+      padding: 10px;
+      text-align: center;
+      span {
+        font-size: 16px;
+      }
+      span:nth-child(3n) {
+        font-size: 13px;
+      }
+    }
+  }
+  #details {
+    background: white;
+    margin-top: -16px;
+    .header_tabs {
+      height: 35px;
+      margin-top: 15px;
+      .tab_item {
+        border-bottom: 3px solid gainsboro;
+        display: inline-block;
+        height: 37px;
+        line-height: 32px;
+        text-align: center;
+        background-color: white;
+        width: 33.33%;
+        margin-top: 8px;
+        span {
+          color: #cccccc;
+          float: right;
+        }
+      }
+      .choosed {
+        border-bottom: 3px solid rgb(201, 159, 99);
+      }
+    }
+  }
+}
+.tt {
+  margin-left: 3%;
+  color: #c99f63;
+  margin-top: 8px;
+  line-height: 30px;
+  font-size: 16px;
+  font-weight: normal;
+}
+</style>

@@ -1,0 +1,17 @@
+/* ------------------------------------------ native原生交互工具类 ------------------------------------------ */
+
+import bridge from "@/assets/libs/dsbridge";
+
+/**
+ * 在app里面关闭当前vue页面
+ * @param {*} ret 传入ret则关闭并跳转到ret指定的某个页面，不传则仅关闭当前vue页面
+ */
+export const closePage = ret => {
+  bridge.call("_dsb.closePage", ret);
+};
+
+const native = {
+  closePage
+};
+
+export default native;

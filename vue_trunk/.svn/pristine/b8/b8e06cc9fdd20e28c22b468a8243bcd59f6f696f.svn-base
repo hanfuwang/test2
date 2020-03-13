@@ -1,0 +1,156 @@
+<template>
+  <div class="productImg">
+    <!--产品详情投不展示图-->
+    <img :src="productImg01" alt="" />
+    <!--保障计划-->
+    <div class="bzjh">
+      <div class="bzjh_header">
+        保障规划
+      </div>
+      <div class="split_ine"><!--分割线--></div>
+      <div class="row" v-for="prolis in proInfoData" :key="prolis.id">
+        <div
+          v-if="
+            prolis.indexOf('*$') != -1 &&
+              (proInfo.productCode == 'RPPB01' ||
+                proInfo.productCode == 'DTRB03')
+          "
+          class="col"
+        >
+          {{ prolis.replace("*$", "") }}
+        </div>
+        <div
+          v-if="
+            prolis.indexOf('*$') != -1 &&
+              (proInfo.productCode != 'RPPB01' &&
+                proInfo.productCode != 'DTRB03')
+          "
+          class="col"
+        >
+          {{ prolis.replace("*$", "") }}
+        </div>
+        <div v-if="prolis.indexOf('*$') == -1" class="col">
+          {{ prolis.replace("*$", "") }}
+        </div>
+      </div>
+      <div class="row" v-if="proInfoData.length">
+        <div class="col">
+          以上各项保险金为您所能获取赔付金的最高额度，仅供您参考，具体内容请以保单条款为准。
+        </div>
+      </div>
+      <div class="split_ine"><!--分割线--></div>
+      <div class="row">
+        <div class="col">
+          <span style="text-align: center;color: #000000;">查看</span>
+          <span
+            style="text-align: center;color: #c99f63;"
+            @click="tiaokuanTotal()"
+            >《保障条款》、</span
+          >
+          <span style="text-align: center;color: #c99f63;" @click="openModal(3)"
+            >《投保须知》</span
+          >
+          <span
+            style="text-align: center;color: #c99f63;"
+            @click="explain()"
+            v-if="
+              proInfo.productCode == 'APWB01' || proInfo.productCode == 'RPPB01'
+            "
+            >、《产品说明书》</span
+          >
+        </div>
+      </div>
+    </div>
+    <!--产品特色-->
+    <img :src="productImg02" alt="" />
+  </div>
+</template>
+
+<script>
+export default {
+  name: "ProductImg",
+  props: {
+    productList: {
+      type: Array,
+      default: () => {
+        return [];
+      }
+    },
+    productSecurityList: [],
+    proInfo: {
+      type: Object,
+      default: () => {
+        return {};
+      }
+    }
+  },
+  data() {
+    return {
+      productImg01: "", //PD007 产品介绍长图
+      productImg02: "", //PD012 产品介绍小图
+      proInfoData: [] //产品保障规划的数据
+    };
+  },
+  computed: {},
+  watch: {
+    productSecurityList: {
+      handler(newVal) {
+        this.dealProInfo(newVal);
+      },
+      deep: true
+    }
+  },
+  created() {
+    this.productList.filter(item => {
+      if (item.docType == "PD012") {
+        this.productImg01 = item.fileUrl;
+      }
+      if (item.docType == "PD007") {
+        this.productImg02 = item.fileUrl;
+      }
+    });
+  },
+  methods: {
+    dealProInfo(result) {
+      this.proInfoData = [];
+      result.map(ele => {
+        this.proInfoData.push(ele);
+      });
+      console.log(this.proInfoData);
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.productImg {
+  img {
+    margin-top: 10px;
+    width: 100%;
+  }
+  .bzjh {
+    .bzjh_header {
+      color: #c99f63;
+      margin-top: 8px;
+      line-height: 30px;
+      font-size: 17px;
+      margin-left: 10px;
+    }
+    .split_ine {
+      border-bottom: 1px solid rgb(201, 159, 99);
+      width: 92%;
+      margin-left: 10px;
+    }
+    .row {
+      @include display-flex;
+      text-align: left;
+      font-size: 14px;
+      padding: 5px;
+      .col {
+        padding: 5px;
+        width: 100%;
+      }
+    }
+  }
+}
+</style>

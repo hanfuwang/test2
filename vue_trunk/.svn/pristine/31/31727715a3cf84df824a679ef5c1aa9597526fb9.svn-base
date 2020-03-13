@@ -1,0 +1,74 @@
+/* ------------------------------------------ 规划书模块 ------------------------------------------ */
+
+const clouds = [
+  {
+    name: "fiveClouds",
+    path: "/clouds/fiveClouds",
+    meta: {
+      title: "爱心五朵云"
+    },
+    component: () => {
+      return import(
+        /* webpackChunkName: "fiveClouds" */ "@/views/clouds/FiveClouds.vue"
+      );
+    }
+  },
+  {
+    name: "charitable",
+    path: "/clouds/charitable",
+    meta: {
+      title: "慈善云"
+    },
+    component: () => {
+      return import(
+        /* webpackChunkName: "charitable" */ "@/views/clouds/Charitable.vue"
+      );
+    }
+  },
+  {
+    name: "health",
+    path: "/clouds/health",
+    meta: {
+      title: "健康云"
+    },
+    component: () => {
+      return import(
+        /* webpackChunkName: "health" */ "@/views/clouds/Health.vue"
+      );
+    }
+  },
+  {
+    name: "insure",
+    path: "/clouds/insure",
+    meta: {
+      title: "保险云"
+    },
+    component: () => {
+      return import(
+        /* webpackChunkName: "insure" */ "@/views/clouds/Insure.vue"
+      );
+    }
+  },
+  {
+    name: "safe",
+    path: "/clouds/safe",
+    meta: {
+      title: "安全云"
+    },
+    component: () => {
+      return import(/* webpackChunkName: "safe" */ "@/views/clouds/Safe.vue");
+    }
+  },
+  {
+    name: "wealf",
+    path: "/clouds/wealf",
+    meta: {
+      title: "财富云"
+    },
+    component: () => {
+      return import(/* webpackChunkName: "wealf" */ "@/views/clouds/Wealf.vue");
+    }
+  }
+];
+
+export default clouds;

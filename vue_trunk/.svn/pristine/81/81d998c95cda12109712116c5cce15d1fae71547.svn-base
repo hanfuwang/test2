@@ -1,0 +1,90 @@
+/* ------------------------------------------ 规划书模块 ------------------------------------------ */
+
+const plan = [
+  {
+    name: "bankMes",
+    path: "/plan/bankMes",
+    meta: {
+      title: "客户联系方式"
+    },
+    component: () => {
+      return import(
+        /* webpackChunkName: "bankMes" */ "@/views/plan/BankMes.vue"
+      );
+    }
+  },
+  {
+    name: "customerContact",
+    path: "/plan/customerContact",
+    meta: {
+      title: "客户联系方式"
+    },
+    component: () => {
+      return import(
+        /* webpackChunkName: "customerContact" */ "@/views/plan/CustomerContact.vue"
+      );
+    }
+  },
+  {
+    name: "addCustomer",
+    path: "/plan/addCustomer",
+    meta: {
+      title: "基本信息"
+    },
+    component: () => {
+      return import(
+        /* webpackChunkName: "addCustomer" */ "@/views/plan/AddCustomer.vue"
+      );
+    }
+  },
+  {
+    name: "chooseCustomer",
+    path: "/plan/chooseCustomer",
+    meta: {
+      title: "模拟选择客户"
+    },
+    component: () => {
+      return import(
+        /* webpackChunkName: "chooseCustomer" */ "@/views/plan/ChooseCustomer.vue"
+      );
+    }
+  },
+  {
+    name: "planList",
+    path: "/plan/planList",
+    meta: {
+      title: "规划书列表"
+    },
+    component: () => {
+      return import(
+        /* webpackChunkName: "planList" */ "@/views/plan/PlanList.vue"
+      );
+    }
+  },
+  {
+    name: "makePlan",
+    path: "/plan/makePlan",
+    meta: {
+      title: "制作规划书"
+    },
+    component: () => {
+      return import(
+        /* webpackChunkName: "makePlan" */ "@/views/plan/MakePlan.vue"
+      );
+    }
+  },
+  {
+    name: "insuranceSelect",
+    path: "/plan/insuranceSelect",
+    meta: {
+      title: "险种选择"
+    },
+    component: () => {
+      return import(
+        /* webpackChunkName: "insuranceSelect" */ "@/views/plan/InsuranceSelect.vue"
+      );
+    }
+  }
+];
+
+export default plan;

@@ -1,0 +1,180 @@
+<template>
+  <section class="tips">
+    <h4>利益演示</h4>
+    <section class="con">
+      <aside class="banner">
+        <div @click="selectlow" :class="{ selected: sellow }" class="low">
+          <nav>1.75%</nav>
+          <nav>低档分红</nav>
+        </div>
+        <div
+          @click="selectmiddle"
+          :class="{ selected: selmiddle }"
+          class="middle"
+        >
+          <nav>4.5%</nav>
+          <nav>中档分红</nav>
+        </div>
+        <div @click="selecthigh" :class="{ selected: selhigh }">
+          <nav>5.5%</nav>
+          <nav>高档分红</nav>
+        </div>
+      </aside>
+      <section class="list">
+        <div class="head">
+          被保人
+          <span>
+            {{ age }}
+          </span>
+          周岁时
+        </div>
+      </section>
+      <NumberSlider v-model="number" :max="77" :min="11"></NumberSlider>
+      <div>注：拖动按钮查看被保人不用跟年龄的利益。</div>
+      <div class="btn" @click="$router.push('/plan/showTable')">
+        查看利益演示表
+      </div>
+    </section>
+  </section>
+</template>
+
+<script>
+import NumberSlider from "@/components/common/ui/NumberSlider";
+export default {
+  components: {
+    NumberSlider
+  },
+  data() {
+    return {
+      sellow: true, //默认低档
+      selmiddle: false, //中档
+      selhigh: false, //高档
+      age: 30, //被保人年龄
+      valueList: [],
+      number: 21
+    };
+  },
+  props: ["benifitOutLineItemDtoList"],
+  methods: {
+    //低档
+    selectlow() {
+      this.sellow = true;
+      this.selmiddle = false;
+      this.selhigh = false;
+    },
+    //中档
+    selectmiddle() {
+      this.selmiddle = true;
+      this.sellow = false;
+      this.selhigh = false;
+    },
+    //高档
+    selecthigh() {
+      this.selhigh = true;
+      this.sellow = false;
+      this.selmiddle = false;
+    }
+  },
+  created() {}
+};
+</script>
+
+<style lang="scss" scoped>
+ul li {
+  list-style: none;
+  overflow: hidden;
+  height: 30px;
+  line-height: 30px;
+  padding: 0 5px;
+  div {
+    float: left;
+  }
+  aside {
+    float: right;
+    span {
+      color: #eb5757;
+    }
+  }
+}
+.list {
+  font-size: 14px;
+  width: 95%;
+  margin: 10px auto;
+  background: #f1f1f1;
+  border-top: 1px solid #f1f1f1;
+  border-radius: 10px;
+  .head {
+    font-size: 16px;
+    height: 38px;
+    line-height: 38px;
+    text-align: center;
+    span {
+      font-size: 18px;
+      color: #eb5757;
+    }
+  }
+  .white {
+    background: #ffffff;
+  }
+}
+h4 {
+  margin: 5px 0 10px;
+  padding-left: 10px;
+  border-left: 3px solid #eb5656;
+}
+nav {
+  height: 20px;
+  line-height: 20px;
+  text-align: center;
+  width: 100%;
+  clear: both;
+}
+.con {
+  border-top: 1px solid #e5e5e5;
+  padding-top: 15px;
+}
+.selected {
+  color: #60532e;
+  background: #f7c21e;
+}
+.banner {
+  width: 85%;
+  height: 40px;
+  border: 1px solid #e5e5e5;
+  margin: 0 20px;
+  border-radius: 40px;
+  overflow: hidden;
+  border-color: #f8cc43;
+  display: flex;
+  div {
+    flex: 1;
+    height: 40px;
+    line-height: 40px;
+    float: left;
+  }
+}
+.low {
+  border-right: 1px solid #f7c21e;
+}
+.middle {
+  border-right: 1px solid #f7c21e;
+}
+.tips {
+  font-size: 14px;
+  background: #fff;
+  margin: 10px;
+  padding: 10px;
+  border-radius: 10px;
+}
+.btn {
+  font-size: 18px;
+  background: #ffd737;
+  color: #383320;
+  width: 75%;
+  height: 45px;
+  line-height: 45px;
+  text-align: center;
+  margin: 20px auto;
+  border-radius: 40px;
+}
+</style>

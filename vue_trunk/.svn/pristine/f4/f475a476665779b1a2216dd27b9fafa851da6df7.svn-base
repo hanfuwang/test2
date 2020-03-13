@@ -1,0 +1,1299 @@
+<template>
+  <page class="production_detail" :withAppBar="!globalConfig.isWx">
+    <!-- 导航栏 -->
+    <AppBar
+      class="app-bar"
+      :leftWidth="30"
+      :rightWidth="30"
+      v-if="!globalConfig.isWx"
+    >
+      <img
+        slot="left"
+        src="@/assets/imgs/common/icon/icon_back.png"
+        class="icon icon-back"
+        @click="goBack"
+      />
+      <template slot="center">
+        {{ productionItem.alias }}
+      </template>
+    </AppBar>
+    <!-- 主体 -->
+    <AppContent class="app-content">
+      <!--险种的图片-->
+      <article class="product_img">
+        <img :src="productionItem.picUrl" alt="" />
+        <div class="product_brief">
+          <span>{{ productionItem.name }}</span>
+          <br />
+          <span>{{ productionItem.productDes }}</span>
+        </div>
+      </article>
+      <!------------------------被保险人主险配置start---------------------------------------------->
+      <div class="tt" style="">保费测算</div>
+      <h2 class="tt" v-if="isShowApplicant">投保人信息</h2>
+      <!-- 生日 -->
+      <FormDatepicker
+        v-if="isShowApplicant"
+        :placeholder="'投保人年龄为(18(含)-65周岁(含))'"
+        label="出生日期"
+        :max="now"
+        v-model="applicant.birthday"
+        :rules="rules.birthday"
+      ></FormDatepicker>
+      <!-- 性别 -->
+      <FormRadio
+        v-if="isShowApplicant"
+        v-model="applicant.sex"
+        label="性别"
+        :disabled="selectMainCode == 'DTCB02'"
+        :selectList="sexSelectList"
+        @input="changeSex"
+      ></FormRadio>
+      <!--配置选项---------- 职业-->
+      <FormSelector
+        v-if="isShowApplicant"
+        :selectData.sync="applicant.cdOccupation"
+        type="job"
+        label="职业"
+        placeholder="请选择职业"
+        ref="jobSelector"
+      ></FormSelector>
+      <h2 class="tt">被保险人信息</h2>
+      <!-- 生日 -->
+      <FormDatepicker
+        :placeholder="birthdayShow"
+        label="出生日期"
+        :max="now"
+        v-model="insurant.birthday"
+        :rules="rules.birthday"
+      ></FormDatepicker>
+      <!-- 性别 -->
+      <FormRadio
+        v-model="insurant.sex"
+        label="性别"
+        :disabled="selectMainCode == 'DTCB02'"
+        :selectList="sexSelectList"
+        @input="changeSex"
+      ></FormRadio>
+      <!--配置选项3-------------基本保险金额  -->
+      <div
+        v-if="
+          mainSetting.isAmount &&
+            selectMainCode != 'DTRB03' &&
+            selectMainCode != 'DTCB02' &&
+            selectMainCode != 'ATIB01' &&
+            selectMainCode != 'ATRB01'
+        "
+      >
+        <FormAmount
+          label="基本保险金额"
+          v-model="mainSetting.amount"
+          rightLabel="元"
+          type="number"
+          @iptBlur="changePremium"
+        />
+      </div>
+      <!--3.1爱心人寿爱心宝宝特定疾病保险固有基本保险金额 -->
+      <div v-if="mainSetting.isAmount && selectMainCode == 'DTCB02'">
+        <FormInput
+          label="基本保险金额"
+          disabled
+          rightLabel="详见条款（详见附件一）"
+        />
+      </div>
+
+      <!-- 3.2爱心人寿宝宝驾到少儿医疗保险 -->
+      <div v-if="selectMainCode == 'DTRB03'">
+        <FormInput label="基本保险金额" disabled rightLabel="详见条款" />
+      </div>
+
+      <!-- 3.3爱心人寿质子重离子医疗保险 -->
+      <div v-if="selectMainCode == 'ATRB02'">
+        <FormInput label="基本保险金额" disabled rightLabel="1,000,000" />
+      </div>
+      <!--配置选项4-------------保费  -->
+      <div v-if="mainSetting.isPremium">
+        <FormAmount
+          label="保险费"
+          v-model="mainSetting.premium"
+          rightLabel="元"
+          type="number"
+          @iptBlur="changePremium"
+        />
+      </div>
+      <!--配置选项---------- 职业-->
+      <FormSelector
+        v-if="isShowJob"
+        :selectData.sync="insurant.cdOccupation"
+        type="job"
+        label="职业"
+        placeholder="请选择职业"
+        ref="jobSelector"
+      ></FormSelector>
+      <!-- 配置选项1----------- 缴费方式 -->
+      <RiskSettingSelect
+        label="领取方式"
+        :list="mainSetting.drawModeList"
+        :selectCode="mainSetting.drawMode"
+        @handle="handleDrawMode"
+        v-if="mainSetting.drawModeList.length != 0"
+      />
+      <!-- 配置选项2----------- 年金开始领取年龄 -->
+      <RiskSettingSelect
+        label="年金开始领取年龄"
+        :list="mainSetting.drawStartAgeList"
+        :selectCode="mainSetting.drawStartAge"
+        @handle="handleDrawStartAge"
+        v-if="mainSetting.drawStartAgeList.length != 0"
+      />
+
+      <!-- 配置选项5----------- 保险期限 -->
+      <RiskSettingSelect
+        label="保险期限"
+        :list="mainSetting.policyPeriodList"
+        :selectCode="mainSetting.policyPeriod"
+        @handle="handlePolicyPeriod"
+        v-if="mainSetting.policyPeriodList.length != 0"
+      />
+      <!-- 配置选项6----------- 交费频次 -->
+      <RiskSettingSelect
+        label="交费频次"
+        :list="mainSetting.payModeList"
+        :selectCode="mainSetting.payMode"
+        @handle="handlePayMode"
+        v-if="mainSetting.payModeList.length != 0"
+      />
+      <!-- 配置选项7----------- 交费期间 -->
+      <RiskSettingSelect
+        label="交费期间"
+        :list="mainSetting.payPeriodList"
+        :selectCode="mainSetting.payPeriod"
+        @handle="handlePayPeriod"
+        v-if="mainSetting.payPeriodList.length != 0"
+      />
+      <!-- 配置选项8----------- 被保人类型 -->
+      <RiskSettingSelect
+        label="被保人类型"
+        :list="mainSetting.gradeList"
+        :selectCode="mainSetting.grade"
+        @handle="handleGrade"
+        v-if="mainSetting.isGrade"
+      />
+      <p v-if="mainSetting.isGrade" class="tips-two">
+        (需依据体检结果评估被保险人是否获得优选费率)
+      </p>
+
+      <!-- 配置选项9----------- 年金领取频率 -->
+      <RiskSettingSelect
+        label="年金领取频率"
+        :list="mainSetting.drawFreqList"
+        :selectCode="mainSetting.drawFreq"
+        @handle="handleDrawFreq"
+        v-if="mainSetting.drawFreqList.length != 0"
+      />
+
+      <!-- 配置选项10----------- 责任类型/保障计划 -->
+      <RiskSettingSelect
+        label="保障计划"
+        :list="mainSetting.rankList"
+        :selectCode="mainSetting.rank"
+        @handle="handleRank"
+        v-if="mainSetting.rankList.length != 0 && selectMainCode === 'ATRB01'"
+      />
+      <RiskSettingRadio
+        label="责任类型"
+        :list="mainSetting.rankList"
+        :selectCode="mainSetting.rank"
+        @handle="handleRank"
+        v-if="mainSetting.rankList.length != 0 && selectMainCode == 'ATRB02'"
+      />
+      <!--配置选项12---------- 是否有社保-->
+      <div v-if="mainSetting.isShebao">
+        <FormRadio
+          v-model="mainSetting.shebao"
+          :selectList="yesNoList"
+          label="是否有社保"
+          @input="handleInput"
+        ></FormRadio>
+      </div>
+      <!--配置选项11---------- 是否自动续保 -->
+      <div v-if="mainSetting.isXubao && selectMainCode != 'DTCB02'">
+        <FormRadio
+          v-model="mainSetting.xubao"
+          :selectList="yesNoList"
+          label="是否自动续保"
+          @input="handleInput"
+        ></FormRadio>
+      </div>
+      <!--配置选项13---------- 责任列表 -->
+      <div v-if="mainSetting.liabList.length != 0">
+        <RiskSettingLiab :list="mainSetting.liabList" ref="rlb" />
+      </div>
+      <!-- 被保人类型 -->
+
+      <!------------------------主险配置end------------------------------------------------->
+      <!-- 附加险 -->
+      <div class="additional-list" v-if="additionalRiskList.length != 0">
+        <h2>可选计划</h2>
+        <AdditionalRisk
+          :selectMain="selectMain"
+          :mainSetting="mainSetting"
+          @calcPremium="calcPremium"
+        />
+      </div>
+      <!-- 按钮组 -->
+      <!--详情的部分-->
+      <section>
+        <div class="details">
+          <!--<div class="tt" style="color: blue;background: white;line-height: 40px;font-size: 16px;">产品介绍</div>-->
+          <section class="header_tabs">
+            <nav
+              class="tab_item"
+              v-for="(item, index) in productDetail"
+              :key="index"
+              :class="{ choosed: tabshow == item.code }"
+              @click="newSwitch(item.code)"
+            >
+              {{ item.desc }}
+              <span v-if="index + 1 != productDetail.length">|</span>
+            </nav>
+          </section>
+          <!--产品详情-->
+          <div v-show="tabshow == '1'" class="list">
+            <div class="toDucument">
+              <!--产品详情投不展示图-->
+              <ProducImg
+                v-if="ImgList.length"
+                :productList="ImgList"
+                :proInfo="productionItem"
+                :productSecurityList="productSecurityList"
+              ></ProducImg>
+              <!--保障计划-->
+            </div>
+          </div>
+
+          <!--公司简介-->
+          <div v-show="tabshow == '2'" class="list">
+            <BreifImg
+              v-if="tabshow == '2'"
+              :breifImg="ImgList"
+              :type="'2'"
+            ></BreifImg>
+          </div>
+          <!--理赔流程-->
+          <div v-show="tabshow == '3'" class="list">
+            <BreifImg
+              v-if="tabshow == '3'"
+              :breifImg="ImgList"
+              :type="'3'"
+            ></BreifImg>
+          </div>
+        </div>
+      </section>
+    </AppContent>
+    <div class="TrialResult">
+      <div :class="canjump ? 'no-padding' : 'no-padding-close'">
+        <span class="fontC"> {{ totalPremium }}元 </span>
+        <button
+          @click="goInform()"
+          :disabled="!canjump"
+          style="font-size: 18px;"
+        >
+          制作规划书
+        </button>
+      </div>
+    </div>
+  </page>
+</template>
+
+<script>
+import FormSelector from "@/components/common/form/FormSelector";
+import FormAmount from "@/components/common/form/FormAmount";
+import BreifImg from "@/components/production/BreifImg";
+import FormDatepicker from "@/components/common/form/FormDatepicker";
+import FormInput from "@/components/common/form/FormInput";
+import AdditionalRisk from "@/components/production/AdditionalRisk";
+import RiskSettingSelect from "@/components/plan/RiskSettingSelect";
+import RiskSettingRadio from "@/components/plan/RiskSettingRadio";
+import RiskSettingLiab from "@/components/plan/RiskSettingLiab";
+import FormRadio from "@/components/common/form/FormRadio";
+import ProducImg from "@/components/production/ProductImg";
+import { mapState } from "vuex";
+export default {
+  components: {
+    FormDatepicker,
+    FormInput,
+    RiskSettingSelect,
+    RiskSettingRadio,
+    RiskSettingLiab,
+    AdditionalRisk,
+    FormRadio,
+    ProducImg,
+    BreifImg,
+    FormAmount,
+    FormSelector
+  },
+  props: {},
+  data() {
+    return {
+      //产品介绍的头部栏
+      productDetail: [
+        {
+          desc: "产品详情",
+          code: "1"
+        },
+        {
+          desc: "公司简介",
+          code: "2"
+        },
+        {
+          desc: "理赔流程",
+          code: "3"
+        }
+      ],
+      isShowApplicant: false, //是否显示投保人的内容
+      calculate_type: "", //保费算保额或保额算保费的标识
+      isShowJob: false, //是否显示职业
+      birthdayShow: "", //被保人的生日的的限制
+      now: utils.format.dateToStr(new Date(), "yyyy-MM-dd"), //生日的最大值
+      flag: true, //投，被保人的数据校验的标识
+      totalPremium: "0", //总保费
+      productMessage: "", //产品信息
+      tabshow: "1", //默认选项是产品详情的code值
+      //主险种配置
+      mainSetting: {
+        //领取方式
+        drawMode: "",
+        //领取方式列表
+        drawModeList: [],
+        //保费算保额需要传输
+        premiumDes: "0",
+        //被选择当保险期限
+        policyPeriod: "",
+        //保险期限列表
+        policyPeriodList: [],
+
+        //被选择的交费期间
+        payPeriod: "",
+        //交费期间列表
+        payPeriodList: [],
+
+        //缴费方式
+        payMode: "",
+        //缴费方式列表
+        payModeList: [],
+
+        //年金开始领取年龄
+        drawStartAge: "",
+        //年金开始领取年龄列表
+        drawStartAgeList: [],
+
+        //年金领取频率
+        drawFreq: "",
+        //年金领取频率列表
+        drawFreqList: [],
+
+        //保障计划/责任类型
+        rank: "",
+        //保障计划/责任类型列表
+        rankList: [],
+        isAmount: false, //是否有基本保险金额配置
+        //基本保险金额
+        amount: "",
+
+        //保费
+        premium: 0,
+        //是否有保费配置
+        isPremium: false,
+
+        //责任列表
+        liabList: [],
+        //是否有续保配置
+        isXubao: false,
+        //续保
+        xubao: "Y",
+        //是否有社保配置
+        isShebao: false,
+        //社保
+        shebao: "Y",
+        //是否有被保类型配置
+        isGrade: false,
+        //被选择当被保人类型
+        grade: "0",
+        subFlag: "-2", //续保标示
+        //被保人类型码表
+        gradeList: [{ code: "0", text: "标准" }, { code: "1", text: "优选" }]
+      },
+      //险种的码表
+      selectMainCode: "",
+      //附加险列表
+      additionalRiskList: [],
+      //主险
+      selectMain: {},
+      sexSelectList: [], // 性别
+      canjump: false, //能否跳转
+      ImgList: [], //产品详情
+      productSecurityList: [], //产品的详情
+      //校验规则
+      rules: {
+        birthday: [
+          {
+            regExp: "require",
+            msg: "生日不能为空"
+          }
+        ]
+      },
+      proInfo: [], //保障规划内容
+      comImgList: [], //公司简介图片
+      payImg: [] //理赔流程图片
+    };
+  },
+  computed: {
+    ...mapState({
+      selectAllRisk: state => state.production.selectAllRisk, //附加险试算报文
+      insurant: state => state.production.insurant, //被保人对象
+      productionItem: state => state.production.productItem, //选中的产品内容
+      applicant: state => state.production.applicant, //投保人
+      userInfo: state => state.user.userInfo //用户信息
+    })
+  },
+  watch: {
+    insurant: {
+      handler(newVal, oldVal) {
+        if (
+          this.productionItem.productCode == "DTCB02" &&
+          newVal.sex != oldVal.sex
+        ) {
+          console.log(newVal, oldVal);
+        } else {
+          this.calcPremium();
+        }
+      },
+      deep: true
+    },
+    selectAllRisk: {
+      handler() {
+        this.isShowApplicant = this.selectAllRisk.find(ele => {
+          return ele.productCode == "ATCR01";
+        });
+      },
+      deep: true
+    },
+    applicant: {
+      handler() {
+        this.calcPremium();
+      },
+      deep: true
+    }
+  },
+  created() {
+    if (this.productionItem.productCode == "DTCB02") {
+      this.$store.commit("production/setState", {
+        attr: "insurant",
+        data: Object.assign({
+          sex: "1",
+          birthday: "",
+          birthdate: "",
+          //职业信息
+          cdOccupation: {
+            occupationCode: "",
+            occupationLevel: "",
+            occupationName: "",
+            occupationRiskLevel: "",
+            occupationRiskMetical: ""
+          }
+        })
+      });
+    }
+    this.initCodeList();
+    this.getProductDetails();
+  },
+  methods: {
+    getRisk() {
+      return JSON.parse(JSON.stringify(this.selectAllRisk));
+    },
+    // 返回
+    goBack() {
+      this.back();
+    },
+    changePremium() {
+      this.calcPremium();
+    },
+    //获取产品的详情
+    getProductDetails() {
+      const params = {
+        productCode: this.productionItem.productCode,
+        infoId:
+          "d272a135bde84e768cb098d86a42035a" ||
+          this.userInfo.weChatAgenctDTO.infoId, //规划师工号(Y)
+        channelId: "01" || this.userInfo.weChatAgenctDTO.channelId, //渠道(Y)
+        orgCode: "86010000" || this.userInfo.orgLdcom.comcode //管理机构(Y)
+      };
+      // http
+      utils.http
+        .post(interfaces.production.productDetail, params)
+        .then(data => {
+          //成功获取数据
+          console.log(data);
+          this.selectMain = data.productDefList[0];
+          console.log(this.selectMain);
+          this.selectMainCode = data.productDefList[0].productCode;
+          //附加险列表
+          this.additionalRiskList = data.productDefList[0].extraList;
+          this.initMainSetting(this.selectMain);
+          //产品详情
+          this.ImgList = this.selectMain.documentFileList;
+        });
+    },
+    //详情的部分的切换
+    newSwitch(code) {
+      this.tabshow = code;
+    },
+    //选择主险初始化主险配置
+    initMainSetting(item) {
+      item.attList.forEach(element => {
+        switch (element.attCode) {
+          case "drawMode": //领取方式
+            this.mainSetting.drawModeList = element.attValueList;
+            //如果additional节点没有默认值，则设第一个
+            this.mainSetting.drawMode = element.attValueList[0].code;
+            break;
+          case "policyPeriod": //保险期限
+            this.mainSetting.policyPeriodList = element.attValueList;
+            break;
+          case "payPeriod": //交费期间
+            this.mainSetting.payPeriodList = element.attValueList;
+            break;
+          case "payMode": //缴费方式
+            this.mainSetting.payModeList = element.attValueList;
+            break;
+          case "drawStartAge": //年金开始领取年龄
+            this.mainSetting.drawStartAgeList = element.attValueList;
+            break;
+          case "drawFreq": //年金领取频率
+            this.mainSetting.drawFreqList = element.attValueList;
+            break;
+          case "rank": //责任类型
+            this.mainSetting.rankList = element.attValueList;
+            break;
+          case "amount": //基本保险金额
+            if (item.liabList.length == 0) {
+              //无保险责任列表才会有基本保险额
+              this.mainSetting.isAmount = true;
+              this.mainSetting.amount = Number(item.baseAmount);
+            }
+            break;
+          case "premium": //保费
+            this.mainSetting.isPremium = true;
+            this.mainSetting.premium = Number(item.baseAmount);
+            break;
+        }
+      });
+      //获取责任配置list
+      //alert("66");
+      this.mainSetting.liabList = item.liabList;
+
+      //是否有社保配置
+      this.mainSetting.isShebao =
+        this.selectMainCode == "ATRB01" ? true : false;
+      //设置社保默认值
+      this.mainSetting.shebao = this.insurant.shebao == "1" ? "Y" : "N";
+
+      //是否有被保人类型配置
+      this.mainSetting.isGrade = this.selectMainCode == "APWB01" ? true : false;
+
+      //设置默认值
+      item.additional.forEach(element => {
+        switch (element.key) {
+          case "drawMode": //领取方式
+            this.mainSetting.drawMode = element.value.split(",")[0];
+            break;
+          case "policyPeriod": //保险期限
+            this.mainSetting.policyPeriod = element.value.split(",")[0];
+            break;
+          case "payPeriod": //交费期间
+            this.mainSetting.payPeriod = element.value.split(",")[0];
+            break;
+          case "payMode": //缴费方式
+            this.mainSetting.payMode = element.value.split(",")[0];
+            break;
+          case "drawStartAge": //年金开始领取年龄
+            this.mainSetting.drawStartAge = element.value.split(",")[0];
+            break;
+          case "drawFreq": //年金领取频率
+            this.mainSetting.drawFreq = element.value.split(",")[0];
+            break;
+          case "rank_extra": //保障计划
+            this.mainSetting.rank = element.value.split(",")[0];
+            break;
+          case "protectionPlan": //责任类型
+            this.mainSetting.rank = "duty_" + element.value.split(",")[0];
+            console.log(this.mainSetting.rank);
+            break;
+          case "QXFL": //自动续保
+            this.mainSetting.isXubao =
+              element.value === "duanqi" ? true : false;
+            this.mainSetting.xubao = "Y";
+            break;
+          case "birthdayShow": //自动续保
+            this.birthdayShow = element.value;
+            break;
+          case "profession": //自动续保
+            this.isShowJob = true;
+            break;
+          case "calculate_type": //保费算保额或保额算保费的标识
+            this.calculate_type = element.value;
+            break;
+          // case "shebao": //有社保配置
+          //   this.mainSetting.isShebao = "Y";
+          //   //console.log(element.value);
+          //   this.mainSetting.shebao = element.value == "yes" ? "Y" : "N";
+          //   break;
+        }
+      });
+    },
+    //初始化码表
+    async initCodeList() {
+      //是或否码表
+      this.yesNoList = await utils.code.getCode("sys_yes_no");
+      let sexSelectList = await utils.code.getCode("sys_user_sex");
+      this.sexSelectList = sexSelectList.filter(item => {
+        return item.code != "2";
+      });
+    },
+    //选择领取方式
+    handleDrawMode(item) {
+      this.mainSetting.drawMode = item.code;
+      this.calcPremium();
+    },
+    //选择保险期限
+    handlePolicyPeriod(item) {
+      this.mainSetting.policyPeriod = item.code;
+      this.calcPremium();
+    },
+    //选择交费期间
+    handlePayPeriod(item) {
+      this.mainSetting.payPeriod = item.code;
+      this.calcPremium();
+    },
+    //选择缴费方式
+    handlePayMode(item) {
+      this.mainSetting.payMode = item.code;
+      this.calcPremium();
+    },
+    //年金开始领取年龄
+    handleDrawStartAge(item) {
+      this.mainSetting.drawStartAge = item.code;
+      this.calcPremium();
+    },
+    //年金领取频率
+    handleDrawFreq(item) {
+      this.mainSetting.drawFreq = item.code;
+      this.calcPremium();
+    },
+    //责任类型
+    handleRank(item) {
+      this.mainSetting.rank = item.code;
+      this.calcPremium();
+    },
+    //被保人类型
+    handleGrade(item) {
+      this.mainSetting.grade = item.code;
+      this.calcPremium();
+    },
+    //修改社保
+    handleInput() {
+      this.calcPremium();
+    },
+    //修改性别
+    changeSex(code) {
+      if (this.productionItem.productCode == "RPPB01") {
+        if (code == "1") {
+          this.mainSetting.drawStartAge = "age_60";
+        } else {
+          this.mainSetting.drawStartAge = "age_65";
+        }
+      }
+    },
+    /**
+     * 处理计算因子是否为空
+     */
+    checkParams() {
+      let flag = true,
+        _this = this;
+      if (!this.insurant.birthday) {
+        utils.ui.confirm("被保险人出生日期不能为空");
+        flag = false;
+      }
+      if (
+        (this.isShowJob || this.insurant.isProfession) &&
+        !this.insurant.cdOccupation.occupationCode &&
+        flag
+      ) {
+        utils.ui.confirm("被保险人职业不能为空");
+        flag = false;
+      }
+      if (this.selectAllRisk.length && flag) {
+        this.selectAllRisk.forEach(item => {
+          if (item.productCode == "ATCR01") {
+            if (!_this.applicant.birthday) {
+              utils.ui.confirm("投保人生日不能为空");
+              flag = false;
+            } else if (!_this.applicant.cdOccupation.occupationCode) {
+              utils.ui.confirm("投保人职业不能为空");
+              flag = false;
+            }
+          }
+        });
+      }
+      return flag;
+    },
+    //保费试算参数拼接
+    initCalcParams() {
+      let mainProposalProductItem = this.initMainProposalProductItem(); //主险项
+      //let attList = mainProposalProductItem.attList; //主险的配置项
+      mainProposalProductItem.premiumDes = mainProposalProductItem.premium;
+      //处理投保人
+      let applicant = JSON.parse(JSON.stringify(this.applicant));
+      applicant.birthday = utils.format.strToDate(applicant.birthday);
+      applicant.birthdate = applicant.birthday;
+      //处理被保人
+      let insurant = JSON.parse(JSON.stringify(this.insurant));
+      insurant.birthday = utils.format.strToDate(insurant.birthday);
+      insurant.birthdate = insurant.birthday;
+      insurant.jobLevel = insurant.cdOccupation.occupationRiskLevel;
+      insurant.job = insurant.cdOccupation.occupationCode;
+      //处理附加险种
+      mainProposalProductItem.extraList = this.getRisk();
+      let params = {
+        proposalPlan: {
+          bookId: "",
+          holder: applicant, //投保人
+          insurantProductList: [
+            {
+              insurant: insurant, //被保人
+              insuredId: "",
+              planId: "",
+              planInsureDate: "",
+              productList: [mainProposalProductItem], //主险种
+              proposalId: "",
+              totalPremium: "0"
+            }
+          ], //主险
+          orgAgent: {
+            agent: {
+              email: "",
+              mobile: "",
+              personCode: "",
+              personId: "",
+              personName: "",
+              sex: "",
+              telephone: ""
+            },
+            channel: "",
+            deviceNo: "",
+            loginCode: "",
+            openId: "",
+            token: ""
+          },
+          totalAmount: 0,
+          totalPremium: 0
+        }
+      };
+      return params;
+    },
+    //保费试算
+    calcPremium() {
+      const params = this.initCalcParams();
+      if (this.checkParams()) {
+        //保费试算接口
+        utils.http.post(interfaces.plan.premiumCalc, params).then(res => {
+          const data = res.trialPremiumMobile.insurantProductList[0];
+          const plan = data.plan;
+          if (data.checkResult.isPass == "true") {
+            //通过
+            console.info(plan);
+            this.canjump = true;
+            this.premiumGetFun(res.trialPremiumMobile.insurantProductList);
+          } else {
+            this.premiumGetFun(res.trialPremiumMobile.insurantProductList);
+            //规则错误
+            var errorMsg = "";
+            this.canjump = false;
+            data.checkResult.reasonList.forEach(item => {
+              errorMsg += item.info;
+            });
+            utils.ui.confirm(errorMsg);
+          }
+        });
+      }
+    },
+    //保费试算的结果处理
+    premiumGetFun(result) {
+      console.log(result);
+      this.productSecurityList = [];
+      result.map(ele => {
+        if (ele.plan != undefined) {
+          ele.plan.productList.map(dataT => {
+            this.mainSetting.amount = Number(dataT.amount);
+            if (this.mainSetting.amount) {
+              this.mainSetting.isAmount = true;
+            }
+            //获取保障规划
+            if (dataT.map != undefined) {
+              if (dataT.map.value != undefined) {
+                if (dataT.map.value.length > 0) {
+                  dataT.map.value.map(val => {
+                    this.productSecurityList.push(val);
+                  });
+                }
+              }
+            }
+            if (dataT.extraList.length) {
+              dataT.extraList.map(ele => {
+                if (ele.map != undefined) {
+                  if (ele.map.value != undefined) {
+                    if (ele.map.value.length > 0) {
+                      ele.map.value.map(val => {
+                        this.productSecurityList.push(val);
+                      });
+                    }
+                  }
+                }
+              });
+            }
+          });
+          this.totalPremium = this.transToThousands(ele.plan.totalPremium);
+        }
+      });
+    },
+    //初始化主险配置
+    initMainProposalProductItem() {
+      console.log(this.mainSetting);
+      //处理主险
+      let mainProposalProductItem = {
+        amount: "",
+        attList: [],
+        bookId: "",
+        chargeType: "",
+        chargeWay: "",
+        coverageType: "",
+        createTime: "",
+        createdBy: "",
+        description: "",
+        drawFreq: "",
+        drawStartAge: "",
+        extraList: [], //附加险种
+        grade: "",
+        id: "",
+        isMaster: "",
+        lastUpdatedBy: "",
+        liabList: [],
+        payMode: "",
+        payPeriod: "",
+        payintv: "",
+        policyPeriod: "",
+        premium: "",
+        productCode: "",
+        productId: "",
+        productName: "",
+        productShortName: "",
+        productType: "",
+        qxFlag: "",
+        relationType: "",
+        shebao: "",
+        sourceId: "",
+        subflag: "",
+        updateTime: " ",
+        userDefine1: "",
+        userDefine2: ""
+      }; //主险模板
+      if (this.calculate_type == "4") {
+        this.mainSetting.isAmount = false;
+        this.mainSetting.isPremium = true;
+      } else {
+        this.mainSetting.isAmount = true;
+        this.mainSetting.isPremium = false;
+      }
+      let mainSetting = this.mainSetting; //主险种配置
+      //险种编码
+      mainProposalProductItem.productCode = this.productionItem.productCode;
+      //险种名称
+      mainProposalProductItem.productName = this.productionItem.productName;
+      //长期、短期
+      mainProposalProductItem.qxFlag = mainSetting.isXubao
+        ? "duanqi"
+        : "changqi";
+      //subflag
+      mainProposalProductItem.subflag = mainSetting.xubao === "Y" ? "-1" : "-2";
+      //shebao
+      mainProposalProductItem.shebao = mainSetting.shebao === "Y" ? "1" : "2";
+      //领取方式
+      if (mainSetting.drawModeList.length != 0) {
+        let attText = mainSetting.drawModeList.filter(item => {
+          return item.code === mainSetting.drawMode;
+        });
+        mainProposalProductItem.attList.push({
+          attCode: "drawMode",
+          attName: "领取方式",
+          attValue: mainSetting.drawMode,
+          attText:
+            attText.length != 0
+              ? attText[0].text
+              : mainSetting.drawModeList[0].code
+        });
+        mainProposalProductItem.drawMode = mainSetting.drawMode;
+      }
+      //年金领取频率
+      if (mainSetting.drawFreqList.length != 0) {
+        let attText = mainSetting.drawFreqList.filter(item => {
+          return item.code === mainSetting.drawFreq;
+        });
+        mainProposalProductItem.attList.push({
+          attCode: "drawFreq",
+          attName: "年金领取频率",
+          attValue: mainSetting.drawFreq,
+          attText: attText[0].text
+        });
+        mainProposalProductItem.drawFreq = mainSetting.drawFreq;
+      }
+      //年金开始领取年龄
+      if (mainSetting.drawStartAgeList.length != 0) {
+        console.log(mainSetting.drawStartAgeList);
+        let attText = mainSetting.drawStartAgeList.filter(item => {
+          return item.code === mainSetting.drawStartAge;
+        });
+        mainProposalProductItem.attList.push({
+          attCode: "drawStartAge",
+          attName: "年金开始领取年龄",
+          attValue: mainSetting.drawStartAge,
+          attText: attText[0].text
+        });
+        mainProposalProductItem.drawStartAge = mainSetting.drawStartAge;
+      }
+      //交费期限
+      if (mainSetting.payPeriodList.length != 0) {
+        let attText = mainSetting.payPeriodList.filter(item => {
+          return item.code === mainSetting.payPeriod;
+        });
+        mainProposalProductItem.attList.push({
+          attCode: "payPeriod",
+          attName: "交费期限",
+          attValue: mainSetting.payPeriod,
+          attText: attText[0].text
+        });
+        mainProposalProductItem.payPeriod = mainSetting.payPeriod;
+      }
+      //保险期限
+      if (mainSetting.policyPeriodList.length != 0) {
+        let attText = mainSetting.policyPeriodList.filter(item => {
+          return item.code === mainSetting.policyPeriod;
+        });
+        mainProposalProductItem.attList.push({
+          attCode: "policyPeriod",
+          attName: "保险期限",
+          attValue: mainSetting.policyPeriod,
+          attText: attText[0].text
+        });
+        mainProposalProductItem.policyPeriod = mainSetting.policyPeriod;
+      }
+      //缴费方式
+      if (mainSetting.payModeList.length != 0) {
+        let attText = mainSetting.payModeList.filter(item => {
+          return item.code === mainSetting.payMode;
+        });
+        mainProposalProductItem.attList.push({
+          attCode: "payMode",
+          attName: "缴费方式",
+          attValue: mainSetting.payMode,
+          attText: attText[0].text
+        });
+        mainProposalProductItem.payMode = mainSetting.payMode;
+      }
+      //保险金额
+      if (mainSetting.isAmount || this.productionItem.productCode == "ATRB02") {
+        if (this.productionItem.productCode === "ATRB02") {
+          mainProposalProductItem.amount = "1000000";
+        } else {
+          mainProposalProductItem.attList.push({
+            attCode: "amount",
+            attName: "保险金额",
+            attValue: mainSetting.amount,
+            attText: ""
+          });
+          mainProposalProductItem.amount = mainSetting.amount;
+        }
+      }
+      //保费
+      if (mainSetting.isPremium) {
+        mainProposalProductItem.attList.push({
+          attCode: "premium",
+          attName: "保费",
+          attValue: mainSetting.premium,
+          attText: ""
+        });
+        mainProposalProductItem.premium = mainSetting.premium;
+      }
+      //责任类型
+      if (mainSetting.rankList.length != 0) {
+        let attText = mainSetting.rankList.filter(item => {
+          return item.code === mainSetting.rank;
+        });
+        mainProposalProductItem.attList.push({
+          attCode: "rank",
+          attName: "档次",
+          attValue: mainSetting.rank,
+          attText: attText[0].text
+        });
+      }
+      //责任列表
+      if (mainSetting.liabList.length != 0) {
+        mainProposalProductItem.liabList = mainSetting.liabList;
+        // console.log(mainProposalProductItem.liabList);
+        let attValue = 0;
+        mainProposalProductItem.liabList.forEach(item => {
+          if (item.checked == "true") {
+            attValue = parseInt(item.amount) + attValue;
+          }
+        });
+        mainProposalProductItem.amount = attValue;
+        mainProposalProductItem.attList.push({
+          attCode: "amount",
+          attName: "保额",
+          attValue,
+          attText: ""
+        });
+      }
+      return mainProposalProductItem;
+    },
+    //规划书跳转
+    goInform() {
+      this.$router.push({
+        name: "planList"
+      });
+    },
+    // 千分位转换：3333 => 3,333
+    transToThousands(number) {
+      // number转字符串
+      if (typeof number === "number") {
+        number += "";
+      }
+      const regExp = /(\d{1,3})(?=(\d{3})+(?:$|\.))/g;
+      const thousands = number.replace(regExp, "$1,");
+      return thousands;
+    }
+  },
+  destroyed() {
+    //被保人
+    this.$store.commit("production/setState", {
+      attr: "insurant",
+      data: Object.assign({
+        sex: "0",
+        birthday: "",
+        birthdate: "",
+        //职业信息
+        cdOccupation: {
+          occupationCode: "",
+          occupationLevel: "",
+          occupationName: "",
+          occupationRiskLevel: "",
+          occupationRiskMetical: ""
+        }
+      })
+    });
+    this.$store.commit("production/setState", {
+      attr: "applicant",
+      data: {
+        sex: "0",
+        birthday: "",
+        birthdate: "",
+        //职业信息
+        cdOccupation: {
+          occupationCode: "",
+          occupationLevel: "",
+          occupationName: "",
+          occupationRiskLevel: "",
+          occupationRiskMetical: ""
+        }
+      }
+    });
+    this.$store.commit("production/setState", {
+      attr: "selectAllRisk",
+      data: []
+    });
+    this.$store.commit("production/setState", {
+      attr: "proIframeTittle",
+      data: ""
+    });
+  },
+  beforeRouteLeave(to, from, next) {
+    if (this.$refs.jobSelector && this.$refs.jobSelector.showSelector) {
+      // 有选择器为打开状态，先关闭
+      this.$refs.jobSelector.close();
+      next(false);
+    } else {
+      next();
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.app-bar {
+  .icon {
+    height: auto;
+    &.icon-back {
+      width: 11.5px;
+    }
+  }
+}
+.app-content {
+  .product_img {
+    box-shadow: 0 0 4px 1px #e5e9f1;
+    border-radius: 0 0 5px 5px;
+    position: relative;
+    img {
+      width: 100%;
+      height: 210px;
+    }
+    .product_brief {
+      color: white;
+      position: absolute;
+      background: #000;
+      opacity: 0.5;
+      bottom: 0px;
+      width: 100%;
+      padding: 10px;
+      text-align: center;
+      span {
+        font-size: 16px;
+      }
+      span:nth-child(3n) {
+        font-size: 13px;
+      }
+    }
+  }
+  .tips-two {
+    font-size: 12px;
+    color: #fa7070;
+    margin: 0 20px;
+    padding: 15px 0;
+    border-bottom: 1px solid $color-ds;
+  }
+  .additional-list {
+    background: $color-bg;
+    margin: 0 10px;
+    padding: 14px 20px;
+    box-shadow: 0 0 4px 1px #e5e9f1;
+    border-radius: 0 0 5px 5px;
+    h2 {
+      font-size: 15px;
+      color: #333333;
+      font-weight: normal;
+      border-bottom: 1px solid #e5e9f1;
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+    }
+  }
+  .details {
+    margin-top: 10px;
+    background: white;
+    .header_tabs {
+      height: 35px;
+      margin-top: 15px;
+      .tab_item {
+        @include lineheight-height(37px);
+        border-bottom: 3px solid gainsboro;
+        display: inline-block;
+        text-align: center;
+        background-color: white;
+        width: 33.33%;
+        margin-top: 8px;
+        span {
+          color: #cccccc;
+          float: right;
+        }
+      }
+      .choosed {
+        border-bottom: 3px solid rgb(201, 159, 99);
+      }
+    }
+  }
+  /deep/ .risk-setting-radio .top {
+    h2 {
+      max-width: 102px;
+      font-size: 14px;
+      padding-left: 12px;
+    }
+  }
+  /deep/.risk-setting-select {
+    padding: 0px;
+    min-height: 43px;
+    line-height: 43px;
+    h2 {
+      max-width: 102px;
+      font-size: 14px;
+      padding-left: 12px;
+    }
+    .item {
+      span {
+        margin-top: 10px;
+      }
+    }
+  }
+}
+.tt {
+  margin-left: 3%;
+  color: #c99f63;
+  margin-top: 8px;
+  line-height: 30px;
+  font-size: 16px;
+  font-weight: normal;
+}
+.TrialResult {
+  position: fixed;
+  bottom: 0px;
+  left: 0px;
+  height: 54px;
+  background: #fff;
+  width: 100%;
+  z-index: 2;
+  .no-padding {
+    text-align: center;
+    span {
+      font-size: 16px;
+      line-height: 54px;
+    }
+    button {
+      float: right;
+      height: 50px;
+      width: 40%;
+      color: white;
+      padding: 0px 10px;
+      outline: none;
+      border: none;
+      background: #d24a32;
+    }
+  }
+  .no-padding-close {
+    width: 100%;
+    padding: 0;
+    padding-left: 15px;
+    height: 54px;
+    text-align: center;
+    span {
+      font-size: 16px;
+      line-height: 54px;
+    }
+    button {
+      float: right;
+      height: 50px;
+      width: 40%;
+      color: white;
+      background: #dadada;
+      padding: 0px 10px;
+      outline: none;
+      border: none;
+    }
+  }
+}
+</style>

@@ -1,0 +1,238 @@
+<template>
+  <Page class="plan-list" :withAppBar="!globalConfig.isWx">
+    <!-- 导航栏 -->
+    <AppBar class="app-bar" v-if="!globalConfig.isWx">
+      <img
+        slot="left"
+        src="../../assets/imgs/common/icon/icon_back.png"
+        class="icon icon-back"
+        @click="goBack"
+      />
+      <template slot="center">
+        规划书列表
+      </template>
+    </AppBar>
+
+    <!-- 主体 -->
+    <AppContent
+      class="app-content"
+      needLoadmore
+      :loadmoreOpt="loadmoreOpt"
+      @loadmore="loadmore"
+    >
+      <!-- 规划书列表 -->
+      <PlanlistItem
+        v-for="(item, index) in dataList"
+        :key="index"
+        @delPlan="delPlan"
+        @viewPlan="viewPlan"
+        :itemObj="item"
+      />
+      <p v-if="isEmpty" class="empty">
+        尚未创建规划书～
+      </p>
+    </AppContent>
+  </Page>
+</template>
+
+<script>
+import { mapState } from "vuex";
+import PlanlistItem from "@/components/plan/PlanListItem";
+export default {
+  name: "planList",
+  components: {
+    PlanlistItem
+  },
+  data() {
+    return {
+      dataList: [], //规划书列表
+      isEmpty: false, //规划书列表是否为空
+      pageNum: 0, //第一页
+      // 加载更多配置项
+      loadmoreOpt: {
+        loadmoreing: false,
+        loadmoreFinish: false,
+        bottomDistance: 4
+      }
+    };
+  },
+  computed: {
+    ...mapState({
+      insurant: state => state.plan.insurant, //被保人
+      applicant: state => state.plan.applicant, //投保人
+      userInfo: state => state.user.userInfo //用户信息
+    })
+  },
+  watch: {},
+  created() {
+    this.initPage(0);
+  },
+  methods: {
+    // 返回
+    goBack() {
+      this.back();
+    },
+    //删除计划书
+    delPlan(item) {
+      const params = {
+        proposalPlan: {
+          bookId: item.bookId //建议书id
+        }
+      };
+      utils.ui.confirm({
+        msg: "确定删除吗？",
+        btnList: [
+          {
+            msg: "确定",
+            cb: () => {
+              //删除规划书
+              utils.http.post(interfaces.plan.delPlan, params).then(() => {
+                this.initPage(0, true);
+                utils.ui.tips("删除成功！");
+              });
+            }
+          },
+          {
+            msg: "取消",
+            cb: () => {
+              // utils.ui.tips("继续保持");
+            }
+          }
+        ]
+      });
+    },
+    //查看计划书
+    viewPlan(item) {
+      console.log(item);
+      let applicant = item.proposalCustomerList[0]; //投保人
+      let insurant = item.holder[0]; //被保人
+      applicant.cdOccupation = applicant.cdOccupation[0];
+      insurant.cdOccupation = insurant.cdOccupation[0];
+      //投保人
+      this.$store.commit("plan/setState", {
+        attr: "applicant",
+        data: Object.assign(this.applicant, applicant)
+      });
+      //被保人
+      this.$store.commit("plan/setState", {
+        attr: "insurant",
+        data: Object.assign(this.insurant, insurant)
+      });
+
+      //主险列表
+      this.$store.commit("plan/setState", {
+        attr: "mainProposalProductList",
+        data: item.mainProposalProductList
+      });
+      //附加险列表
+      this.$store.commit("plan/setState", {
+        attr: "riskProposalProductList",
+        data: item.riskProposalProductList
+      });
+      //总保费
+      this.$store.commit("plan/setState", {
+        attr: "totalPremium",
+        data: item.totalPremium
+      });
+      //总保额
+      this.$store.commit("plan/setState", {
+        attr: "totalAmount",
+        data: item.totalAmount
+      });
+      this.go("makePlan");
+    },
+    //初始化页面
+    initPage(pageNum, isDel = false) {
+      /***********上线参数start */
+      // const params = {
+      //   proposalPlan: {
+      //     searchProductName: "", //产品名称
+      //     searchHolderName: "",
+      //     searchBeginDate: "", //开始时间
+      //     searchEndDate: "", //结束时间
+      //     searchPersonId: globalConfig.isWx
+      //       ? this.userInfo && this.userInfo.weChatAgenctDTO.infoId
+      //       : this.userInfo &&this.userInfo.user &&this.userInfo.user.personId, //查询持有人ID
+      //     searchMemberInfoId: null, // 查询员工信息ID
+      //     begin: pageNum,
+      //     pageSize: 10
+      //   }
+      // };
+      /*********** 上线参数end */
+      const params = {
+        proposalPlan: {
+          searchProductName: "", //产品名称
+          searchHolderName: "",
+          searchBeginDate: "", //开始时间
+          searchEndDate: "", //结束时间
+          searchPersonId: "e1909a91046d4506a58113ab54f70bb4", //查询持有人ID
+          searchMemberInfoId: null, // 查询员工信息ID
+          begin: pageNum,
+          pageSize: 10
+        }
+      };
+      //配置loading
+      let isLoading = {
+        needLoading: true
+      };
+      //滚动加载更多
+      if (pageNum != 0) {
+        // 设置当前正在加载
+        this.loadmoreOpt.loadmoreing = true;
+        isLoading.needLoading = false;
+      }
+      //请求规划书列表
+      utils.http
+        .post(interfaces.plan.getPlanList, params, isLoading)
+        .then(res => {
+          if (isDel) {
+            //当删除后，清空数据
+            this.dataList = [];
+            this.pageNum = 0;
+          }
+          //当未制作规划书时
+          if (res.proposalViewDto.proposalBookListDTO.length == 0)
+            return (this.isEmpty = true);
+          if (pageNum != 0) {
+            this.loadmoreOpt.loadmoreing = false;
+          }
+          //全部加载完毕
+          if (res.proposalViewDto.proposalBookListDTO.length % 10 != 0) {
+            this.loadmoreOpt.loadmoreFinish = true;
+          }
+          this.dataList = this.dataList.concat(
+            res.proposalViewDto.proposalBookListDTO
+          );
+        });
+    },
+    //加载更多
+    loadmore() {
+      if (this.dataList.length % 10 == 0) {
+        this.pageNum = this.pageNum + 10;
+        this.initPage(this.pageNum);
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.app-bar {
+  .icon {
+    height: auto;
+    &.icon-back {
+      width: 11.5px;
+    }
+  }
+}
+
+.plan-list {
+  background: $color-ds;
+  .empty {
+    text-align: center;
+    margin-top: 20px;
+    color: #999;
+    font-size: 14px;
+  }
+}
+</style>

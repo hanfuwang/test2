@@ -1,0 +1,13 @@
+/* ------------------------------------------ production接口 ------------------------------------------ */
+
+const production = {
+  productHome: {
+    requestType: "AXPRODUCTLIST",
+    requestDesc: "产品中心查询签约状态"
+  },
+  productDetail: {
+    requestType: "AXPRODUCTDEFLIST",
+    requestDesc: "产品详情的接口"
+  }
+};
+export default production;

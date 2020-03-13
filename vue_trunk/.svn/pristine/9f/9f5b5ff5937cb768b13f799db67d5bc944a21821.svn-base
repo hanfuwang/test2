@@ -1,0 +1,138 @@
+<template>
+  <div class="form-radio form-item">
+    <div class="f-wrap">
+      <!-- label -->
+      <label class="f-label">
+        <span class="require">
+          <template v-if="isRequire">
+            *
+          </template>
+        </span>
+        <span class="label">{{ label }}</span>
+      </label>
+
+      <!-- radio -->
+      <div class="f-radio">
+        <div
+          class="radio-item"
+          :class="{ active: item.code === selectItem.code }"
+          v-for="item of selectList"
+          :key="item.code"
+          @click="handlerRadioClick(item)"
+        >
+          <div class="circle"></div>
+          <div class="desc">{{ item.desc }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  name: "formRadio",
+  props: {
+    // 左侧的label描述
+    label: {
+      type: String,
+      default: undefined
+    },
+    // value值
+    value: {
+      type: String,
+      default: undefined
+    },
+    // rules校验规则
+    rules: {
+      type: Array,
+      default: () => {
+        return [];
+      }
+    },
+    // 待选列表
+    selectList: {
+      type: Array,
+      default: function() {
+        return [];
+      }
+    },
+    // disabled
+    disabled: {
+      type: Boolean,
+      default: false
+    }
+  },
+  data() {
+    return {
+      // 当前被选中的item
+      selectItem: {}
+    };
+  },
+  computed: {
+    // 当前是否是必填项
+    isRequire() {
+      // 从rules中找是否包含require项
+      return this.rules.find(rule => {
+        return rule.regExp === "require";
+      })
+        ? true
+        : false;
+    }
+  },
+  created() {
+    // 初始值赋值(如果有的话)
+    const item = this.selectList.find(item => {
+      return item.code === this.value;
+    });
+    item && (this.selectItem = item);
+  },
+  methods: {
+    // 处理radio被点击
+    handlerRadioClick(item) {
+      if (this.disabled) return;
+
+      this.selectItem = item;
+      this.$emit("input", item.code);
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/assets/css/common/form.scss";
+.f-wrap {
+  // radio
+  .f-radio {
+    @include display-flex;
+    justify-content: flex-end;
+    flex: 1;
+  }
+  .radio-item {
+    @include display-flex;
+    &:not(:last-of-type) {
+      margin-right: 20px;
+    }
+    // 选中状态下的radio
+    &.active {
+      .circle {
+        @include small-circle(12px, 4px, solid, $color-theme);
+      }
+      .desc {
+        color: $font-color;
+      }
+    }
+    // 圆圈
+    .circle {
+      @include small-circle(12px, 1px, solid, $color-theme);
+      border-radius: 50%;
+      margin-right: 10px;
+      transition: border-width 0.2s ease-out;
+    }
+    // 描述
+    .desc {
+      font-size: $font-size;
+      color: $font-color-dark;
+    }
+  }
+}
+</style>

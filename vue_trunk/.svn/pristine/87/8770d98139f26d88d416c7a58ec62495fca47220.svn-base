@@ -1,0 +1,191 @@
+<template>
+  <page class="login">
+    <article class="login-wrap">
+      <!-- 密码登录 -->
+      <transition name="leftToRight05">
+        <section v-show="loginType === 'pwd'" class="login-content login-pwd">
+          <ValiForm ref="pwdVF">
+            <!-- 手机号 -->
+            <FormInput
+              v-model="pwdForm.aMobile"
+              type="tel"
+              placeholder="手机号"
+              :rules="rules.aMobile"
+            ></FormInput>
+            <!-- 密码 -->
+            <FormPwd
+              v-model="pwdForm.aPassword"
+              placeholder="密码"
+              :rules="rules.aPassword"
+            ></FormPwd>
+          </ValiForm>
+          <!-- 修改密码，忘记密码 -->
+          <div class="tool-bar">
+            <button class="tool-btn" @click="goToChangePwd">修改密码</button>
+            <button class="tool-btn" @click="goToForgetPwd">忘记密码？</button>
+          </div>
+          <!-- 短信验证登录 -->
+          <div class="tool-bar">
+            <button
+              class="tool-btn vali-code"
+              @click="switchLoginType('valiCode')"
+            >
+              短信验证登录 >
+            </button>
+          </div>
+        </section>
+      </transition>
+
+      <!-- 短信验证码登录 -->
+      <transition name="rightToLeft05">
+        <section
+          v-show="loginType === 'valiCode'"
+          class="login-content login-valiCode"
+        >
+          <ValiForm ref="valiCodeVF">
+            <!-- 手机号 -->
+            <FormInput
+              v-model="valiCodeForm.aMobile"
+              type="tel"
+              placeholder="请输入手机号"
+              :rules="rules.aMobile"
+            ></FormInput>
+            <!-- 验证码 -->
+            <FormNumVali
+              v-model="valiCodeForm.aValiCode"
+              :mobile="valiCodeForm.aMobile"
+              placeholder="请输入验证码"
+              ref="fnv"
+            ></FormNumVali>
+          </ValiForm>
+          <!-- 密码登录 -->
+          <div class="tool-bar">
+            <button class="tool-btn vali-code" @click="switchLoginType('pwd')">
+              密码登录 >
+            </button>
+          </div>
+        </section>
+      </transition>
+
+      <!-- 登录按钮 -->
+      <button class="login-btn theme-btn" @click="login">登录</button>
+    </article>
+  </page>
+</template>
+
+<script>
+import ValiForm from "@/components/common/form/ValiForm";
+import FormInput from "@/components/common/form/FormInput";
+import FormNumVali from "@/components/common/form/FormNumVali";
+import FormPwd from "@/components/common/form/FormPwd";
+export default {
+  name: "login",
+  components: {
+    ValiForm,
+    FormInput,
+    FormNumVali,
+    FormPwd
+  },
+  data() {
+    return {
+      loginType: "pwd", // 登陆类型，pwd：密码，valiCode：验证码
+      // 密码登录form
+      pwdForm: {
+        aMobile: "", // 手机号
+        aPassword: "" // 密码
+      },
+      // 验证码登录form
+      valiCodeForm: {
+        aMobile: "", // 手机号
+        aValiCode: "" // 验证码
+      },
+      // 规则
+      rules: {
+        aMobile: [
+          {
+            regExp: "require",
+            msg: "手机号码不能为空"
+          },
+          {
+            regExp: "mobile",
+            msg: "您输入的是一个无效的手机号码"
+          }
+        ],
+        aPassword: [
+          {
+            regExp: "require",
+            msg: "密码不能为空"
+          }
+        ]
+      }
+    };
+  },
+  computed: {},
+  mounted() {},
+  methods: {
+    // 切换登录类型
+    switchLoginType(loginType) {
+      this.loginType = loginType;
+    },
+    // 跳转到修改密码页面
+    goToChangePwd() {
+      this.go("/user/changePwd");
+    },
+    // 跳转到忘记密码页面
+    goToForgetPwd() {
+      this.go("/user/forgetPwd");
+    },
+    // 登陆
+    login() {
+      // 根据当前登陆类型调用对应的登陆方法
+      this[`${this.loginType}Login`]();
+    },
+    // 密码登陆
+    pwdLogin() {},
+    // 验证码登陆
+    valiCodeLogin() {
+      // 获取form的验证对象
+      const vali = this.$refs.valiCodeVF.getVali();
+      if (!vali.status) {
+        utils.ui.confirm(vali.unlegalValiList[0].msg);
+        return;
+      }
+
+      this.$refs.fnv.checkValiCode();
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.login-wrap {
+  position: relative;
+  border-top: 1px solid rgba(255, 255, 255, 0);
+  // 登录content
+  .login-content {
+    position: absolute;
+    width: 100%;
+    top: 30px;
+    left: 0;
+    // 工具栏
+    .tool-bar {
+      @include display-flex;
+      justify-content: space-between;
+      margin: 12px 20px 20px;
+      .tool-btn {
+        @include reset-button;
+        color: #fa7070;
+        font-size: 13px;
+        &.vali-code {
+          font-size: 14px;
+          color: #6c6c6c;
+        }
+      }
+    }
+  }
+  // 登录按钮
+  .login-btn {
+    margin-top: 230px;
+  }
+}
+</style>

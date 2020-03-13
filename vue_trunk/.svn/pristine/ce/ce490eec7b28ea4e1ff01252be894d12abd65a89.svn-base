@@ -1,0 +1,70 @@
+<template>
+  <div class="access"></div>
+</template>
+
+<script>
+export default {
+  name: "access",
+  data() {
+    return {};
+  },
+  computed: {},
+  created() {
+    // 验证页面，防止非法进入
+    const vali = this.valiPage();
+    if (vali.state) {
+      // 验证通过，走access方法
+      this.access();
+    } else {
+      // 验证不通过，跳转到非法页面
+      this.$router.replace({
+        name: "illegalRequest",
+        query: {
+          msg: vali.msg
+        }
+      });
+    }
+  },
+  methods: {
+    // 验证页面，防止非法进入
+    valiPage() {
+      // 验证对象
+      const vali = {
+        state: true,
+        msg: []
+      };
+      // 检查链接参数
+      if (!this.haveQueryParam("openId")) {
+        vali.state = false;
+        vali.msg.push("[ACCESS]缺少openId参数，请检查链接");
+      }
+      if (!this.haveQueryParam("path")) {
+        vali.state = false;
+        vali.msg.push("[ACCESS]缺少path参数，请检查链接");
+      }
+      vali.msg = vali.msg.join("；");
+      return vali;
+    },
+    // 检查查询参数中是否包含某项
+    haveQueryParam(param) {
+      const query = this.$route.query;
+      return query[param];
+    },
+    // 微信进入授权：获取openId
+    access() {
+      const openId = this.$route.query.openId;
+      const path = this.$route.query.path;
+
+      // openId塞入store
+      this.$store.commit("user/setState", {
+        attr: "openId",
+        data: openId
+      });
+      // 根据path跳转到对应的页面
+      this.go(path);
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped></style>

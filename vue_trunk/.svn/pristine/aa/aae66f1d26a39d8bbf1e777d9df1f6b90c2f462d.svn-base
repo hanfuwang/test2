@@ -1,0 +1,270 @@
+<template>
+  <section>
+    <div class="risk-save-button">
+      <button class="view" @click="viewPlan">查看规划书</button>
+      <button class="send" @click="sendPlan">生成规划书并发送</button>
+    </div>
+  </section>
+</template>
+
+<script>
+import { mapState } from "vuex";
+export default {
+  name: "riskSaveButton",
+  components: {},
+  props: {
+    mainRiskList: {
+      //主险列表
+      type: Array
+    },
+    mainSetting: {
+      //主险配置
+      type: Object
+    },
+    selectMainCode: {
+      //当前主险code
+      type: String
+    },
+    selectMain: {
+      //被选的主险项
+      type: Object
+    }
+  },
+  data() {
+    return {};
+  },
+  mounted() {},
+  computed: {
+    ...mapState({
+      riskProposalProductList: state => state.plan.riskProposalProductList, //附加险列表
+      mainProposalProductList: state => state.plan.mainProposalProductList, //主险列表
+      insurant: state => state.plan.insurant, //被保人对象
+      applicant: state => state.plan.applicant, //投保人
+      totalPremium: state => state.plan.totalPremium, //总保费
+      totalAmount: state => state.plan.totalAmount //总保额
+    })
+  },
+  watch: {},
+  created() {},
+  methods: {
+    //校验投、被保人信息
+    isMsgEmpty() {
+      //alert(this.insurant.name);
+      if (this.insurant.name == "") {
+        utils.ui.confirm("请先选择被保人");
+        return false;
+      }
+      if (this.applicant.holderRelation == "") {
+        utils.ui.confirm("请选择关系");
+        return false;
+      }
+      if (this.applicant.name == "") {
+        utils.ui.confirm("请选择投保人");
+        return false;
+      }
+      if (this.mainProposalProductList.length == 0) {
+        utils.ui.confirm("请选择险种");
+        return false;
+      }
+      return true;
+    },
+    //保存/更新险种接口
+    saveOrUpdatePlan() {
+      const params = this.initSaveRisk();
+      //保存/更新险种接口
+      utils.http.post(interfaces.plan.saveOrUpdatePlan, params).then(res => {
+        console.log(res);
+      });
+    },
+    //发送规划书
+    sendPlan() {
+      if (!this.isMsgEmpty()) return;
+    },
+    //查看计划书
+    viewPlan() {
+      if (!this.isMsgEmpty()) return;
+      const params = {
+        agentCode: "",
+        cusRelationList: [
+          {
+            infoId: this.insurant.customerId || this.insurant.infoId, //被保险人客户id
+            relationPersonId:
+              this.applicant.customerId || this.applicant.infoId, //--------------投保人客户id
+            relationType: this.insurant.holderRelation, //关系
+            sourceId: this.applicant.customerId || this.applicant.infoId //---投保人客户id
+          }
+        ],
+        cusmemberInfoList: [
+          {
+            //被保人
+            birthday: new Date(this.insurant.birthdate),
+            category: this.insurant.isoldCustomer, //新客户老客户标志
+            infoId: this.insurant.customerId || this.insurant.infoId,
+            name: this.insurant.name,
+            profession: this.insurant.cdOccupation.occupationCode,
+            sex: this.insurant.sex,
+            socialMedicalInsurance: this.insurant.shebao
+              ? this.insurant.shebao
+              : this.insurant.isSocialInsurance //社保
+          },
+          {
+            //投保人
+            birthday: new Date(this.applicant.birthdate),
+            category: this.applicant.isoldCustomer, //新客户老客户标志
+            infoId: this.applicant.customerId || this.applicant.infoId,
+            name: this.applicant.name,
+            profession: this.applicant.cdOccupation.occupationCode,
+            sex: this.applicant.sex,
+            socialMedicalInsurance: this.applicant.shebao
+              ? this.applicant.shebao
+              : this.applicant.isSocialInsurance //社保
+          }
+        ],
+        // personId: globalConfig.isWx
+        //   ? this.userInfo && this.userInfo.weChatAgenctDTO.infoId
+        //   : this.userInfo && this.userInfo.user && this.userInfo.user.personId, //代理人ID
+        personId: "e1909a91046d4506a58113ab54f70bb4",
+        stepFlag: "2"
+      };
+      //更新客户
+      utils.http.post(interfaces.plan.updateCustomer, params).then(res => {
+        console.log(res);
+        this.saveOrUpdatePlan();
+      });
+    },
+    //保存/更新计划书字段拼接
+    initSaveRisk() {
+      //处理主险配置
+      let mainProposalProductItem = this.mainProposalProductList[0]; //主险项
+      let attList = mainProposalProductItem.attList; //主险的配置项
+      let mainSetting = {
+        shebao: this.insurant.shebao,
+        premiumDes: mainProposalProductItem.premium
+      };
+
+      attList.forEach(element => {
+        switch (element.attCode) {
+          case "drawMode": //领取方式
+            mainSetting.drawMode = element.attValue;
+            break;
+          case "policyPeriod": //保险期限
+            mainSetting.policyPeriod = element.attValue;
+            break;
+          case "payPeriod": //交费期间
+            mainSetting.payPeriod = element.attValue;
+            break;
+          case "payMode": //缴费方式
+            mainSetting.payMode = element.attValue;
+            break;
+        }
+      });
+      //处理投保人
+      let applicant = JSON.parse(JSON.stringify(this.applicant));
+      applicant.birthday = new Date(applicant.birthdate);
+      applicant.birthdate = new Date(applicant.birthdate);
+      applicant.jobLevel = applicant.cdOccupation.occupationRiskLevel;
+      applicant.job = applicant.cdOccupation.occupationCode;
+
+      //处理被保人
+      let insurant = JSON.parse(JSON.stringify(this.insurant));
+      insurant.birthday = new Date(insurant.birthdate);
+      insurant.birthdate = new Date(insurant.birthdate);
+      insurant.jobLevel = insurant.cdOccupation.occupationRiskLevel;
+      insurant.job = insurant.cdOccupation.occupationCode;
+      insurant.relationNew = insurant.holderRelation;
+      //处理附加险种
+      mainProposalProductItem.extraList = this.riskProposalProductList;
+      mainProposalProductItem.extraList.forEach(item => {
+        item.premiumDes = item.premium;
+        item.isSelect = true;
+        item.attList.forEach(el => {
+          switch (el.attCode) {
+            case "exceptAmt": //次免赔额
+              item.exceptAmt = el.attValue;
+              break;
+            case "claimRate": //次免赔额
+              item.claimRate = el.attValue;
+              break;
+            case "policyPeriod": //保险期限
+              item.policyPeriod = el.attValue;
+              break;
+            case "payPeriod": //交费期间
+              item.payPeriod = el.attValue;
+              break;
+            case "payMode": //缴费方式
+              item.payMode = el.attValue;
+              break;
+          }
+        });
+      });
+      let params = {
+        proposalPlan: {
+          bookId: insurant.bookId,
+          holder: applicant, //投保人
+          insurantProductList: [
+            {
+              insurant: insurant, //被保人
+              insuredId: "",
+              planId: "",
+              planInsureDate: "",
+              productList: [
+                Object.assign(mainProposalProductItem, mainSetting)
+              ], //主险种
+              proposalId: "e1909a91046d4506a58113ab54f70bb4",
+              // proposalId: globalConfig.isWx
+              //   ? this.userInfo && this.userInfo.weChatAgenctDTO.infoId
+              //   : this.userInfo &&
+              //     this.userInfo.user &&
+              //     this.userInfo.user.personId, //查询持有人ID
+              totalPremium: "0"
+            }
+          ], //主险
+          orgAgent: {
+            agent: {
+              email: "",
+              mobile: "",
+              personCode: "",
+              personId: "e1909a91046d4506a58113ab54f70bb4",
+              // proposalId: globalConfig.isWx
+              //   ? this.userInfo && this.userInfo.weChatAgenctDTO.infoId
+              //   : this.userInfo &&
+              //     this.userInfo.user &&
+              //     this.userInfo.user.personId, //查询持有人ID
+              personName: "",
+              sex: "",
+              telephone: ""
+            },
+            channel: "iwechat1",
+            deviceNo: "572032449254344960",
+            loginCode: "",
+            openId: "oT-9Av8nXoxn3qnlDjopfnu8VHyI",
+            token: ""
+          },
+          totalAmount: this.totalAmount,
+          totalPremium: this.totalPremium
+        }
+      };
+      return params;
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/assets/css/common/form.scss";
+.risk-save-button {
+  padding: 0 40px 20px 40px;
+  .view {
+    margin-right: 30px;
+  }
+  button {
+    width: 130px;
+    height: 33px;
+    display: inline-block;
+    border: 1px solid $color-theme;
+    border-radius: 16.5px;
+    background: $color-bg;
+    font-size: 13px;
+  }
+}
+</style>

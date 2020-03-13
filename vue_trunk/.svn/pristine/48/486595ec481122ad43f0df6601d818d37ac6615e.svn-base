@@ -1,0 +1,303 @@
+<template>
+  <div class="productImg">
+    <!--产品详情投不展示图-->
+    <img :src="productImg01" alt="" />
+    <!--保障计划-->
+    <div class="bzjh">
+      <div class="bzjh_header">
+        保障规划
+      </div>
+      <div class="split_ine"><!--分割线--></div>
+      <!--保障规划的额内容-->
+      <div class="row" v-for="prolis in proInfoData" :key="prolis.id">
+        <div
+          v-if="
+            prolis.indexOf('*$') != -1 &&
+              (proInfo.productCode == 'RPPB01' ||
+                proInfo.productCode == 'DTRB03')
+          "
+          class="col"
+        >
+          {{ prolis.replace("*$", "") }}
+        </div>
+        <div
+          v-if="
+            prolis.indexOf('*$') != -1 &&
+              (proInfo.productCode != 'RPPB01' &&
+                proInfo.productCode != 'DTRB03')
+          "
+          class="col"
+        >
+          {{ prolis.replace("*$", "") }}
+        </div>
+        <div v-if="prolis.indexOf('*$') == -1" class="col">
+          {{ prolis.replace("*$", "") }}
+        </div>
+      </div>
+      <div class="row" v-if="proInfoData.length">
+        <div class="col">
+          以上各项保险金为您所能获取赔付金的最高额度，仅供您参考，具体内容请以保单条款为准。
+        </div>
+      </div>
+      <div class="split_ine"><!--分割线--></div>
+      <div class="row">
+        <div class="col">
+          <span style="text-align: center;color: #000000;">查看</span>
+          <span
+            style="text-align: center;color: #c99f63;"
+            @click="tiaokuanTotal()"
+            >《保障条款》、</span
+          >
+          <span style="text-align: center;color: #c99f63;" @click="openModal()"
+            >《投保须知》</span
+          >
+          <span
+            style="text-align: center;color: #c99f63;"
+            @click="explain()"
+            v-if="
+              proInfo.productCode == 'APWB01' || proInfo.productCode == 'RPPB01'
+            "
+            >、《产品说明书》</span
+          >
+        </div>
+      </div>
+    </div>
+    <!--产品特色-->
+    <img :src="productImg02" alt="" />
+    <!--投保条款,投保须知,产品说明书的modal-->
+    <Modal
+      :show="isShow"
+      :clickModalToClose="clickModalToClose"
+      :backgroundColor="backgroundColor"
+    >
+      <Page :withAppBar="true">
+        <AppBar class="app-bar">
+          <img
+            slot="left"
+            src="@/assets/imgs/common/icon/icon_back.png"
+            class="icon icon-back"
+            @click="isShow = false"
+          />
+          <template slot="center">
+            {{ modalTitle }}
+          </template>
+        </AppBar>
+        <AppContent class="tiaokuan">
+          <ul class="tiaokuan_ul">
+            <li @click="openPdf(proa)" v-for="proa in tiaokuan" :key="proa.id">
+              {{ proa.fileName }}
+            </li>
+            <!--<li ng-click="pro.tiaokuan(2)" 
+    			ng-if="policyReqData.order.policyRiskList.length==2">
+    			爱心人寿附加爱家无忧家庭收入保障定期寿险
+    		</li>-->
+          </ul>
+        </AppContent>
+      </Page>
+    </Modal>
+    <!--显示打开的条款-->
+    <Modal
+      :show="isShowIframe"
+      :clickModalToClose="clickModalToClose"
+      :backgroundColor="backgroundColor"
+    >
+      <Page :withAppBar="true">
+        <AppBar class="app-bar">
+          <img
+            slot="left"
+            src="@/assets/imgs/common/icon/icon_back.png"
+            class="icon icon-back"
+            @click="isShowIframe = false"
+          />
+          <template slot="center">
+            {{ modalTitle }}
+          </template>
+        </AppBar>
+        <AppContent class="tiaokuanIframe">
+          <iframe
+            :src="path"
+            frameborder="0"
+            width="100%"
+            height="100%"
+          ></iframe>
+        </AppContent>
+      </Page>
+    </Modal>
+  </div>
+</template>
+
+<script>
+import Modal from "@/components/common/ui/Modal.vue";
+export default {
+  name: "ProductImg",
+  components: {
+    Modal
+  },
+  props: {
+    //产品的pdf,图片
+    productList: {
+      type: Array,
+      default: () => {
+        return [];
+      }
+    },
+    // 保障规划的内容
+    productSecurityList: {
+      type: Array,
+      default: () => {
+        return [];
+      }
+    },
+    //
+    proInfo: {
+      type: Object,
+      default: () => {
+        return {};
+      }
+    }
+  },
+  data() {
+    return {
+      productImg01: "", //PD007 产品介绍长图
+      productImg02: "", //PD012 产品介绍小图
+      proInfoData: [], //产品保障规划的数据
+      //模态框
+      isShow: false, //是否关闭模态框
+      // 点击模态层关闭confirm框
+      clickModalToClose: false,
+      // 背景色
+      backgroundColor: "#fff",
+      modalTitle: "", //modal标题
+      tiaokuan: [], //条款的列表
+      isShowIframe: false, //是否展示产品的条款的pdf
+      path: "", //展示产品的条款的pdf
+      toubaoImg: "" //投保须知的图片
+    };
+  },
+  computed: {},
+  watch: {
+    //监控保障规划的内容
+    productSecurityList: {
+      handler(newVal) {
+        this.dealProInfo(newVal);
+      },
+      deep: true
+    }
+  },
+  created() {
+    this.productList.filter(item => {
+      if (item.docType == "PD012") {
+        this.productImg01 = item.fileUrl;
+      }
+      if (item.docType == "PD007") {
+        this.productImg02 = item.fileUrl;
+      }
+      if (item.docType == "PD001") {
+        this.tiaokuan.push(item);
+      }
+      if (item.docType == "PD004") {
+        if (item.fileUrl.indexOf("https://") != -1) {
+          //用户信息协议
+          this.toubaoImg =
+            globalConfig.openOffice + "?ssl=1&furl=" + item.fileUrl;
+        } else if (item.fileUrl.indexOf("http://") != -1) {
+          this.toubaoImg = globalConfig.openOffice + "?furl=" + item.fileUrl;
+        }
+      }
+    });
+    console.log(this.tiaokuan);
+  },
+  methods: {
+    tiaokuanTotal() {
+      this.modalTitle = "投保条款";
+      this.isShow = true;
+      this.clickModalToClose = true;
+    },
+    // 保障规划的内容的处理方法
+    dealProInfo(result) {
+      this.proInfoData = [];
+      result.map(ele => {
+        this.proInfoData.push(ele);
+      });
+      console.log(this.proInfoData);
+    },
+    //展示pdf
+    openPdf(item) {
+      console.log(item);
+      this.isShowIframe = true;
+      if (item.fileUrl.indexOf("https://") != -1) {
+        //用户信息协议
+        this.path = globalConfig.openOffice + "?ssl=1&furl=" + item.fileUrl;
+      } else if (item.fileUrl.indexOf("http://") != -1) {
+        this.path = globalConfig.openOffice + "?furl=" + item.fileUrl;
+      }
+    },
+    //投保须知
+    openModal() {
+      this.modalTitle = "投保须知";
+      this.isShowIframe = true;
+      this.path = this.toubaoImg;
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.productImg {
+  padding-bottom: 55px;
+  img {
+    margin-top: 10px;
+    width: 100%;
+  }
+  .bzjh {
+    .bzjh_header {
+      color: #c99f63;
+      margin-top: 8px;
+      line-height: 30px;
+      font-size: 17px;
+      margin-left: 10px;
+    }
+    .split_ine {
+      border-bottom: 1px solid rgb(201, 159, 99);
+      width: 92%;
+      margin-left: 10px;
+    }
+    .row {
+      @include display-flex;
+      text-align: left;
+      font-size: 14px;
+      padding: 5px;
+      .col {
+        padding: 5px;
+        width: 100%;
+      }
+    }
+  }
+  /deep/ .modal {
+    align-items: flex-start;
+  }
+  .app-bar {
+    .icon {
+      height: auto;
+      &.icon-back {
+        width: 11.5px;
+      }
+    }
+  }
+  .tiaokuanIframe {
+    min-height: 100vh;
+    iframe {
+      min-height: 100vh;
+    }
+  }
+  .tiaokuan_ul li {
+    font-size: 14px;
+    line-height: 26px;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+  }
+  .tiaokuan_ul {
+    background: #fff;
+  }
+}
+</style>

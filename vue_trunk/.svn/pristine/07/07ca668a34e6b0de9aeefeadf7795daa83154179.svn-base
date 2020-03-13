@@ -1,0 +1,376 @@
+<template>
+  <page class="demo-app" :withAppBar="!globalConfig.isWx">
+    <AppBar class="app-bar" v-if="!globalConfig.isWx">
+      <img
+        slot="left"
+        src="../../assets/imgs/common/icon/icon_back.png"
+        class="icon icon-back"
+        @click="$router.go(-1)"
+      />
+      <template slot="center">
+        我的保单列表
+      </template>
+      <img
+        slot="right"
+        src="../../assets/imgs/common/icon/icon_search.png"
+        class="icon icon-search"
+        @click="$router.push('/policy/PolicyQuery')"
+      />
+    </AppBar>
+    <AppContent
+      class="app-content"
+      needLoadmore
+      needRefresh
+      :refreshOpt="refreshOpt"
+      :loadmoreOpt="loadmoreOpt"
+      @refresh="refresh"
+      @loadmore="loadmore"
+    >
+      <div class="content" v-show="list.length != 0">
+        <div class="list" v-for="(item, index) in list" :key="index">
+          <p>{{ item.applyCode }}/{{ item.policyCode }}</p>
+          <div class="ask">
+            <div class="left">
+              <img src="../../assets/imgs/policy/pic/pic_insurance.jpg" />
+            </div>
+            <div class="right">
+              <p class="xz">投保险种{{ " " }}:{{ " " }}{{ item.riskName }}</p>
+              <p>被保人{{ " " }}:{{ " " }}{{ item.holderName }}</p>
+              <p>投保人{{ " " }}:{{ " " }}{{ item.insuredName }}</p>
+            </div>
+          </div>
+          <div class="base">
+            <span
+              >生效日期:{{ " "
+              }}<b v-if="item.accecpDate != ' '">{{
+                formatDate(item.accecpDate)
+              }}</b></span
+            >
+            <span class="query" @click="query(item.applyCode, item.policyCode)"
+              >查看</span
+            >
+          </div>
+        </div>
+      </div>
+      <div class="null" v-show="list.length == 0">
+        <p>暂无数据~</p>
+      </div>
+    </AppContent>
+  </page>
+</template>
+
+<script>
+export default {
+  name: "policyList",
+  data() {
+    return {
+      list: [],
+      pageNum: 1,
+      pageSize: 10,
+      payList: [], //支付信息
+      riskDtoList: [], //险种信息
+      policyDTO: [], //保单信息
+      policyHolder: [], //投保人信息
+      policyInsureds: [], //被保人信息
+      policyBenficiaryDtoList: [], //身故受益人
+      req: {},
+      policyCode: "",
+      // 加载更多配置项
+      loadmoreOpt: {
+        loadmoreing: false,
+        loadmoreFinish: false,
+        bottomDistance: 4
+      },
+      // 下拉刷新配置项
+      refreshOpt: {
+        refreshing: false
+      }
+    };
+  },
+  created() {
+    this.req = this.$route.params.req;
+    this.loadate(this.pageNum);
+  },
+  methods: {
+    // 下拉刷新
+    refresh() {
+      console.log("refresh");
+      this.refreshOpt.refreshing = true;
+      this.loadate((this.pageNum = 1));
+      if (this.pageNum < 1) {
+        this.list = [];
+      }
+      if (this.pageNum == 1) {
+        this.list = [];
+        this.refreshOpt.refreshing = false;
+      }
+    },
+    query(a, b) {
+      this.DetailsQuery(a, b);
+    },
+    //保单详情请求
+    DetailsQuery(a, b) {
+      const params = {
+        policyQueryRequestDto: {
+          applyCode: a,
+          policyCode: b,
+          agentCode:
+            utils.session.get("sessionVuexState").user.userInfo.weChatAgenctDTO
+              .agentCode || "1110101301",
+          fpInfoId: "e37fb59a626543afb04f218659419a44"
+        }
+      };
+      this.policyCode = params.policyQueryRequestDto.policyCode;
+      utils.http.post(interfaces.policy.roductlist, params).then(res => {
+        //支付信息
+        this.payList = res.policyDetailResponseDto.payList;
+        //险种信息
+        this.riskDtoList = res.policyDetailResponseDto.riskDtoList;
+        //保单信息
+        this.policyDTO = res.policyDetailResponseDto.policyDTO;
+        console.log(this.policyDTO);
+        //投保人信息
+        this.policyHolder = res.policyDetailResponseDto.policyHolder;
+        this.policyInsureds = res.policyDetailResponseDto.policyInsureds;
+        this.policyBenficiaryDtoList =
+          res.policyDetailResponseDto.policyBenficiaryDtoList;
+        this.$router.push({
+          name: "particulars",
+          params: {
+            payList: this.payList,
+            riskDtoList: this.riskDtoList,
+            policyDTO: this.policyDTO,
+            policyHolder: this.policyHolder,
+            policyInsureds: this.policyInsureds,
+            policyBenficiaryDtoList: this.policyBenficiaryDtoList,
+            policyCode: this.policyCode
+          }
+        });
+      });
+    },
+    //已完成保单列表
+    loadate(pageNum) {
+      let params = {
+        policyQuery: {
+          fpInfoId: "e37fb59a626543afb04f218659419a44",
+          agentCode:
+            utils.session.get("sessionVuexState").user.userInfo.weChatAgenctDTO
+              .agentCode || "1110101301",
+          memberInfoId: undefined,
+          applyCode: "", //投保单号
+          policyCode: "", //投保单号
+          holderName: "", //投保人姓名
+          insuredName: "", //被保人姓名
+          pageNum: pageNum, //查询第几页
+          pageSize: 10, //每页显示多少条
+          riskName: "", //第一主险名称
+          status: 1, //状态：0查询未完成，1查询已完成
+          familyNum: "" //家庭单号
+        }
+      };
+      //console.log(this.req);
+      //查询参数赋值
+      if (this.req != undefined) {
+        params = this.req;
+      }
+      //配置loading
+      let isLoading = {
+        needLoading: true
+      };
+      //滚动加载更多
+      if (pageNum != 1) {
+        // 设置当前正在加载
+        this.loadmoreOpt.loadmoreing = true;
+        isLoading.needLoading = false;
+      }
+      utils.http
+        .post(interfaces.policy.queryPolicyList, params, isLoading)
+        .then(res => {
+          if (res.code != 1) {
+            for (
+              var i = 0;
+              i < res.policyQueryResponseDto.policyDTOs.length;
+              i++
+            ) {
+              this.list.push(res.policyQueryResponseDto.policyDTOs[i]);
+            }
+            console.log(this.list);
+          }
+          //全部加载完毕
+          if (res.policyQueryResponseDto.policyDTOs.length % 10 != 0) {
+            this.loadmoreOpt.loadmoreFinish = true;
+          }
+        });
+    },
+    //加载更多
+    loadmore() {
+      if (this.list.length % 10 == 0) {
+        this.pageNum = this.pageNum + 1;
+        this.loadate(this.pageNum);
+      }
+    },
+    //转换时间格式
+    formatDate(secs) {
+      let t = new Date(secs);
+      let year = t.getFullYear();
+      let month = t.getMonth() + 1;
+      if (month < 10) {
+        month = "0" + month;
+      }
+      let date = t.getDate();
+      if (date < 10) {
+        date = "0" + date;
+      }
+      let hour = t.getHours();
+      if (hour < 10) {
+        hour = "0" + hour;
+      }
+      let minute = t.getMinutes();
+      if (minute < 10) {
+        minute = "0" + minute;
+      }
+      let second = t.getSeconds();
+      if (second < 10) {
+        second = "0" + second;
+      }
+      return year + "-" + month + "-" + date;
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.app-bar {
+  border-bottom: 1px solid #cccccc;
+  .icon {
+    height: auto;
+    &.icon-back {
+      width: 11.5px;
+    }
+    &.icon-search {
+      width: 20px;
+    }
+  }
+}
+.content {
+  background: #f3f3f3;
+  .list {
+    padding: 0 10px;
+    margin: 10px 0px;
+    width: 100%;
+    height: 177px;
+    background-color: #fff;
+    background: #ffffff;
+    border: 1px solid #ffffff;
+    font-family: "微软雅黑";
+    .base {
+      width: 100%;
+      line-height: 47px;
+      span {
+        width: auto;
+        float: left;
+        background-size: cover;
+        padding-left: 6px;
+        float: left;
+        display: block;
+        height: 100%;
+        font-family: HYQiHei-DES;
+        font-size: 13px;
+        color: #999999;
+        b {
+          font-family: HYQiHei-DES;
+          font-size: 13px;
+          color: #999999;
+          font-weight: 500;
+        }
+      }
+      .query {
+        min-width: 67px;
+        height: 30px;
+        border-radius: 4px;
+        background-color: #ffffff;
+        border: 1px solid #ffcc00;
+        margin-top: 6px;
+        text-align: center;
+        line-height: 25px;
+        padding: 2px 5px;
+        margin-left: 10px;
+        color: white;
+        font-family: HYQiHei-DES;
+        font-size: 13px;
+        color: #ffcc00;
+        letter-spacing: 0;
+        float: right;
+      }
+    }
+    p {
+      float: left;
+      font-size: 12px;
+      color: #000000;
+      font-weight: normal;
+      padding-left: 10px;
+      height: 33px;
+      width: 100%;
+      line-height: 33px;
+    }
+    .ask {
+      width: 100%;
+      height: 95px;
+      line-height: 95px;
+      overflow: hidden;
+      padding-right: 5px;
+      border-top: 1px solid #eeeeee;
+      border-bottom: 1px solid #eeeeee;
+      .left {
+        float: left;
+        width: 100px;
+        height: 75px;
+        padding-top: 8px;
+        padding-left: 7px;
+        img {
+          width: 100px;
+          height: 75px;
+        }
+      }
+      .right {
+        min-width: 100px;
+        height: 100%;
+        margin-left: 110px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        padding-top: 10px;
+        .xz {
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+        }
+        p {
+          font-family: HYQiHei-DES;
+          font-size: 15px;
+          color: #333333;
+          width: 100%;
+          height: 20px;
+          margin-bottom: 4px;
+          line-height: 20px;
+          font-size: 14px;
+        }
+      }
+    }
+  }
+}
+.null {
+  width: 100%;
+  height: 50px;
+  text-align: center;
+  font-family: HYQiHei-DES;
+  font-size: 15px;
+  color: #333333;
+  letter-spacing: 0;
+  padding-top: 20px;
+  background-color: white;
+  p {
+    text-align: center;
+  }
+}
+</style>

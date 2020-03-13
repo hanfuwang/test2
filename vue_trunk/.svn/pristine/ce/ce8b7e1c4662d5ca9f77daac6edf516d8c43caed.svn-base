@@ -1,0 +1,56 @@
+/* ------------------------------------------ user模块 ------------------------------------------ */
+
+const user = [
+  {
+    name: "userInfo",
+    path: "/user/userInfo",
+    meta: {
+      title: "个人资料",
+      login: true
+    },
+    component: () => {
+      return import(
+        /* webpackChunkName: "userInfo" */ "@/views/user/UserInfo.vue"
+      );
+    }
+  },
+  {
+    name: "changePwd",
+    path: "/user/changePwd",
+    meta: {
+      title: ""
+    },
+    component: () => {
+      return import(
+        /* webpackChunkName: "changePwd" */ "@/views/user/ChangePwd.vue"
+      );
+    }
+  },
+  {
+    name: "forgetPwd",
+    path: "/user/forgetPwd",
+    meta: {
+      title: "找回密码"
+    },
+    component: () => {
+      return import(
+        /* webpackChunkName: "forgetPwd" */ "@/views/user/ForgetPwd.vue"
+      );
+    }
+  },
+  {
+    name: "changeMobile",
+    path: "/user/changeMobile",
+    meta: {
+      title: "修改手机号",
+      login: true
+    },
+    component: () => {
+      return import(
+        /* webpackChunkName: "changeMobile" */ "@/views/user/ChangeMobile.vue"
+      );
+    }
+  }
+];
+
+export default user;

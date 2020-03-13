@@ -1,0 +1,63 @@
+<template>
+  <transition name="fadeIn05">
+    <div
+      class="modal"
+      :style="{
+        backgroundColor: backgroundColor
+      }"
+      v-show="show"
+      @click.self="handlerModalClick"
+      @touchmove.prevent
+    >
+      <slot></slot>
+    </div>
+  </transition>
+</template>
+
+<script>
+export default {
+  name: "modal",
+  props: {
+    // 是否显示modal
+    show: {
+      type: Boolean,
+      default: false
+    },
+    // 点击模态层关闭confirm框
+    clickModalToClose: {
+      type: Boolean,
+      default: false
+    },
+    // 背景色
+    backgroundColor: {
+      type: String,
+      default: "rgba(0, 0, 0, 0.4)"
+    }
+  },
+  data() {
+    return {};
+  },
+  computed: {},
+  created() {},
+  methods: {
+    // 处理模态层点击
+    handlerModalClick() {
+      if (this.clickModalToClose) {
+        this.$emit("close");
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.modal {
+  @include display-flex;
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  top: 0;
+  left: 0;
+  z-index: $zIndex-modal;
+}
+</style>

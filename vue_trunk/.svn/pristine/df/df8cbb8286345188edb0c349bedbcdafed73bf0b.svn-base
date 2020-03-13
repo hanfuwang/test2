@@ -1,0 +1,99 @@
+<template>
+  <section class="pay-time">
+    <h2>{{ label }}</h2>
+    <div class="item">
+      <span
+        v-for="(item, index) in list"
+        :class="{ active: item.code == selectCode }"
+        :key="index"
+        @click="handle(item)"
+        >{{ item.text }}</span
+      >
+    </div>
+  </section>
+</template>
+
+<script>
+export default {
+  name: "riskSetting",
+  components: {},
+  props: {
+    //被选中的code
+    selectCode: {
+      type: String,
+      default: function() {
+        return "";
+      }
+    },
+    //label
+    label: {
+      type: String,
+      default: function() {
+        return "";
+      }
+    },
+    list: {
+      type: Array,
+      default: function() {
+        return [];
+      }
+    }
+  },
+  data() {
+    return {};
+  },
+  computed: {},
+  watch: {},
+  created() {},
+  mounted() {},
+  // beforeUpdate() {
+  //   this.initComponents();
+  // },
+  methods: {
+    //选中某项
+    handle(item) {
+      this.$emit("handle", item);
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.pay-time {
+  margin: 20px 10px;
+  padding: 13px 20px;
+  margin-bottom: 10px;
+  box-shadow: 0 0 4px 1px #e5e9f1;
+  border-radius: 5px;
+  h2 {
+    font-size: 15px;
+    color: #333333;
+    font-weight: normal;
+    border-bottom: 1px solid #e5e9f1;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+  }
+  .item {
+    span {
+      @include lineheight-height(34px);
+      display: inline-block;
+      width: 94px;
+      margin: 5px 0;
+      margin-right: 15px;
+      // margin: 10px 0;
+      text-align: center;
+      border: 1px solid #e5e9f1;
+      border-radius: 4px;
+      font-size: 14px;
+      color: #333;
+    }
+    span.active {
+      background: $color-theme;
+      border-color: $color-theme;
+    }
+    span:nth-child(3n) {
+      margin-right: 0;
+    }
+  }
+}
+</style>

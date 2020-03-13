@@ -1,0 +1,302 @@
+<template>
+  <section class="product-msg">
+    <div class="header">
+      <div class="left">险种选择</div>
+      <div class="right" @click="addProduct">
+        <img src="@/assets/imgs/common/icon/icon_add.png" />
+        <span v-if="mainProposalProductList.length === 0">添加险种</span>
+        <span v-else>修改险种</span>
+      </div>
+    </div>
+
+    <!-- 主险表格信息 -->
+    <div
+      class="table"
+      v-for="(item, index) in mainProposalProductList"
+      :key="item.id"
+    >
+      <div class="table-header">
+        <div class="left">
+          <span>{{ item.productShortName }}</span>
+        </div>
+        <div class="right">
+          <img
+            src="@/assets/imgs/common/icon/icon_del.png"
+            @click="delRisk(item, 'main', index)"
+          />
+        </div>
+      </div>
+      <div class="table-main">
+        <div class="table-th">
+          <span
+            v-if="
+              sortSetting(item)[0].attCode == 'amount' ||
+                sortSetting(item)[0].attCode == 'rank'
+            "
+            >基本保额(元)</span
+          >
+          <span v-else>基本保费(元)</span>
+          <span>交费频次</span>
+          <span>交费期间</span>
+          <span>保险期间</span>
+        </div>
+        <div class="table-tr">
+          <span v-for="(item1, index1) in sortSetting(item)" :key="index1">{{
+            item1.attText || item1.attValue | global_addCommas
+          }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 附加险表格信息 -->
+    <div
+      class="table"
+      v-for="(item, index) in riskProposalProductList"
+      :key="item.id"
+    >
+      <div class="table-header">
+        <div class="left">
+          <span>{{ item.productShortName }}</span
+          ><span v-if="item.productCode == 'ATRR03' && insurant.shebao == 1"
+            >（社保型）</span
+          >
+          <span
+            v-if="
+              item.productCode == 'ATRR03' &&
+                (insurant.shebao == 2 || insurant.shebao == '')
+            "
+            >（非社保型）</span
+          >
+        </div>
+        <div class="right">
+          <img
+            src="@/assets/imgs/common/icon/icon_del.png"
+            @click="delRisk(item, 'additional', index)"
+          />
+        </div>
+      </div>
+      <!-- 表格（第一个为基本保费的） -->
+      <div
+        class="table-main"
+        v-if="
+          mainProposalProductList[0] &&
+            sortSetting(mainProposalProductList[0])[0].attCode == 'premium'
+        "
+      >
+        <div class="table-th">
+          <span>基本保费(元)</span>
+          <span>交费频次</span>
+          <span>交费期间</span>
+          <span>保险期间</span>
+        </div>
+        <div class="table-tr">
+          <span
+            v-for="(item1, index1) in sortSetting(item, '1')"
+            :key="index1"
+            >{{ item1.attText || item1.attValue | global_addCommas }}</span
+          >
+        </div>
+      </div>
+      <!-- 表格（第一个为基本保额的） -->
+      <div v-else class="table-main">
+        <div class="table-th">
+          <span>基本保额(元)</span>
+          <span>交费频次</span>
+          <span>交费期间</span>
+          <span>保险期间</span>
+        </div>
+        <div class="table-tr">
+          <span v-for="(item1, index1) in sortSetting(item)" :key="index1">{{
+            item1.attText || item1.attValue | global_addCommas
+          }}</span>
+        </div>
+      </div>
+    </div>
+    <!-- 总保费 -->
+    <div
+      class="all-pay"
+      v-if="
+        (mainProposalProductList[0] &&
+          totalPremium &&
+          sortSetting(mainProposalProductList[0])[0].attCode == 'amount') ||
+          (mainProposalProductList[0] &&
+            totalPremium &&
+            sortSetting(mainProposalProductList[0])[0].attCode == 'rank')
+      "
+    >
+      首期总保费：<span>{{ totalPremium | global_addCommas }}</span
+      >元
+    </div>
+    <div
+      class="all-pay"
+      v-if="
+        totalAmount &&
+          mainProposalProductList[0] &&
+          sortSetting(mainProposalProductList[0])[0].attCode == 'premium'
+      "
+    >
+      首期总保额：<span>{{ totalAmount | global_addCommas }}</span
+      >元
+    </div>
+  </section>
+</template>
+
+<script>
+import { mapState } from "vuex";
+export default {
+  name: "productMsg",
+  components: {},
+  props: {},
+  data() {
+    return {};
+  },
+  computed: {
+    ...mapState({
+      mainProposalProductList: state => state.plan.mainProposalProductList, //主险列表
+      riskProposalProductList: state => state.plan.riskProposalProductList, //附加险列表
+      totalPremium: state => state.plan.totalPremium, //总保费用
+      totalAmount: state => state.plan.totalAmount, //总保额
+      insurant: state => state.plan.insurant
+    })
+  },
+  watch: {},
+  created() {},
+  methods: {
+    //添加险种
+    addProduct() {
+      this.$emit("addProduct");
+    },
+    //删除险种
+    delRisk(delObj, deltType, delIndex) {
+      this.$emit("delRisk", {
+        delObj,
+        deltType,
+        delIndex
+      });
+    },
+    //排序基本项
+    sortSetting(el, u) {
+      let sortedArray = [];
+      el.attList.forEach(item => {
+        switch (item.attCode) {
+          case "rank": //基本保额
+            sortedArray[0] = {
+              attText: el.amount,
+              attCode: "rank"
+            };
+            break;
+          case "amount": //基本保额
+            if (el.productCode == "ATCR01" || el.productCode == "DTCR02") {
+              //排除豁免
+              sortedArray[0] = {
+                attText: "见条款",
+                attCode: "amount"
+              };
+            } else if (u) {
+              //排除主险是保费算保额 附加险展示保费
+              sortedArray[0] = {
+                attText: el.premium,
+                attCode: "premium"
+              };
+            } else {
+              sortedArray[0] = item;
+            }
+            break;
+          case "premium": //基本保费
+            sortedArray[0] = item;
+            break;
+          case "payMode":
+            sortedArray[1] = item;
+            break;
+          case "payPeriod":
+            sortedArray[2] = item;
+            break;
+          case "policyPeriod":
+            sortedArray[3] = item;
+            break;
+        }
+      });
+      //console.log(sortedArray);
+      return sortedArray;
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.product-msg {
+  margin: 10px 0;
+  .header {
+    @include lineheight-height(37px);
+    margin: 0 20px;
+    padding: 0 15px;
+    background: $color-ds;
+    font-size: 14px;
+    color: #333333;
+    display: flex;
+    justify-content: space-between;
+    .right {
+      color: #ffcc00;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      img {
+        width: 12px;
+        height: 12px;
+      }
+      span {
+        @include lineheight-height(37px);
+      }
+    }
+  }
+  .table {
+    margin: 10px 15px;
+    border: 1px solid $color-ds;
+    font-size: 12px;
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      height: 40px;
+      padding: 0 15px;
+      align-items: center;
+      font-size: 14px;
+      .right {
+        img {
+          width: 11px;
+        }
+      }
+    }
+    .table-main {
+      .table-th {
+        display: flex;
+        padding: 10px 15px;
+        background: #fffbeb;
+        span {
+          flex: 1;
+          white-space: nowrap;
+          text-align: center;
+        }
+      }
+      .table-tr {
+        display: flex;
+        padding: 10px 15px;
+
+        span {
+          flex: 1;
+          white-space: nowrap;
+          text-align: center;
+        }
+      }
+    }
+  }
+  .all-pay {
+    text-align: right;
+    padding: 15px;
+    font-size: 14px;
+    span {
+      font-size: 20px;
+      color: #fa7070;
+    }
+  }
+}
+</style>

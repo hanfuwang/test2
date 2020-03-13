@@ -1,0 +1,73 @@
+<template>
+  <Page class="plan-list" :withAppBar="!globalConfig.isWx">
+    <!-- 导航栏 -->
+    <AppBar class="app-bar" v-if="!globalConfig.isWx">
+      <img
+        slot="left"
+        src="../../assets/imgs/common/icon/icon_back.png"
+        class="icon icon-back"
+      />
+      <!-- AXPROPOSALSHARE -->
+      <template slot="center">
+        爱心人寿家庭保障规划
+      </template>
+    </AppBar>
+    <!-- 主体 -->
+    <AppContent class="app-content" style="background: #F7C21E;">
+      <img src="" />
+      <!-- 投保险种 -->
+      <ParticularsInsurant />
+      <!-- 保障责任 -->
+      <Guarantee></Guarantee>
+    </AppContent>
+  </Page>
+</template>
+
+<script>
+import Guarantee from "@/components/plan/Guarantee";
+import ParticularsInsurant from "@/components/plan/ParticularsInsurant";
+export default {
+  components: {
+    Guarantee,
+    ParticularsInsurant
+  },
+  data() {
+    return {};
+  },
+  created() {
+    this.loadata();
+  },
+  methods: {
+    loadata() {
+      const params = {
+        proposalPlan: {
+          bookId: "979941c59cb6487cb82f86ae5bcc0a15"
+        }
+      };
+      utils.http.post(interfaces.plan.queryPlan, params).then(res => {
+        console.log(res);
+      });
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.app-bar {
+  .icon {
+    height: auto;
+    &.icon-back {
+      width: 11.5px;
+    }
+  }
+}
+
+.plan-list {
+  background: $color-ds;
+  .empty {
+    text-align: center;
+    margin-top: 20px;
+    color: #999;
+    font-size: 14px;
+  }
+}
+</style>

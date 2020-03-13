@@ -1,0 +1,88 @@
+<template>
+  <page class="forget-pwd">
+    <!-- tips -->
+    <div class="tips">* 请输入您要找回登录密码的账户</div>
+
+    <!-- vf -->
+    <ValiForm class="vf" ref="vf">
+      <!-- 手机号 -->
+      <FormInput
+        v-model="form.aMobile"
+        type="tel"
+        placeholder="请输入手机号"
+        :rules="rules.aMobile"
+      ></FormInput>
+      <!-- 验证码 -->
+      <FormNumVali
+        v-model="form.aValiCode"
+        :mobile="form.aMobile"
+        placeholder="请输入验证码"
+      ></FormNumVali>
+    </ValiForm>
+
+    <!-- button -->
+    <button class="next-step theme-btn" @click="nextStep">下一步</button>
+  </page>
+</template>
+
+<script>
+import ValiForm from "@/components/common/form/ValiForm";
+import FormInput from "@/components/common/form/FormInput";
+import FormNumVali from "@/components/common/form/FormNumVali";
+
+export default {
+  name: "forgetPwd",
+  components: {
+    ValiForm,
+    FormInput,
+    FormNumVali
+  },
+  data() {
+    return {
+      // form
+      form: {
+        aMobile: "", // 手机号
+        aValiCode: "" // 验证码
+      },
+      // 规则
+      rules: {
+        aMobile: [
+          {
+            regExp: "require",
+            msg: "手机号码不能为空"
+          },
+          {
+            regExp: "mobile",
+            msg: "您输入的是一个无效的手机号码"
+          }
+        ]
+      }
+    };
+  },
+  computed: {},
+  mounted() {},
+  methods: {
+    nextStep() {
+      // 无需原密码跳转到修改密码页面
+      this.go("/user/changePwd?type=NOOLD");
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.tips {
+  @include display-flex;
+  justify-content: flex-start;
+  height: 30px;
+  padding: 0 20px;
+  box-shadow: 0 1px 0 0 #f3f3f3;
+  background: #fafafa;
+  font-size: 12px;
+  color: #fa7070;
+  margin-bottom: 15px;
+}
+.vf {
+  margin-bottom: 90px;
+}
+</style>

@@ -1,0 +1,54 @@
+<template>
+  <page class="demo-store demo-page">
+    <h4 class="tips">
+      项目默认配置了store
+      sessionStorage的缓存配置，确保刷新页面后store的数据不丢失，但是数据的更新必须通过commit触发才能存入sessionStorage
+    </h4>
+    <p>{{ demoInfo.desc }}</p>
+    <ul>
+      <li v-for="(item, index) of demoInfo.objList" :key="index">
+        {{ item.name }} {{ item.age }}
+      </li>
+    </ul>
+    <div class="btn-wrap">
+      <button @click="push" class="btn">
+        添加数据
+      </button>
+      <button @click="refresh" class="btn">
+        刷新页面
+      </button>
+    </div>
+  </page>
+</template>
+
+<script>
+export default {
+  name: "demoStore",
+  data() {
+    return {
+      demoInfo: this.$store.state.demo.demoInfo
+    };
+  },
+  computed: {},
+  mounted() {},
+  methods: {
+    push() {
+      this.demoInfo.objList.push({
+        name: `xiao${this.demoInfo.objList.length}`,
+        age: 22
+      });
+      this.$store.commit("demo/setState", {
+        attr: "demoInfo",
+        data: this.demoInfo
+      });
+    },
+    refresh() {
+      window.location.reload();
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/assets/css/demo/index.scss";
+</style>

@@ -1,0 +1,366 @@
+<template>
+  <article
+    class="app-content"
+    :class="{
+      refresh: this.needRefresh,
+      loadmore: this.needLoadmore
+    }"
+    :style="{ top: pullDistance + 'px' }"
+  >
+    <!-- refresh-tips -->
+    <section
+      class="refresh-tips"
+      :style="{
+        height: maxPullDistance - callDistance + 'px',
+        top: -(maxPullDistance - callDistance) + 'px'
+      }"
+      v-show="refreshingDesc"
+    >
+      <!-- 正在刷新 -->
+      <CircularProgress
+        v-show="refreshingDesc === '正在刷新...'"
+        class="refreshing"
+        :color="globalConfig.ui.colorTheme"
+        :stroke-width="refreshStrokewidth"
+        :size="refreshCirSize"
+      ></CircularProgress>
+      <!-- 施放刷新图标 -->
+      <img
+        v-show="refreshingDesc === '松开刷新'"
+        class="release-icon"
+        :style="{ transform: `rotate(${releaseIconRotate}deg)` }"
+        src="@/assets/imgs/common/icon/icon_release_refresh.png"
+      />
+      <!-- 描述 -->
+      {{ refreshingDesc }}
+    </section>
+
+    <!-- 主内容插槽 -->
+    <slot></slot>
+
+    <!-- loadmore-tips -->
+    <section class="loadmore-tips" v-show="showLoadmoreTips">
+      <!-- 正在加载 -->
+      <CircularProgress
+        v-show="loadmoreOpt.loadmoreing && hadLoadmore"
+        class="loadmoreing"
+        :color="globalConfig.ui.colorTheme"
+        :stroke-width="loadmoreStrokewidth"
+        :size="loademoreCirSize"
+      ></CircularProgress>
+      <!-- 全部加载完毕 -->
+      <div v-show="loadmoreOpt.loadmoreFinish" class="loadmore-finish">
+        {{ loadmoreOpt.loadmoreFinishDesc || "没有更多数据啦~" }}
+      </div>
+    </section>
+  </article>
+</template>
+
+<script>
+import { CircularProgress } from "muse-ui/es5/Progress";
+export default {
+  name: "appContent",
+  components: {
+    CircularProgress
+  },
+  props: {
+    // 是否需要下拉刷新
+    needRefresh: {
+      type: Boolean,
+      default: false
+    },
+    // 下拉刷新配置项
+    refreshOpt: {
+      type: Object,
+      default: function() {
+        return {
+          // 当前是否正在下拉刷新
+          refreshing: false
+        };
+      }
+    },
+    // 是否需要加载更多
+    needLoadmore: {
+      type: Boolean,
+      default: false
+    },
+    // 加载更多配置项
+    loadmoreOpt: {
+      type: Object,
+      default: function() {
+        return {
+          // 当前是否正在加载更多
+          loadmoreing: false,
+          // 当前是否已经全部加载完毕
+          loadmoreFinish: false,
+          // 触发底部loadmore的距离
+          bottomDistance: utils.ui.getAdaptSize(30),
+          // 加载完毕的描述
+          loadmoreFinishDesc: ""
+        };
+      }
+    }
+  },
+  data() {
+    return {
+      // --------------下拉刷新相关--------------
+      topDistance: utils.ui.getAdaptSize(70), //  下拉刷新触发下拉操作的高度
+      maxPullDistance: utils.ui.getAdaptSize(80), // 最大下拉距离
+      callDistance: utils.ui.getAdaptSize(40), // 能够触发下拉刷新方法的距离
+      pullDistance: 0, // 当前拉下来的高度
+      beginY: 0, // touchstart初始的Y坐标值
+      moveY: 0, // touchmove时的Y坐标值
+      initBackSpeed: utils.ui.getAdaptSize(5), // 回去的初始速度
+      scrollRate: 1.15, // 下拉，回弹速度比，标志速度变缓的程度，1是匀速
+      refreshStrokewidth: utils.ui.getAdaptSize(2), // 刷新圈border大小
+      refreshCirSize: utils.ui.getAdaptSize(16), // 刷新圈大小
+
+      // --------------加载更多相关--------------
+      hadLoadmore: false, // 当前是否已经加载过
+      loadmoreStrokewidth: utils.ui.getAdaptSize(2), // 加载更多圈border大小
+      loademoreCirSize: utils.ui.getAdaptSize(20) // 加载更多圈大小
+    };
+  },
+  computed: {
+    // 下拉刷新的描述
+    refreshingDesc() {
+      if (this.refreshOpt.refreshing) {
+        // 当前在刷新中
+        return "正在刷新...";
+      } else {
+        if (this.pullDistance > this.callDistance) {
+          return "松开刷新";
+        } else {
+          return "";
+        }
+      }
+    },
+    // 释放刷新图标的旋转角度
+    releaseIconRotate() {
+      // 各自刨去触发下拉刷新的最小距离后计算百分比 * 180°
+      return (
+        ((this.pullDistance - this.callDistance) /
+          (this.maxPullDistance - this.callDistance)) *
+        180
+      );
+    },
+    // 是否展示加载更多的tips
+    showLoadmoreTips() {
+      if (
+        // 加载更多中
+        this.loadmoreOpt.loadmoreing ||
+        // 全部加载完毕
+        this.loadmoreOpt.loadmoreFinish
+      ) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+  },
+  watch: {
+    // 监听refreshing
+    "refreshOpt.refreshing"(newVal, oldVal) {
+      if (newVal === false && oldVal === true) {
+        // 下拉刷新完毕，滚回顶部
+        this.scrollTo(0);
+      }
+    },
+    // 监听loadmoreing
+    "loadmoreOpt.loadmoreing"(newVal, oldVal) {
+      // loadmoreing由true变false，说明加载过一遍
+      if (newVal === false && oldVal === true) {
+        // 设置hadLoadmore为true
+        this.hadLoadmore = true;
+      }
+    }
+  },
+  created() {},
+  // 组件活动状态
+  activated() {
+    // 添加事件
+    this.addEvent();
+  },
+  // 组件非活动状态
+  deactivated() {
+    // 移除事件
+    this.removeEvent();
+  },
+  // 组件销毁
+  beforeDestroy() {
+    // 移除事件
+    this.removeEvent();
+  },
+  methods: {
+    // 添加事件
+    addEvent() {
+      // 如果有加载更多，添加滚动监听事件
+      if (this.needLoadmore) {
+        // 延迟添加滚动监听，防止切换页面瞬间高度变化触发的scroll事件
+        setTimeout(() => {
+          window.addEventListener("scroll", this.handlerScroll);
+        }, 100);
+      }
+      // 如果有下拉刷新，添加3个touch事件
+      if (this.needRefresh) {
+        this.$el.addEventListener("touchstart", this.handlerTouchStart);
+        this.$el.addEventListener("touchmove", this.handlerTouchMove);
+        this.$el.addEventListener("touchend", this.handlerTouchEnd);
+      }
+    },
+    // 移除事件
+    removeEvent() {
+      // 移除滚动监听事件
+      window.removeEventListener("scroll", this.handlerScroll);
+      // 移除下拉刷新事件
+      this.$el.removeEventListener("touchstart", this.handlerTouchStart);
+      this.$el.removeEventListener("touchmove", this.handlerTouchMove);
+      this.$el.removeEventListener("touchend", this.handlerTouchEnd);
+    },
+    // 滚到具体的Y坐标
+    scrollTo(topY) {
+      let nowSpeed = this.initBackSpeed;
+      const minSpeed = 1; // 最小滚动速度，防止滚不回去的情况
+      let timeflag = setInterval(() => {
+        const afterPullDistance = this.pullDistance - nowSpeed;
+        // 最小滚动速度限制
+        nowSpeed = nowSpeed > minSpeed ? nowSpeed / this.scrollRate : nowSpeed;
+        if (afterPullDistance <= topY) {
+          // 达到要滚到的高度，停止滚动
+          this.pullDistance = topY;
+          clearInterval(timeflag);
+        } else {
+          this.pullDistance = afterPullDistance;
+        }
+      }, 10);
+    },
+
+    // 处理touchstart
+    handlerTouchStart(e) {
+      // 只有在顶部才处理
+      if (utils.ui.getScrollTop() !== 0) return;
+
+      // 记住touch一开始的Y坐标
+      this.beginY = e.targetTouches[0].clientY;
+    },
+    // 处理touchmove
+    handlerTouchMove(e) {
+      // 只有在顶部才处理
+      if (utils.ui.getScrollTop() !== 0) return;
+
+      // 赋值现在move的Y坐标
+      this.moveY = e.targetTouches[0].clientY;
+      // 触发下拉刷新的最小距离
+      const topDistance = this.topDistance;
+      // 最大下拉距离
+      const maxPullDistance = this.maxPullDistance;
+      // 一共拉了多少Y
+      const diff = this.moveY - this.beginY;
+      // 有效下拉距离
+      const effectPullY = diff - topDistance;
+      if (effectPullY >= 0) {
+        if (this.refreshOpt.refreshing && effectPullY < this.callDistance) {
+          // 在刷新中，最小滚动高度为触发刷新的高度
+          this.pullDistance = this.callDistance;
+        } else {
+          // 不在刷新中
+          if (effectPullY > maxPullDistance) {
+            // 超出了最大下拉高度限制
+            this.pullDistance = maxPullDistance;
+          } else {
+            // 没超出限制，继续下拉
+            this.pullDistance = effectPullY;
+          }
+        }
+      }
+
+      // 下拉操作，阻止外部文档滚动
+      if (diff > 0) {
+        e.stopPropagation();
+        e.preventDefault();
+      }
+    },
+    // 处理touchend
+    handlerTouchEnd() {
+      if (this.pullDistance > this.callDistance) {
+        // 当前页面下拉高度超过了需要调用refresh方法的高度
+        // 滚到触发refresh方法的最小高度
+        this.scrollTo(this.callDistance);
+        if (!this.refreshOpt.refreshing) {
+          // 当前不在刷新中，调用refresh方法
+          this.$emit("refresh");
+        }
+      } else {
+        // 不足触发refresh的距离，滚回顶部
+        this.scrollTo(0);
+      }
+    },
+
+    // 处理滚动
+    handlerScroll() {
+      // 获取当前加载更多配置项
+      const loadmoreOpt = this.loadmoreOpt;
+      // 不处理的情况
+      if (
+        !this.needLoadmore ||
+        loadmoreOpt.loadmoreing ||
+        loadmoreOpt.loadmoreFinish
+      )
+        return;
+      // 当前页面高度
+      const clientHeight = utils.ui.getClientHeight();
+      // 当前页面滚动高度
+      const scrollTop = utils.ui.getScrollTop();
+      // 当前页面总高度
+      const scrollHeight = utils.ui.getScrollHeight();
+      // 触发底部loadmore的距离
+      const bottomDistance = loadmoreOpt.bottomDistance || 30;
+      if (clientHeight + scrollTop + bottomDistance >= scrollHeight) {
+        // 滚动到底部，触发loadmore方法
+        this.$emit("loadmore");
+        // 强制滚动到页面底部
+        setTimeout(() => {
+          window.scrollTo(0, scrollHeight);
+        }, 100);
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.app-content {
+  position: relative;
+  top: 0;
+  left: 0;
+  &.refresh {
+    min-height: 75vh;
+  }
+}
+// 刷新tips
+.refresh-tips {
+  @include display-flex;
+  position: absolute;
+  left: 0;
+  width: 100%;
+  font-size: 13px;
+  color: #999999;
+  .refreshing {
+    margin-right: 6px;
+  }
+  .release-icon {
+    width: 20px;
+    height: auto;
+    margin-right: 4px;
+  }
+}
+// 加载更多tips
+.loadmore-tips {
+  @include display-flex;
+  padding: 15px 0;
+  .loadmore-finish {
+    font-size: 13px;
+    color: #999999;
+  }
+}
+</style>

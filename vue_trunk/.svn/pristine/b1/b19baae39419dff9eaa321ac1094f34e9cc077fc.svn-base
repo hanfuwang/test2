@@ -1,0 +1,292 @@
+<template>
+  <Page class="demo-form">
+    <ValiForm :form="form" :vali="vali">
+      <FormInput
+        v-model="form.name"
+        label="姓名"
+        placeholder="请输入姓名"
+        :rules="rules.name"
+      ></FormInput>
+      <FormRadio
+        v-model="form.sex"
+        label="性别"
+        :rules="rules.sex"
+        :selectList="sexSelectList"
+      ></FormRadio>
+      <FormDatepicker
+        label="生日"
+        placeholder="请选择生日"
+        v-model="form.birthday"
+        :rules="rules.birthday"
+      ></FormDatepicker>
+      <FormPwd
+        v-model="form.password"
+        label="密码"
+        placeholder="请输入密码"
+        :rules="rules.password"
+        needPwdIcon
+      ></FormPwd>
+      <FormInput
+        type="tel"
+        v-model="form.mobile"
+        label="手机号"
+        placeholder="请输入手机号"
+        :rules="rules.mobile"
+      ></FormInput>
+      <FormSelect
+        v-model="form.purpose"
+        :selectList="purposeSelectList"
+        label="职业意向"
+        placeholder="请选择职业意向"
+        :rules="rules.purpose"
+      ></FormSelect>
+      <FormInput
+        type="tel"
+        v-model="form.agentCode"
+        label="工号"
+        :rules="rules.agentCode"
+        disabled
+      ></FormInput>
+      <FormInput
+        type="tel"
+        v-model="form.intro"
+        label="推荐人"
+        placeholder="如有，请输入其工号"
+      ></FormInput>
+      <FormNumVali v-model="form.valiCode" :mobile="form.mobile" label="验证码">
+      </FormNumVali>
+      <FormSelector
+        :selectData.sync="bankWebsite"
+        type="bank"
+        label="所属机构"
+        placeholder="请选择银行网点"
+        :rules="rules.bankWebsite"
+        ref="bankSelector"
+      ></FormSelector>
+      <FormSelector
+        :selectData.sync="area"
+        type="area"
+        label="家庭住址"
+        placeholder="请选择家庭住址"
+        :rules="rules.area"
+        ref="areaSelector"
+      ></FormSelector>
+      <FormSelector
+        :selectData.sync="job"
+        type="job"
+        label="职业"
+        placeholder="请选择职业"
+        ref="jobSelector"
+      ></FormSelector>
+    </ValiForm>
+
+    <button
+      class="theme-btn"
+      :class="{ disabled: !vali.status }"
+      @click="submitForm"
+    >
+      提交
+    </button>
+  </Page>
+</template>
+
+<script>
+import ValiForm from "@/components/common/form/ValiForm";
+import FormInput from "@/components/common/form/FormInput";
+import FormRadio from "@/components/common/form/FormRadio";
+import FormNumVali from "@/components/common/form/FormNumVali";
+import FormPwd from "@/components/common/form/FormPwd";
+import FormDatepicker from "@/components/common/form/FormDatepicker";
+import FormSelector from "@/components/common/form/FormSelector";
+import FormSelect from "@/components/common/form/FormSelect";
+
+export default {
+  name: "demoForm",
+  components: {
+    ValiForm,
+    FormInput,
+    FormRadio,
+    FormNumVali,
+    FormPwd,
+    FormDatepicker,
+    FormSelector,
+    FormSelect
+  },
+  data() {
+    return {
+      // form表单
+      form: {
+        name: "",
+        sex: "0",
+        birthday: "",
+        mobile: "",
+        purpose: "",
+        password: "",
+        agentCode: "A201908",
+        valiCode: "",
+        intro: "",
+        bankWebsite: ""
+      },
+      // form验证对象
+      vali: {
+        status: false,
+        unlegalValiList: []
+      },
+      // 银行网点对象
+      bankWebsite: {
+        banktype: "",
+        agentcom: "",
+        bankName: ""
+      },
+      // 家庭住址
+      area: {
+        provinceCode: "", // 省code
+        provinceName: "", // 省名称
+        cityCode: "", // 市code
+        cityName: "", // 市名称
+        areaCode: "", // 区code
+        areaName: "" // 区名称
+      },
+      // 职业信息
+      job: {
+        occupationCode: "",
+        occupationLevel: "",
+        occupationName: "",
+        occupationRiskLevel: "",
+        occupationRiskMetical: ""
+      },
+      // 校验规则
+      rules: {
+        name: [
+          {
+            regExp: "require",
+            msg: "姓名不能为空"
+          },
+          {
+            regExp: "chinese",
+            msg: "姓名必须由汉字组成"
+          },
+          {
+            regExp: /^.{2,10}$/,
+            msg: "姓名长度必须在2~10字符之内"
+          },
+          {
+            regExp: val => {
+              const month = new Date().getMonth() + 1;
+              if (month > 7 && !val.startsWith("七")) {
+                return false;
+              }
+              return true;
+            },
+            msg: "7月份以后注册的姓名必须以七开头"
+          }
+        ],
+        sex: [
+          {
+            regExp: "require",
+            msg: "性别不能为空"
+          }
+        ],
+        birthday: [
+          {
+            regExp: "require",
+            msg: "生日不能为空"
+          }
+        ],
+        mobile: [
+          {
+            regExp: "require",
+            msg: "手机号不能为空"
+          },
+          {
+            regExp: "mobile",
+            msg: "请输入正确的手机号"
+          }
+        ],
+        purpose: [
+          {
+            regExp: "require",
+            msg: "职业意向不能为空"
+          }
+        ],
+        password: [
+          {
+            regExp: "require",
+            msg: "密码不能为空"
+          },
+          {
+            regExp: "pwd",
+            msg: "请输入6~20位的密码"
+          }
+        ],
+        agentCode: [
+          {
+            regExp: "require",
+            msg: "工号不能为空"
+          }
+        ],
+        bankWebsite: [
+          {
+            regExp: "require",
+            msg: "银行网点不能为空"
+          }
+        ],
+        area: [
+          {
+            regExp: "require",
+            msg: "家庭住址不能为空"
+          }
+        ]
+      },
+      // 码表
+      sexSelectList: globalCode.sex,
+      purposeSelectList: [
+        {
+          code: "1",
+          desc: "精算师"
+        },
+        {
+          code: "2",
+          desc: "保险代理人"
+        }
+      ]
+    };
+  },
+  watch: {
+    // 网点选择，赋值form中的网点信息
+    "bankWebsite.agentcom"(newVal) {
+      this.form.bankWebsite = newVal;
+    }
+  },
+  beforeRouteLeave(to, from, next) {
+    if (
+      this.$refs.bankSelector.showSelector ||
+      this.$refs.areaSelector.showSelector ||
+      this.$refs.jobSelector.showSelector
+    ) {
+      // 有选择器为打开状态，先关闭
+      this.$refs.bankSelector.close();
+      this.$refs.areaSelector.close();
+      this.$refs.jobSelector.close();
+      next(false);
+    } else {
+      next();
+    }
+  },
+  methods: {
+    submitForm() {
+      // 根据vali对象判断当前form元素是否全部输入合法
+      if (!this.vali.status) {
+        // utils.ui.confirm(this.vali.unlegalValiList[0].msg);
+        return;
+      } else {
+        utils.ui.confirm("提交成功");
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/assets/css/demo/index.scss";
+</style>

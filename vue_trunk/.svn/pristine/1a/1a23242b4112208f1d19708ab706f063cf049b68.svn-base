@@ -1,0 +1,179 @@
+<template>
+  <Page class="demo-form" :withAppBar="!globalConfig.isWx">
+    <!-- app-bar -->
+    <AppBar v-if="!globalConfig.isWx">
+      <template slot="center">
+        银行账户信息
+      </template>
+    </AppBar>
+    <AppContent class="app-content">
+      <ValiForm :form="form" :vali="vali">
+        <div class="nav">手机号码/固定电话/邮箱</div>
+        <FormInput
+          type="tel"
+          v-model="form.accountCode"
+          label="银行账号"
+          placeholder="请输入银行账号"
+        ></FormInput>
+        <FormSelect
+          v-model="form.bankCode"
+          :selectList="purposeSelectList"
+          label="银行"
+          placeholder="请选择银行"
+        ></FormSelect>
+        <FormInput
+          type="tel"
+          v-model="form.mobile"
+          label="银行预留手机号"
+          placeholder="请输入银行预留手机号"
+        ></FormInput>
+      </ValiForm>
+      <div class="box">
+        <span
+          class="theme-btn right"
+          @click="sure"
+          :class="{ disabled: !vali.status }"
+          >确定</span
+        >
+        <span class="left" @click="$router.go(-1)">取消</span>
+      </div>
+    </AppContent>
+  </Page>
+</template>
+
+<script>
+import ValiForm from "@/components/common/form/ValiForm";
+import FormInput from "@/components/common/form/FormInput";
+import FormSelect from "@/components/common/form/FormSelect";
+
+export default {
+  name: "bankMes",
+  components: {
+    ValiForm,
+    FormInput,
+    FormSelect
+  },
+  data() {
+    return {
+      // form表单
+      form: {
+        accountCode: "", //银行账号
+        bankCode: "", //银行
+        mobile: "" //预留手机号
+      },
+      // form验证对象
+      vali: {
+        status: false,
+        unlegalValiList: []
+      },
+      purposeSelectList: [
+        {
+          code: "1",
+          desc: "工商银行"
+        },
+        {
+          code: "2",
+          desc: "农业银行"
+        },
+        {
+          code: "3",
+          desc: "中国银行"
+        },
+        {
+          code: "4",
+          desc: "建设银行"
+        },
+        {
+          code: "5",
+          desc: "交通银行"
+        },
+        {
+          code: "6",
+          desc: "中信银行"
+        },
+        {
+          code: "7",
+          desc: "广发银行"
+        },
+        {
+          code: "8",
+          desc: "招商银行"
+        },
+        {
+          code: "9",
+          desc: "邮政储蓄银行"
+        },
+        {
+          code: "10",
+          desc: "北京银行"
+        },
+        {
+          code: "11",
+          desc: "平安银行"
+        },
+        {
+          code: "12",
+          desc: "民生银行"
+        },
+        {
+          code: "13",
+          desc: "兴业银行"
+        },
+        {
+          code: "14",
+          desc: "光大银行"
+        }
+      ]
+    };
+  },
+  methods: {
+    sure() {
+      // 根据vali对象判断当前form元素是否全部输入合法
+      if (!this.vali.status) {
+        // utils.ui.confirm(this.vali.unlegalValiList[0].msg);
+        return;
+      } else {
+        utils.ui.confirm("提交成功");
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/assets/css/demo/index.scss";
+.nav {
+  @include lineheight-height(37px);
+  padding: 0 30px;
+  background: $color-ds;
+  font-size: 14px;
+  color: #333333;
+  display: flex;
+  justify-content: space-between;
+}
+.box {
+  text-align: center;
+  font-family: HYQiHei-DES;
+  font-size: 18px;
+  .left {
+    width: 102px;
+    border: 1px solid #ffcc00;
+    border-radius: 19px;
+    height: 38px;
+    display: inline-block;
+    margin-top: 73px;
+    margin-left: 37px;
+    color: #ffcc00;
+    line-height: 38px;
+    color: #ffcc00;
+  }
+  .right {
+    width: 102px;
+    background: #ffcc00;
+    border-radius: 19px;
+    height: 38px;
+    display: inline-block;
+    line-height: 38px;
+  }
+}
+</style>

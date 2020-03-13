@@ -1,0 +1,52 @@
+<template>
+  <page class="demo-http demo-page">
+    <div class="btn-wrap">
+      <button class="btn" @click="httpStatistical">
+        请求统计功能使用率接口
+      </button>
+      <button class="btn" @click="httpGetIp">
+        请求后台获取用户IP接口
+      </button>
+      {{ ip }}
+    </div>
+  </page>
+</template>
+
+<script>
+export default {
+  name: "demoHttp",
+  data() {
+    return {
+      ip: ""
+    };
+  },
+  computed: {},
+  mounted() {},
+  methods: {
+    httpStatistical() {
+      utils.http
+        .post(interfaces.global.statistical, {
+          reviewid: "",
+          functioncode: "all"
+        })
+        .then(res => {
+          console.log(res.questions);
+        });
+    },
+    httpGetIp() {
+      utils.http
+        .get(interfaces.global.getIp)
+        .then(res => {
+          this.ip = res.data;
+        })
+        .catch(error => {
+          console.error(error);
+        });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/assets/css/demo/index.scss";
+</style>

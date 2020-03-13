@@ -1,0 +1,495 @@
+<template>
+  <!-- <img src="../../assets/imgs/common/icon/icon_goback.png" alt=""> -->
+  <Page class="look-plan" :withAppBar="!globalConfig.isWx">
+    <!-- 导航栏 -->
+    <AppBar class="app-bar" v-if="!globalConfig.isWx" :rightWidth="rightWidth">
+      <img
+        slot="left"
+        src="../../assets/imgs/common/icon/icon_back.png"
+        class="icon icon-back"
+        @click="goBack"
+        v-if="globalConfig.isApp"
+      />
+      <!-- AXPROPOSALSHARE -->
+      <template slot="center">
+        爱心人寿家庭保障规划书
+      </template>
+      <div slot="right">
+        <img
+          slot="left"
+          src="../../assets/imgs/common/icon/icon_test.png"
+          class="icon icon-share"
+          @click="handleShare"
+          v-if="globalConfig.isApp"
+        />
+      </div>
+    </AppBar>
+    <transition name="mybox">
+      <div
+        class="popup"
+        v-show="popout"
+        @click="Add"
+        :style="{ height: `calc(100vh - ${globalConfig.ui.topRemain}px` }"
+      >
+        <img
+          src="../../assets/imgs/plan/pic/pic_open.png"
+          alt=""
+          class="imgwidth"
+        />
+        <transition name="fadeIn">
+          <div class="texts" v-show="insurant.name">
+            敬呈
+            {{ insurant.name }}
+            {{ insurant.sex == 0 ? "先生" : "女士" }}
+          </div>
+        </transition>
+      </div>
+    </transition>
+    <!-- 主体 -->
+    <transition name="content">
+      <div v-show="add">
+        <AppContent class="app-content" style="background: #F7C21E;">
+          <div class="tp">
+            <img v-lazy="productImage" />
+          </div>
+          <nav class="nav">
+            <ul class="nav_ul">
+              <li
+                v-for="item in Navarr"
+                :key="item.e"
+                :v-model="identifier"
+                :class="{ identifier: item.e == identifier }"
+                @click="identifier = item.e"
+              >
+                {{ item.c }}
+              </li>
+            </ul>
+          </nav>
+          <div v-show="identifier == 'project'">
+            <div class="message">
+              <span>被保人:</span>
+              <span v-if="insurant.name" class="name">{{ insurant.name }}</span>
+              <span v-if="insurant.sex">{{
+                insurant.sex == 0 ? "男" : "女"
+              }}</span>
+              <span v-if="insurant.age">{{ insurant.age }}岁</span
+              ><span v-if="insurant.shebao">{{
+                insurant.shebao == 1 ? "有社保" : "无社保"
+              }}</span>
+            </div>
+            <!-- 投保险种 -->
+            <ParticularsInsurant
+              :productList="productList"
+              :extraList="extraList"
+              :totalPremium="totalPremium"
+            />
+            <!-- 保障责任 -->
+            <Guarantee :clausesDtoList="clausesDtoList"></Guarantee>
+            <!-- 利益演示 -->
+            <Benefit
+              v-if="
+                benifitDtoList.productCode != 'ATRB01' &&
+                  benifitDtoList.productCode != 'ATIB01' &&
+                  benifitDtoList.productCode != 'DTCB02' &&
+                  benifitDtoList.productCode != 'DTRB03'
+              "
+              :benifitDtoList="benifitDtoList"
+              :benifitOutLineItemDtoList="benifitOutLineItemDtoList"
+            ></Benefit>
+            <!-- 风险提示 -->
+            <RiskWarning></RiskWarning>
+            <div class="gap"></div>
+          </div>
+          <article class="other-tabs">
+            <div v-show="identifier == 'product'" class="product">
+              <img v-lazy="productIntroductionUrl" />
+            </div>
+            <div v-show="identifier == 'company'" class="product">
+              <img
+                v-for="item in companyIntroductionUrl"
+                :key="item"
+                v-lazy="item"
+              />
+            </div>
+            <div v-show="identifier == 'flow'" class="product">
+              <img v-lazy="claimProcessUrl" />
+            </div>
+          </article>
+          <!-- 代理人名片 -->
+          <Gopolicy
+            class="foot"
+            :agent="agent"
+            :shareProductImagePath="shareProductImagePath"
+            :productName="productName"
+            @shareWx="shareWx"
+          ></Gopolicy>
+        </AppContent>
+      </div>
+    </transition>
+    <ShareWx
+      ref="shareWX"
+      @shareCancel="shareCancel"
+      :isOpenWx="isOpenWx"
+      :shareObj="shareObj"
+      :shareScene="shareScene"
+      :duanxinSendObj="duanxinSendObj"
+    />
+    <ShareWxTips :show="modalShow" @close="modalShow = false" />
+  </Page>
+</template>
+<script>
+import Guarantee from "@/components/plan/Guarantee";
+import Benefit from "@/components/plan/Benefit";
+import RiskWarning from "@/components/plan/RiskWarning";
+import Gopolicy from "@/components/plan/Gopolicy";
+import ParticularsInsurant from "@/components/plan/ParticularsInsurant";
+import ShareWx from "@/components/common/ShareWx";
+import ShareWxTips from "@/components/common/ShareWxTips";
+export default {
+  components: {
+    Guarantee,
+    Benefit,
+    RiskWarning,
+    Gopolicy,
+    ParticularsInsurant,
+    ShareWx,
+    ShareWxTips
+  },
+  data() {
+    return {
+      modalShow: false, //微信提示是否显示
+      duanxinSendObj: {}, //针对短信发送所需要的参数
+      shareObj: {}, //针对微信分享参数
+      shareScene: ["friendScene", "duanxinScene"], // zoneScene 朋友圈 friendScene朋友 duanxinScene短信
+      isOpenWx: false, //微信窗体是否开启
+      productName: "", //产品名称
+      shareProductImagePath: "", //小图片地址
+      add: false,
+      popout: true,
+      bookId: this.$route.query.bookId,
+      identifier: "project",
+      insurant: {}, //被保人信息
+      productList: {}, //投保险种列表
+      totalPremium: "", //险种总额
+      sexSelectList: [], //性别码表
+      //保障责任
+      clausesDtoList: [],
+      pdtLiabDtoList: [],
+      productImage: "",
+      agent: {}, //规划师信息
+      benifitOutLineItemDtoList: [], //利益演示表
+      benifitDtoList: [], //利益演示
+      claimProcessUrl: "", //理赔图片
+      productIntroductionUrl: "",
+      companyIntroductionUrl: [],
+      extraList: [],
+      //头部尺寸
+      rightWidth: 50,
+      Navarr: [
+        {
+          c: "保障规划",
+          e: "project"
+        },
+        {
+          c: "产品介绍",
+          e: "product"
+        },
+        {
+          c: "公司介绍",
+          e: "company"
+        },
+        {
+          c: "理赔流程",
+          e: "flow"
+        }
+      ]
+    };
+  },
+  created() {
+    this.initPage();
+  },
+  methods: {
+    initPage() {
+      const timestamp = this.$route.query.timestamp;
+      if (timestamp && utils.format.getDateTimeBefor(timestamp)) {
+        //超过30天
+        this.$router.replace({
+          name: "illegalRequest",
+          query: {
+            msg: "页面已失效"
+          }
+        });
+      } else {
+        this.loadata();
+      }
+    },
+    Add() {
+      this.popout = false;
+      this.add = true;
+    },
+    goBack() {
+      this.back();
+    },
+    loadata() {
+      const params = {
+        proposalPlan: {
+          // bookId: "bb891a9988304dab80bc262d9c143986"
+          bookId: this.bookId
+        }
+      };
+      utils.http
+        .post(interfaces.plan.queryPlan, params, {
+          needErrorTips: false, // 在发生错误时显示tips
+          needLoading: true // 请求时是否显示loading
+        })
+        .then(res => {
+          this.productImage = res.proposalViewDto.productImage;
+          //理赔流程
+          if (res.proposalViewDto.claimProcessUrlList.length != 0) {
+            this.claimProcessUrl =
+              res.proposalViewDto.claimProcessUrlList[0].clausesItemDtoList[0].clausesItemUrl;
+          }
+          //公司介绍
+          if (
+            res.proposalViewDto.companyIntroductionUrlList[0].clausesItemDtoList
+              .length != 0
+          ) {
+            this.companyIntroductionUrl = res.proposalViewDto.companyIntroductionUrlList[0].clausesItemDtoList.map(
+              item => item.clausesItemUrl
+            );
+          }
+          //产品介绍
+          if (
+            res.proposalViewDto.productIntroductionUrlList[0].clausesItemDtoList
+              .length != 0
+          ) {
+            this.productIntroductionUrl =
+              res.proposalViewDto.productIntroductionUrlList[0].clausesItemDtoList[0].clausesItemUrl;
+          }
+          this.insurant =
+            res.proposalViewDto.insurantProductList[0].plan.insurant;
+          //主险
+          this.productList =
+            res.proposalViewDto.insurantProductList[0].plan.productList;
+          this.totalPremium = res.proposalViewDto.totalPremium;
+          //附加险
+          this.extraList =
+            res.proposalViewDto.insurantProductList[0].plan.productList[0].extraList;
+          this.clausesDtoList = res.proposalViewDto.clausesDtoList;
+          //规划师信息
+          this.agent = res.proposalViewDto.orgAgent.agent;
+          //利益演示表
+          this.benifitOutLineItemDtoList =
+            res.proposalViewDto.benifitOutLineDtoList[0].benifitOutLineItemDtoList;
+          //利益演示
+          this.benifitDtoList = res.proposalViewDto.benifitDtoList[0];
+          //微信小图片
+          this.shareProductImagePath =
+            res.proposalViewDto.shareProductImagePath;
+          //产品名称
+          this.productName =
+            res.proposalViewDto.insurantProductList[0].plan.productList[0].productName;
+        })
+        .catch(err => {
+          this.$router.replace({
+            name: "illegalRequest",
+            query: {
+              msg: err.message || err
+            }
+          });
+        });
+    },
+    //分享微信
+    handleShare() {
+      // console.log(this.isOpenWx);
+      this.isOpenWx = true;
+      //微信分享参数
+      this.shareObj = {
+        shareTitle: "家庭财务保障规划书", // 分享标题
+        shareDesc: "爱心让家庭更美好, 请点击查看<" + this.productName + ">", //分享内容
+        shareType: 4, //默认
+        shareTarget: "", //朋友圈
+        shareUrl: this.$route.query.timestamp
+          ? window.location.href
+          : window.location.href + "&timestamp=" + Date.parse(new Date()), //分享链接
+        shareThumb: this.shareProductImagePath
+      };
+      console.log(this.productList);
+      //短信分享参数
+      this.duanxinSendObj = {
+        bankAccount: this.$route.query.timestamp
+          ? window.location.href
+          : window.location.href + "&timestamp=" + Date.parse(new Date()), //分享链接
+        functionCode: "9",
+        mobile: "", //手机号
+        orderId: this.bookId, //bookid
+        policyCode: utils.creator.getUuid(), //32位随机码
+        randomStr: this.productList[0].productCode //险种code
+      };
+      // console.log(this.duanxinSendObj);
+    },
+    shareCancel() {
+      this.isOpenWx = false;
+    },
+    shareWx() {
+      this.modalShow = true;
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.app-bar {
+  font-family: HYQiHei-DES;
+  .icon {
+    height: auto;
+    &.icon-back {
+      width: 11.5px;
+    }
+  }
+}
+//tab
+.nav {
+  background: #f8f8f8;
+  line-height: 47px;
+  margin: 0 auto;
+  padding-left: 15px;
+  .nav_ul {
+    padding-left: 20px;
+    @include display-flex;
+    margin: 0 auto;
+    li {
+      list-style: none;
+      font-size: 15px;
+      color: #333333;
+      margin-right: 20px;
+    }
+  }
+  .identifier {
+    color: #f7c21e;
+    border-bottom: 2px solid #eb5656;
+  }
+}
+.product {
+  img {
+    width: 100%;
+    display: block;
+  }
+}
+.tp {
+  width: 100%;
+  height: 194px;
+  img {
+    width: 100%;
+    height: 100%;
+  }
+}
+.message {
+  width: 300px;
+  height: 37px;
+  background: #ffffff;
+  border-radius: 27.5px;
+  margin: 25px auto;
+  padding: 0 25px;
+  line-height: 37px;
+  display: flex;
+  :first-child {
+    font-family: HYQiHei-DES;
+    font-size: 14px;
+    color: #333333;
+    letter-spacing: 0;
+  }
+  .name {
+    width: 70px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  span {
+    font-size: 14px;
+    color: #333333;
+    text-align: center;
+    vertical-align: middle;
+    display: inline-block;
+    width: 50px;
+  }
+}
+.look-plan {
+  background: $color-ds;
+  .tip {
+    text-align: center;
+    padding-top: 20px;
+    color: #999;
+    font-size: 14px;
+  }
+}
+.gap {
+  height: 20px;
+}
+.foot {
+  width: 100%;
+  position: fixed;
+  bottom: 0;
+  font-size: 14px;
+}
+
+// popup
+.popup {
+  position: relative;
+  background-color: white;
+  // 亲启图片
+  .imgwidth {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: auto;
+  }
+  // 敬呈文字
+  .texts {
+    @include display-flex;
+    position: absolute;
+    bottom: 50px;
+    width: 100vw;
+    height: 50px;
+    font-size: 15px;
+    color: white;
+  }
+}
+
+.mybox-leave-active,
+.mybox-enter-active {
+  transition: all 1.5s ease;
+}
+
+.mybox-leave-active,
+.mybox-enter {
+  opacity: 0 !important;
+  transform: translateY(-100%);
+}
+.mybox-leave,
+.mybox-enter-active {
+  opacity: 100;
+  transform: translateY(0%);
+}
+.content-leave-active,
+.content-enter-active {
+  transition: all 1s ease;
+}
+
+.content-leave-active,
+.content-enter {
+  opacity: 100 !important;
+}
+
+.content-leave,
+.content-enter-active {
+  opacity: 0;
+}
+.other-tabs {
+  padding-bottom: 60px;
+  background-color: $color-ds;
+}
+.icon-share {
+  width: 4px;
+}
+</style>

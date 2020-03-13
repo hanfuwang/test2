@@ -1,0 +1,169 @@
+<template>
+  <Page class="demo-form" :withAppBar="!globalConfig.isWx">
+    <!-- app-bar -->
+    <AppBar v-if="!globalConfig.isWx">
+      <template slot="center">
+        银行账户信息
+      </template>
+    </AppBar>
+    <AppContent class="app-content">
+      <ValiForm :form="form" :vali="vali">
+        <div class="nav">手机号码/固定电话/邮箱</div>
+        <FormInput
+          type="tel"
+          v-model="form.accountCode"
+          label="银行账号"
+          placeholder="请输入银行账号"
+          :rules="rules.accountCode"
+        ></FormInput>
+        <FormSelect
+          v-model="form.bankCode"
+          :selectList="bankSelectList"
+          label="银行"
+          placeholder="请选择银行"
+          :rules="rules.bankCode"
+        ></FormSelect>
+        <FormInput
+          type="tel"
+          v-model="form.mobile"
+          label="银行预留手机号"
+          placeholder="请输入银行预留手机号"
+          :rules="rules.mobile"
+        ></FormInput>
+      </ValiForm>
+      <div class="box">
+        <span @click="sure" class="disabled" :class="{ right: vali.status }"
+          >确定</span
+        >
+        <span class="left" @click="$router.go(-1)">取消</span>
+      </div>
+    </AppContent>
+  </Page>
+</template>
+
+<script>
+import ValiForm from "@/components/common/form/ValiForm";
+import FormInput from "@/components/common/form/FormInput";
+import FormSelect from "@/components/common/form/FormSelect";
+
+export default {
+  name: "bankMes",
+  components: {
+    ValiForm,
+    FormInput,
+    FormSelect
+  },
+  data() {
+    return {
+      // form表单
+      form: {
+        accountCode: "", //银行账号
+        bankCode: "", //银行
+        mobile: "" //预留手机号
+      },
+      bankSelectList: [],
+      bankList: [],
+      rules: {
+        mobile: [
+          {
+            regExp: "require",
+            msg: "手机号不能为空"
+          },
+          {
+            regExp: "mobile",
+            msg: "请输入正确的手机号"
+          }
+        ],
+        accountCode: [
+          {
+            regExp: "require",
+            msg: "银行账号不能为空"
+          }
+        ],
+        bankCode: [
+          {
+            regExp: "require",
+            msg: "银行不能为空"
+          }
+        ]
+      },
+      // form验证对象
+      vali: {
+        status: false,
+        unlegalValiList: []
+      }
+    };
+  },
+  created() {
+    this.initCodeList();
+  },
+  methods: {
+    async initCodeList() {
+      //银行码表
+      this.bankSelectList = await utils.code.getCode("bank_code");
+    },
+    sure() {
+      // 根据vali对象判断当前form元素是否全部输入合法
+      if (!this.vali.status) {
+        // utils.ui.confirm(this.vali.unlegalValiList[0].msg);
+        return;
+      } else {
+        this.bankList.push({
+          accountCode: this.form.accountCode, //银行账号
+          bankCode: this.form.bankCode, //银行
+          mobile: this.form.mobile
+        });
+        console.log(this.bankList);
+        this.back();
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/assets/css/demo/index.scss";
+.nav {
+  @include lineheight-height(37px);
+  padding: 0 30px;
+  background: $color-ds;
+  font-size: 14px;
+  color: #333333;
+  display: flex;
+  justify-content: space-between;
+}
+.box {
+  text-align: center;
+  font-family: HYQiHei-DES;
+  font-size: 18px;
+  .left {
+    width: 102px;
+    border: 1px solid #ffcc00;
+    border-radius: 19px;
+    height: 38px;
+    display: inline-block;
+    margin-top: 73px;
+    margin-left: 37px;
+    color: #ffcc00;
+    line-height: 38px;
+    color: #ffcc00;
+  }
+  .right {
+    width: 102px;
+    background: #ffcc00;
+    border-radius: 19px;
+    height: 38px;
+    display: inline-block;
+    line-height: 38px;
+  }
+}
+.disabled {
+  width: 102px;
+  border-radius: 19px;
+  height: 38px;
+  display: inline-block;
+  line-height: 38px;
+  background-color: #c8cbd2;
+  color: #ffffff;
+}
+</style>

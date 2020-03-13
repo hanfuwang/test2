@@ -1,0 +1,53 @@
+<template>
+  <Page>
+    <section class="menu-wrap">
+      <!-- 健康云 -->
+      <img
+        src="@/assets/imgs/clouds/pic/pic_health.png"
+        @click="$router.push('/clouds/Health')"
+      />
+      <!-- 财富云 -->
+      <img
+        src="@/assets/imgs/clouds/pic/pic_wealf.png"
+        @click="$router.push('/clouds/Wealf')"
+      />
+      <!-- 保险云 -->
+      <img
+        src="@/assets/imgs/clouds/pic/pic_insure.png"
+        @click="$router.push('/clouds/Insure')"
+      />
+      <!-- 安全云 -->
+      <img
+        src="@/assets/imgs/clouds/pic/pic_safe.png"
+        @click="$router.push('/clouds/Safe')"
+      />
+      <!-- 慈善云 -->
+      <img
+        src="@/assets/imgs/clouds/pic/pic_charitable.png"
+        @click="$router.push('/clouds/Charitable')"
+      />
+    </section>
+  </Page>
+</template>
+
+<script>
+export default {
+  name: "fiveClouds",
+  data() {
+    return {};
+  },
+  computed: {},
+  created() {},
+  methods: {}
+};
+</script>
+
+<style lang="scss" scoped>
+.menu-wrap {
+  padding: 20px 10px 0 20px;
+  img {
+    width: 100px;
+    margin-right: 15px;
+  }
+}
+</style>

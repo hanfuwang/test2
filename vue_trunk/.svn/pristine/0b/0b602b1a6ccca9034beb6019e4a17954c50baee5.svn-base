@@ -1,0 +1,181 @@
+<template>
+  <section class="applicant">
+    <h2>投保人信息</h2>
+    <ValiForm :form="applicant" :vali="vali">
+      <!-- 关系 -->
+      <FormSelect
+        v-model="applicant.relation"
+        :selectList="relationSelectList"
+        label="是被保险人的"
+        placeholder="请选择"
+        :rules="rules.relation"
+        @selectSure="changeRelation"
+      ></FormSelect>
+      <!-- 姓名 -->
+      <FormInput
+        v-model="applicant.name"
+        label="姓名"
+        :iconSrc="iconSrc"
+        :rules="rules.name"
+        @iconClick="chooseCustomer"
+      ></FormInput>
+      <!-- 性别 -->
+      <FormRadio
+        v-model="applicant.sex"
+        label="性别"
+        :selectList="sexSelectList"
+        :rules="rules.sex"
+      ></FormRadio>
+      <!-- 生日 -->
+      <FormDatepicker
+        label="出生日期"
+        placeholder="请选择生日"
+        v-model="applicant.birthday"
+        :rules="rules.birthday"
+      ></FormDatepicker>
+      <!-- 职业 -->
+      <FormSelect
+        v-model="applicant.occupation"
+        :selectList="occupationSelectList"
+        label="职业"
+        placeholder="请选择职业"
+        :rules="rules.occupation"
+      ></FormSelect>
+    </ValiForm>
+  </section>
+</template>
+
+<script>
+import ValiForm from "@/components/common/form/ValiForm";
+import FormInput from "@/components/common/form/FormInput";
+import FormRadio from "@/components/common/form/FormRadio";
+import FormDatepicker from "@/components/common/form/FormDatepicker";
+import FormSelect from "@/components/common/form/FormSelect";
+export default {
+  name: "applicant",
+  components: {
+    FormInput,
+    FormRadio,
+    FormDatepicker,
+    ValiForm,
+    FormSelect
+  },
+  props: {},
+  data() {
+    return {
+      //性别码表
+      sexSelectList: [
+        {
+          code: "0",
+          desc: "先生"
+        },
+        {
+          code: "1",
+          desc: "女士"
+        }
+      ],
+      //职业码表
+      occupationSelectList: [
+        {
+          code: "1",
+          desc: "精算师"
+        },
+        {
+          code: "2",
+          desc: "保险代理人"
+        }
+      ],
+      //关系码表
+      relationSelectList: [
+        {
+          code: "0",
+          desc: "本人"
+        },
+        {
+          code: "1",
+          desc: "父母"
+        }
+      ],
+      //客户小图标
+      iconSrc: require("@/assets/imgs/common/icon/icon_search.png"),
+      // applicant验证对象
+      vali: {
+        status: false,
+        unlegalValiList: []
+      },
+      //投保人对象
+      applicant: this.$store.state.plan.applicant,
+      //校验规则
+      rules: {
+        name: [
+          {
+            regExp: "require",
+            msg: "投保人姓名不能为空"
+          },
+          {
+            regExp: "chinese",
+            msg: "姓名必须由汉字组成"
+          },
+          {
+            regExp: /^.{2,10}$/,
+            msg: "姓名长度必须在2~10字符之内"
+          }
+        ],
+        sex: [
+          {
+            regExp: "require",
+            msg: "投保人性别不能为空"
+          }
+        ],
+        birthday: [
+          {
+            regExp: "require",
+            msg: "投保人出生日期不能为空"
+          }
+        ],
+        occupation: [
+          {
+            regExp: "require",
+            msg: "投保人职业不能为空"
+          }
+        ],
+        relation: [
+          {
+            regExp: "require",
+            msg: "关系不能为空"
+          }
+        ]
+      }
+    };
+  },
+  computed: {},
+  watch: {},
+  created() {},
+  methods: {
+    //选择客户
+    chooseCustomer() {
+      utils.ui.tips("点击了选择客户");
+    },
+    //选择关系
+    changeRelation() {
+      // utils.ui.tips("点击了确定");
+      this.$emit("changeRelation");
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.applicant {
+  margin: 8px 0;
+  h2 {
+    @include lineheight-height(37px);
+    margin: 0 20px;
+    padding: 0 15px;
+    background: $color-ds;
+    font-size: 14px;
+    color: #333333;
+    font-weight: normal;
+  }
+}
+</style>

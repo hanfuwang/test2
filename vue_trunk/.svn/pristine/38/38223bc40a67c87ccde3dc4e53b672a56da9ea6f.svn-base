@@ -1,0 +1,31 @@
+/* ------------------------------------------ production模块 ------------------------------------------ */
+
+const production = [
+  {
+    name: "productHome",
+    path: "/porduction/productHome",
+    meta: {
+      title: "产品中心",
+      login: true
+    },
+    component: () => {
+      return import(
+        /* webpackChunkName: "ProductHome" */ "@/views/production/ProductHome.vue"
+      );
+    }
+  },
+  {
+    name: "porductionDetail",
+    path: "/porduction/porductionDetail",
+    meta: {
+      title: "产品中心"
+    },
+    component: () => {
+      return import(
+        /* webpackChunkName: "porductionDetail" */ "@/views/production/PorductionDetail.vue"
+      );
+    }
+  }
+];
+
+export default production;

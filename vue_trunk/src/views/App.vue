@@ -1,0 +1,79 @@
+<template>
+  <div
+    id="app"
+    :class="{
+      'in-app': globalConfig.isApp,
+      'in-iphone': globalConfig.inIPhone,
+      'in-iphone-full-screen': globalConfig.inIPhoneFullScreen
+    }"
+  >
+    <navigation>
+      <!-- 内容注入区 -->
+      <router-view />
+    </navigation>
+
+    <!-- confirm框 -->
+    <Confirm
+      class="global-confirm"
+      :show="confirm.show"
+      :msg="confirm.msg"
+      :btnList="confirm.btnList"
+      :clickModalToClose="confirm.clickModalToClose"
+      @close="confirm.show = false"
+    ></Confirm>
+
+    <!-- loading -->
+    <Loading
+      class="global-loading"
+      :show="loading.show"
+      :loadingColor="loading.color"
+    ></Loading>
+
+    <!-- tips -->
+    <Tips
+      class="global-tips"
+      :show="tips.show"
+      :msg="tips.msg"
+      :type="tips.type"
+      :icon="tips.icon"
+    ></Tips>
+  </div>
+</template>
+<script>
+import { mapState } from "vuex";
+import Confirm from "@/components/common/ui/Confirm";
+import Loading from "@/components/common/ui/Loading";
+import Tips from "@/components/common/ui/Tips";
+export default {
+  name: "App",
+  components: {
+    Confirm,
+    Loading,
+    Tips
+  },
+  data() {
+    return {};
+  },
+  computed: {
+    ...mapState({
+      // confirm
+      confirm: state => state.ui.confirm,
+      // loading
+      loading: state => state.ui.loading,
+      // tips
+      tips: state => state.ui.tips
+    })
+  },
+  watch: {
+    $route() {
+      // 页面切换，关闭confirm
+      this.confirm.show = false;
+    }
+  },
+  methods: {}
+};
+</script>
+<style lang="scss">
+@import "@/assets/css/global/main.scss";
+</style>
+<style lang="scss" scoped></style>

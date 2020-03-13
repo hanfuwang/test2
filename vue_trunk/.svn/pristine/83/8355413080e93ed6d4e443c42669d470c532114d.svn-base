@@ -1,0 +1,798 @@
+<template>
+  <Page class="demo-app" :withAppBar="!globalConfig.isWx">
+    <!-- app-bar -->
+    <appBar class="app-bar" v-if="!globalConfig.isWx">
+      <img
+        slot="left"
+        src="../../assets/imgs/common/icon/icon_back.png"
+        class="icon icon-back"
+        @click="back()"
+      />
+      <template slot="center">
+        基本信息
+      </template>
+    </appBar>
+    <!-- app-content -->
+    <AppContent class="app-content">
+      <ValiForm :form="form" :vali="vali">
+        <FormInput
+          v-model="form.name"
+          label="姓名"
+          placeholder="请输入姓名"
+          :rules="rules.name"
+        ></FormInput>
+        <FormInput
+          type="tel"
+          v-model="form.mobilePhone"
+          label="电话"
+          placeholder="请输入电话"
+          :rules="rules.mobilePhone"
+        ></FormInput>
+        <FormSelect
+          v-model="form.certificateType"
+          :selectList="cardTypeSelectList"
+          label="证件类型"
+          placeholder="请选择证件类型"
+        ></FormSelect>
+        <FormInput
+          v-model="form.certificateNo"
+          label="证件号码"
+          placeholder="请输入证件号码"
+        ></FormInput>
+        <FormRadio
+          v-model="form.sex"
+          label="性别"
+          :rules="rules.sex"
+          :selectList="sexSelectList"
+        ></FormRadio>
+        <FormDatepicker
+          label="出生日期"
+          placeholder="请选择出生日期"
+          v-model="form.birthday"
+        ></FormDatepicker>
+        <FormDatepicker
+          label="证件有效期"
+          placeholder="请选择证件有效期"
+          v-model="form.validEndTime"
+          :default="form.validEndTime || now"
+          :min="now"
+          :max="dateMax"
+        ></FormDatepicker>
+        <FormRadio
+          v-model="form.classification"
+          label="客户类型"
+          :selectList="cusSelectList"
+        ></FormRadio>
+        <FormInput
+          label="姓名"
+          placeholder="请选择介绍人"
+          :iconSrc="iconSrc"
+          :disabled="true"
+          v-model="form.cusMemberReference"
+          @iconClick="chooseCustomer"
+          v-if="form.classification == '1'"
+        ></FormInput>
+        <FormInput
+          type="tel"
+          v-model="form.referralstage"
+          label="介绍环节"
+          v-if="form.classification == '1'"
+        ></FormInput>
+        <FormSelector
+          v-model="job.occupationName"
+          :selectData.sync="job"
+          type="job"
+          label="职业"
+          placeholder="请选择职业"
+          ref="jobSelector"
+        ></FormSelector>
+        <FormRadio
+          v-model="form.isSocialInsurance"
+          label="是否有社保"
+          :selectList="socialSelectList"
+        ></FormRadio>
+        <FormInput
+          type="number"
+          v-model="form.height"
+          label="身高"
+          placeholder="请输入身高（CM）"
+        ></FormInput>
+        <FormInput
+          type="number"
+          v-model="form.weight"
+          label="体重"
+          placeholder="请输入体重（KG）"
+        ></FormInput>
+        <FormInput
+          type="number"
+          v-model="form.familyIncome"
+          label="年收入"
+          placeholder="请输入年收入（万元/年）"
+        ></FormInput>
+        <FormRadio
+          v-model="form.marriage"
+          label="婚姻状态"
+          :selectList="marrySelectList"
+        ></FormRadio>
+        <FormDatepicker
+          label="结婚纪念日"
+          placeholder="请选择您的结婚纪念日"
+          v-model="form.marriageDate"
+          v-if="form.marriage == '1'"
+        ></FormDatepicker>
+        <div>
+          <section class="nav">
+            <div class="left">客户联系方式</div>
+            <div class="right">
+              <img
+                @click="addCon"
+                src="@/assets/imgs/common/icon/icon_add.png"
+              />
+            </div>
+          </section>
+          <aside class="cusCall">
+            <div class="cus" v-for="(cus, index) in concList" :key="index">
+              <mark>
+                <div class="accountCode">{{ cus.mobile }}</div>
+                <div class="accountCode">{{ cus.guMobile }}</div>
+                <div class="accountCode">{{ cus.email }}</div>
+                <div class="accountCode">
+                  {{ cus.address }}{{ cus.streetNum }}
+                </div>
+                <div class="accountCode">{{ cus.zipCode }}</div>
+              </mark>
+              <div class="right">
+                <img
+                  @click="openCus(index)"
+                  class="bianji"
+                  src="@/assets/imgs/common/icon/icon_edit.png"
+                />
+                <img
+                  @click="delCus(index)"
+                  src="@/assets/imgs/common/icon/icon_delete.png"
+                />
+              </div>
+            </div>
+          </aside>
+        </div>
+        <div>
+          <section class="nav">
+            <div class="left">银行账户信息</div>
+            <div class="right">
+              <img
+                @click="addBank"
+                src="@/assets/imgs/common/icon/icon_add.png"
+              />
+            </div>
+          </section>
+          <aside class="edit">
+            <div
+              class="bank"
+              v-for="(bank, index) in bankInfoList"
+              :key="index"
+            >
+              <div class="accountCode">{{ getbankChi(bank.bankCode) }}</div>
+              <div class="accountCode">{{ bank.accountCode }}</div>
+              <div class="right">
+                <img
+                  class="bianji"
+                  @click="openBank(index)"
+                  src="@/assets/imgs/common/icon/icon_edit.png"
+                />
+                <img
+                  @click="delBank(index)"
+                  src="@/assets/imgs/common/icon/icon_delete.png"
+                />
+              </div>
+            </div>
+          </aside>
+        </div>
+      </ValiForm>
+      <button
+        class="theme-btn"
+        :class="{ disabled: !vali.status }"
+        @click="submitForm"
+      >
+        保存
+      </button>
+    </AppContent>
+  </Page>
+</template>
+
+<script>
+import { mapState } from "vuex";
+import ValiForm from "@/components/common/form/ValiForm";
+import FormInput from "@/components/common/form/FormInput";
+import FormRadio from "@/components/common/form/FormRadio";
+import FormDatepicker from "@/components/common/form/FormDatepicker";
+import FormSelect from "@/components/common/form/FormSelect";
+import FormSelector from "@/components/common/form/FormSelector";
+
+export default {
+  name: "addCustomer",
+  components: {
+    ValiForm,
+    FormInput,
+    FormRadio,
+    FormDatepicker,
+    FormSelector,
+    FormSelect
+  },
+  data() {
+    return {
+      id: this.$route.query.id,
+      //模态框
+      isShow: false,
+      result: {},
+      // form表单
+      now: utils.format.dateToStr(new Date(), "yyyy-MM-dd"),
+      dateMax: "2999-01-01",
+      form: {
+        name: "", //姓名
+        mobilePhone: "", //电话
+        certificateType: "", //证件类型
+        certificateNo: "", //证件号码
+        sex: "0", //性别
+        birthday: "", //出生日期
+        validEndTime: "", //证件有效期
+        classification: "", //客户类型
+        professionName: "", //职业
+        isSocialInsurance: "", // 是否有社保
+        height: "", //身高
+        weight: "", //体重
+        familyIncome: "", //年收入
+        marriage: "", //婚姻状态
+        marriageDate: "", //结婚纪念日
+        cusMemberReference: "", //介绍人
+        referralstage: "", //介绍环节
+        concList: [],
+        bankInfoList: [], //银行账户信息
+        cusMemberAttributeList: [], //OCR
+        lastUpdatedBy: "",
+        nationality: "", //国籍
+        source: "PAT06",
+        infoId: ""
+      },
+      cusSelectList: globalCode.cusTypet, //客户类型
+      socialSelectList: globalCode.social, //社保
+      sexSelectList: [], // 性别
+      marrySelectList: [], //婚姻状态
+      cardTypeSelectList: [], //证件类型
+      iconSrc: require("@/assets/imgs/common/icon/icon_search.png"), //客户小图标
+      // form验证对象
+      vali: {
+        status: false,
+        unlegalValiList: []
+      },
+      // 职业信息
+      job: {
+        occupationCode: "",
+        occupationLevel: "",
+        occupationName: "",
+        occupationRiskLevel: "",
+        occupationRiskMetical: ""
+      },
+      // 校验规则
+      rules: {
+        name: [
+          {
+            regExp: "require",
+            msg: "姓名不能为空"
+          },
+          {
+            regExp: "chinese",
+            msg: "姓名必须由汉字组成"
+          },
+          {
+            regExp: /^.{2,10}$/,
+            msg: "姓名长度必须在2~10字符之内"
+          }
+        ],
+        sex: [
+          {
+            regExp: "require",
+            msg: "性别不能为空"
+          }
+        ],
+        birthday: [
+          {
+            regExp: "require",
+            msg: "生日不能为空"
+          }
+        ],
+        mobilePhone: [
+          {
+            regExp: "require",
+            msg: "电话不能为空"
+          },
+          {
+            regExp: "mobile",
+            msg: "请输入正确的电话"
+          }
+        ],
+        purpose: [
+          {
+            regExp: "require",
+            msg: "职业意向不能为空"
+          }
+        ],
+        area: [
+          {
+            regExp: "require",
+            msg: "家庭住址不能为空"
+          }
+        ]
+      }
+    };
+  },
+  computed: {
+    ...mapState({
+      insurant: state => state.plan.insurant,
+      applicant: state => state.plan.applicant,
+      userInfo: state => state.user.userInfo,
+      concList: state => state.plan.concList,
+      bankInfoList: state => state.plan.bankInfoList,
+      cusIndex: state => state.plan.cusIndex,
+      bankIndex: state => state.plan.bankIndex
+    })
+  },
+  watch: {},
+  created() {
+    this.initCodeList();
+    console.log(this.$route.params.result);
+    if (this.$route.params.result) {
+      if (this.$route.params.result.weight) {
+        this.form.bankInfoList = this.bankInfoList;
+        this.form.concList = this.concList;
+        //客户联系信息特殊处理
+        for (var i = 0; i < this.concList.length; i++) {
+          let array = this.concList[i].attrValue.split(",");
+          this.concList[i].address = array[3];
+          this.concList[i].zipCode = array[4];
+          this.concList[i].mobile = array[5];
+          this.concList[i].email = array[6];
+          this.concList[i].guMobile = array[7];
+        }
+        this.form.name = this.$route.params.result.name;
+        this.form.mobilePhone = this.$route.params.result.mobilePhone;
+        this.form.certificateType = this.$route.params.result.certificateType;
+        this.form.certificateNo = this.$route.params.result.certificateNo;
+        this.form.sex = this.$route.params.result.sex;
+        this.form.birthday = this.$route.params.result.birthday;
+        this.form.validEndTime = this.$route.params.result.validEndTime;
+        this.form.classification = this.$route.params.result.classification;
+        this.form.professionName = this.$route.params.result.professionName;
+        this.form.profession = this.$route.params.result.profession;
+        this.form.professionLevel = this.$route.params.result.professionLevel;
+        this.job.occupationName = this.$route.params.result.professionName;
+        this.job.occupationCode = this.$route.params.result.profession;
+        this.job.occupationLevel = this.$route.params.result.professionLevel;
+        this.form.isSocialInsurance = this.$route.params.result.isSocialInsurance;
+        this.form.height = this.$route.params.result.height;
+        this.form.weight = this.$route.params.result.weight;
+        this.form.familyIncome = this.$route.params.result.familyIncome;
+        this.form.marriage = this.$route.params.result.marriage;
+        this.form.marriageDate = this.$route.params.result.marriageDate;
+        this.form.cusMemberReference = this.$route.params.result.cusMemberReference;
+        this.form.referralstage = this.$route.params.result.referralstage;
+        this.form.cusMemberAttributeList = this.$route.params.result.cusMemberAttributeList;
+        this.form.lastUpdatedBy = this.$route.params.result.lastUpdatedBy;
+        this.form.nationality = this.$route.params.result.nationality;
+        this.form.infoId = this.$route.params.result.infoId;
+        //生日
+        if (this.form.birthday) {
+          if (this.form.birthday != "" && this.form.birthday != " ") {
+            this.form.birthday = utils.format.dateToStr(
+              new Date(this.form.birthday),
+              "yyyy-MM-dd"
+            );
+          } else {
+            this.form.birthday = "";
+          }
+        }
+        //professionName 职业
+        this.job.occupationName = this.$route.params.result.professionName;
+        this.form.occupationName = this.$route.params.result.professionName;
+        if (this.form.validEndTime) {
+          if (this.form.validEndTime != "" && this.form.validEndTime != " ") {
+            //有效期
+            this.form.validEndTime = utils.format.dateToStr(
+              new Date(this.form.validEndTime),
+              "yyyy-MM-dd"
+            );
+          } else {
+            this.form.validEndTime = "";
+          }
+        }
+        //体重
+        if (this.form.weight == "0.00") {
+          this.form.weight = "";
+        }
+        //身高
+        if (this.form.height == "0.00") {
+          this.form.height = "";
+        }
+      }
+    } else {
+      //银行账户清空
+      this.$store.commit("plan/setState", {
+        attr: "bankInfoList",
+        data: []
+      });
+      //客户信息清空
+      this.$store.commit("plan/setState", {
+        attr: "concList",
+        data: []
+      });
+    }
+  },
+  methods: {
+    //初始化码表
+    async initCodeList() {
+      //银行码表
+      this.bankSelectList = await utils.code.getCode("bank_code");
+      //婚姻状态
+      this.marrySelectList = await utils.code.getCode("app-member-marriage");
+      //证件类型
+      this.cardTypeSelectList = await utils.code.getCode(
+        "app-member-certificatetype"
+      );
+      //性别码表
+      let sexSelectList = await utils.code.getCode("sys_user_sex");
+      this.sexSelectList = sexSelectList.filter(item => {
+        return item.code != "2";
+      });
+    },
+    getbankChi(code) {
+      return this.bankSelectList.filter(item => {
+        return item.code == code;
+      })[0].desc;
+    },
+    chooseCustomer() {
+      this.$router.push({
+        name: "chooseCustomer"
+      });
+    },
+    addCon() {
+      this.$store.commit("plan/setState", {
+        attr: "cusIndex",
+        data: -1
+      });
+      this.go("customerContact");
+    },
+    addBank() {
+      this.$store.commit("plan/setState", {
+        attr: "bankIndex",
+        data: -1
+      });
+      this.go("bankMes");
+    },
+    //打开银行账户信息页面
+    openBank(index) {
+      this.$store.commit("plan/setState", {
+        attr: "bankIndex",
+        data: index
+      });
+      this.go("bankMes");
+    },
+    //打开客户联系方式
+    openCus(index) {
+      this.$store.commit("plan/setState", {
+        attr: "cusIndex",
+        data: index
+      });
+      this.go("customerContact");
+    },
+    //删除银行
+    delBank(index) {
+      if (this.bankInfoList[index].infoId) {
+        const params = {
+          cusMemberBankinfo: {
+            id: this.bankInfoList[index].infoId
+          }
+        };
+        utils.http.post(interfaces.plan.deletBank, params).then(res => {
+          console.log(res);
+        });
+      }
+
+      this.bankInfoList.splice(index, 1);
+      this.$store.commit("plan/setState", {
+        attr: "bankInfoList",
+        data: this.bankInfoList
+      });
+    },
+    //删除客户联系方式
+    delCus(index) {
+      if (this.concList[index].infoId) {
+        const params = {
+          cusMemberBankinfo: {
+            id: this.concList[index].infoId
+          }
+        };
+        utils.http.post(interfaces.plan.deletCus, params).then(res => {
+          console.log(res);
+        });
+      }
+      this.concList.splice(index, 1);
+      this.$store.commit("plan/setState", {
+        attr: "concList",
+        data: this.concList
+      });
+    },
+    //保存完后查询信息数据返回模块
+    getCusInfoback(infoId) {
+      const params = {
+        infoId: infoId
+      };
+      //请求的方法体
+      //CUSMEMBERLIST
+      utils.http.post(interfaces.plan.queryMember, params).then(res => {
+        console.log(res);
+        //字段统一转换
+        //生日
+        this.result = res.cusMemberInfoList[0];
+        this.result["birthdate"] = String(this.result.birthday).replace(
+          /\s\s*$/,
+          ""
+        )
+          ? String(this.result.birthday).substr(0, 10)
+          : "";
+        //delete this.result.birthday;
+        //新老客户
+        this.result["isoldCustomer"] = this.result.category;
+        delete this.result.category;
+        console.log(this.result);
+        //职业
+        this.result.cdOccupation = {
+          occupationCode: this.result.profession,
+          occupationLevel: "",
+          occupationName: this.result.professionName,
+          occupationRiskLevel: "",
+          occupationRiskMetical: ""
+        };
+
+        if (this.id == "0") {
+          //选择被保人
+          this.$store.commit("plan/setState", {
+            attr: "insurant",
+            data: Object.assign(
+              {
+                name: "",
+                sex: "0", //性别
+                birthdate: "",
+                //职业信息
+                cdOccupation: {
+                  occupationCode: "",
+                  occupationLevel: "",
+                  occupationName: "",
+                  occupationRiskLevel: "",
+                  occupationRiskMetical: ""
+                },
+                isoldCustomer: "0", //默认是新客户
+                holderRelation: ""
+              },
+              this.result
+            )
+          });
+          this.$store.commit("plan/setState", {
+            attr: "applicant",
+            data: {
+              name: "",
+              sex: "0", //性别
+              birthdate: "",
+              //职业信息
+              cdOccupation: {
+                occupationCode: "",
+                occupationLevel: "",
+                occupationName: "",
+                occupationRiskLevel: "",
+                occupationRiskMetical: ""
+              },
+              isoldCustomer: "0" //默认是新客户
+            }
+          });
+          //主险清空
+          this.$store.commit("plan/setState", {
+            attr: "mainProposalProductList",
+            data: []
+          });
+          //附加清空
+          this.$store.commit("plan/setState", {
+            attr: "riskProposalProductList",
+            data: []
+          });
+          //总保费清空
+          this.$store.commit("plan/setState", {
+            attr: "totalPremium",
+            data: ""
+          });
+        } else {
+          //选择投保人
+          this.$store.commit("plan/setState", {
+            attr: "applicant",
+            data: Object.assign(
+              {
+                name: "",
+                sex: "0", //性别
+                birthdate: "",
+                //职业信息
+                cdOccupation: {
+                  occupationCode: "",
+                  occupationLevel: "",
+                  occupationName: "",
+                  occupationRiskLevel: "",
+                  occupationRiskMetical: ""
+                },
+                isoldCustomer: "0" //默认是新客户
+              },
+              this.result
+            )
+          });
+          // console.log(this.applicant);
+        }
+        if (this.$route.params.result) {
+          this.$router.go(-1); //修改
+        } else {
+          this.$router.go(-2); //新增
+        }
+      });
+    },
+    //保存客户信息
+    saveCustomer() {
+      //出生日期和证件有效期转换为日期格式
+      this.form.professionName = this.job.occupationName;
+      this.form.profession = this.job.occupationCode;
+      this.form.professionLevel = this.job.occupationLevel;
+      this.form.professionName = this.job.occupationName;
+      this.form.profession = this.job.occupationCode;
+      this.form.professionLevel = this.job.occupationLevel;
+      let list = JSON.parse(JSON.stringify(this.form));
+      if (list.birthday) {
+        list.birthday = new Date(list.birthday);
+      }
+      if (list.validEndTime) {
+        list.validEndTime = new Date(list.validEndTime);
+      }
+      if (this.$route.params.result) {
+        list.infoId = this.$route.params.result.infoId;
+      }
+      list.lastUpdatedBy = globalConfig.isWx
+        ? this.userInfo && this.userInfo.weChatAgenctDTO.infoId
+        : this.userInfo && this.userInfo.user && this.userInfo.user.personId;
+      //请求的方法体
+      //CUSMEMBERLIST
+      if (this.bankInfoList.length > 0) {
+        for (var i = 0; i < this.bankInfoList.length; i++) {
+          this.bankInfoList[i].bankCode = list.name;
+          this.bankInfoList[i].createdBy = globalConfig.isWx
+            ? this.userInfo && this.userInfo.weChatAgenctDTO.infoId
+            : this.userInfo &&
+              this.userInfo.user &&
+              this.userInfo.user.personId;
+          this.bankInfoList[i].id = "";
+          this.bankInfoList[i].infoId = "";
+          list.bankInfoList = this.bankInfoList;
+        }
+      }
+      if (this.concList.length > 0) {
+        for (var j = 0; j < this.concList.length; j++) {
+          this.concList[j].attrKey = "";
+          this.concList[j].infoId = "";
+          this.concList[j].ocrAddress = "";
+          this.concList[j].certificateType = "";
+          this.concList[j].attributeId = "";
+          this.concList[j].certificateType = "";
+          this.concList[j].ocrAddress = "";
+          list.concList = this.concList;
+        }
+      }
+
+      const params = list;
+      console.log(params);
+      utils.http.post(interfaces.plan.saveMember, params).then(res => {
+        console.log(res);
+        this.getCusInfoback(res.infoId);
+      });
+    },
+    submitForm() {
+      // 根据vali对象判断当前form元素是否全部输入合法
+      if (!this.vali.status) {
+        // utils.ui.confirm(this.vali.unlegalValiList[0].msg);
+        return;
+      } else {
+        this.saveCustomer();
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.app-bar {
+  .icon {
+    height: auto;
+    &.icon-back {
+      width: 11.5px;
+    }
+    &.icon-search {
+      width: 20px;
+    }
+  }
+}
+.theme-btn {
+  margin-bottom: 100px;
+}
+.nav {
+  @include lineheight-height(37px);
+  margin: 0 20px;
+  padding: 0 15px;
+  background: $color-ds;
+  font-size: 14px;
+  color: #333333;
+  border-bottom: 1px solid #dddddd;
+  display: flex;
+  justify-content: space-between;
+  .right {
+    color: #ffcc00;
+    font-size: 12px;
+    img {
+      width: 17px;
+      height: 17px;
+      vertical-align: middle;
+    }
+  }
+}
+.edit {
+  clear: both;
+  margin: 0 20px;
+  padding: 0 15px;
+  .accountCode {
+    float: left;
+    height: 20px;
+    line-height: 20px;
+  }
+  .bank {
+    display: block;
+    padding: 10px 0;
+  }
+  .right {
+    float: right;
+    color: #ffcc00;
+    font-size: 12px;
+    .bianji {
+      margin-right: 10px;
+    }
+    img {
+      width: 20px;
+      height: 20px;
+      vertical-align: middle;
+    }
+  }
+}
+.cusCall {
+  margin: 0 20px;
+  padding: 0 15px;
+  mark {
+    float: left;
+    background: none;
+  }
+  .cus {
+    overflow: hidden;
+    padding: 10px 0;
+  }
+  .right {
+    float: right;
+    color: #ffcc00;
+    font-size: 12px;
+    .bianji {
+      margin-right: 10px;
+    }
+    img {
+      width: 20px;
+      height: 20px;
+      vertical-align: middle;
+    }
+  }
+}
+</style>

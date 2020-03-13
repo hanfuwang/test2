@@ -1,0 +1,34 @@
+<template>
+  <main class="page" :class="{ 'with-app-bar': withAppBar }">
+    <slot></slot>
+  </main>
+</template>
+
+<script>
+export default {
+  name: "page",
+  props: {
+    // 是否带appBar
+    withAppBar: {
+      type: Boolean,
+      default: false
+    }
+  },
+  data() {
+    return {};
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.page {
+  position: relative;
+  width: 100vw;
+  min-height: 100vh;
+  background-color: $color-bg;
+  // 带appbar
+  &.with-app-bar {
+    padding-top: $height-app-bar;
+  }
+}
+</style>

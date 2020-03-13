@@ -1,0 +1,124 @@
+<template>
+  <section class="plan-list-item">
+    <h5>{{ itemObj.posalName }}</h5>
+    <div class="item-top">
+      <img class="img" v-lazy="itemObj.productImgUrl" />
+      <div class="msg">
+        <p class="title">
+          投保险种：{{ itemObj.mainProposalProductList[0].productName }}
+        </p>
+        <p>投保人：{{ itemObj.holder[0].name }}</p>
+        <p>被保人：{{ itemObj.proposalCustomerList[0].name }}</p>
+        <p>保&nbsp;&nbsp;&nbsp;费：{{ itemObj.totalPremium }}</p>
+      </div>
+    </div>
+    <div class="item-bottom">
+      <div class="date">
+        <p>创建日期：{{ itemObj.createTime | global_dateFormat }}</p>
+        <p>试算日期：{{ itemObj.planInsureDate | global_dateFormat }}</p>
+      </div>
+      <div class="btns">
+        <button class="del" @click="del">删除</button>
+        <button class="view" @click="view">查看</button>
+      </div>
+    </div>
+  </section>
+</template>
+
+<script>
+export default {
+  name: "planListItem",
+  components: {},
+  props: {
+    itemObj: {
+      //某一个计划书对象
+      type: Object,
+      default: function() {
+        return {};
+      }
+    }
+  },
+  data() {
+    return {};
+  },
+  computed: {},
+  watch: {},
+  created() {},
+  methods: {
+    //删除
+    del() {
+      this.$emit("delPlan", this.itemObj);
+    },
+    //查看
+    view() {
+      this.$emit("viewPlan", this.itemObj);
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.plan-list-item {
+  background: $color-bg;
+  padding: 0 15px;
+  margin-bottom: 12px;
+  &:last-child {
+    margin-bottom: 0px;
+  }
+  h5 {
+    @include lineheight-height(33px);
+    font-weight: normal;
+    font-size: 13px;
+    color: #000000;
+    letter-spacing: 0;
+    border-bottom: 1px solid #f3f3f3;
+  }
+  .item-top {
+    padding: 10px 0 10px 0;
+    display: flex;
+    border-bottom: 1px solid #f3f3f3;
+    .img {
+      width: 100px;
+      height: 86px;
+    }
+    .msg {
+      font-size: 13px;
+      line-height: 22px;
+      margin-left: 10px;
+      .title {
+        @include overflow-emphasis;
+        font-size: 15px;
+        width: 220px;
+      }
+    }
+  }
+  .item-bottom {
+    padding: 10px 0 15px 0;
+    display: flex;
+    justify-content: space-between;
+    .date {
+      font-size: 13px;
+      color: #999999;
+    }
+    .btns {
+      padding-top: 2px;
+      button {
+        border: 1px solid $color-theme;
+        border-radius: 4px;
+        width: 67px;
+        height: 30px;
+      }
+      .del {
+        background: $color-bg;
+        color: $color-theme;
+        height: 30px;
+        margin-right: 12px;
+      }
+      .view {
+        background: $color-theme;
+        color: #000000;
+      }
+    }
+  }
+}
+</style>

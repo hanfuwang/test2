@@ -1,0 +1,137 @@
+<template>
+  <Page class="demo-form">
+    <!-- app-bar -->
+    <AppBar class="app-bar" v-if="!globalConfig.isWx">
+      <template slot="center"
+        >客户联系方式
+      </template>
+    </AppBar>
+    <AppContent class="app-content">
+      <ValiForm :form="form" :vali="vali">
+        <FormInput
+          type="tel"
+          v-model="form.mobilePhone"
+          label="电话"
+          placeholder="请输入电话"
+          :rules="rules.mobilePhone"
+        ></FormInput>
+        <FormSelect
+          v-model="form.purpose"
+          :selectList="purposeSelectList"
+          label="证件类型"
+          placeholder="请选择证件类型"
+          :rules="rules.purpose"
+        ></FormSelect>
+      </ValiForm>
+      <button class="theme-btn" @click="$router.go(-1)">取消</button>
+    </AppContent>
+  </Page>
+</template>
+
+<script>
+import ValiForm from "@/components/common/form/ValiForm";
+import FormInput from "@/components/common/form/FormInput";
+
+export default {
+  name: "customerContact",
+  components: {
+    ValiForm,
+    FormInput
+  },
+  data() {
+    return {
+      // form表单
+      form: {
+        name: "", //姓名
+        sex: "0", //性别
+        birthday: "", //生日
+        mobilePhone: "", //电话
+        purpose: "0" //证件类型
+      },
+      // 校验规则
+      rules: {
+        name: [
+          {
+            regExp: "require",
+            msg: "姓名不能为空"
+          },
+          {
+            regExp: "chinese",
+            msg: "姓名必须由汉字组成"
+          },
+          {
+            regExp: /^.{2,10}$/,
+            msg: "姓名长度必须在2~10字符之内"
+          }
+        ],
+        sex: [
+          {
+            regExp: "require",
+            msg: "性别不能为空"
+          }
+        ],
+        birthday: [
+          {
+            regExp: "require",
+            msg: "生日不能为空"
+          }
+        ],
+        mobilePhone: [
+          {
+            regExp: "require",
+            msg: "电话不能为空"
+          },
+          {
+            regExp: "mobilePhone",
+            msg: "请输入正确的电话"
+          }
+        ],
+        purpose: [
+          {
+            regExp: "require",
+            msg: "职业意向不能为空"
+          }
+        ],
+        area: [
+          {
+            regExp: "require",
+            msg: "家庭住址不能为空"
+          }
+        ]
+      }
+    };
+  },
+  methods: {
+    submitForm() {
+      // 根据vali对象判断当前form元素是否全部输入合法
+      if (!this.vali.status) {
+        // utils.ui.confirm(this.vali.unlegalValiList[0].msg);
+        return;
+      } else {
+        utils.ui.confirm("提交成功");
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/assets/css/demo/index.scss";
+.nav {
+  @include lineheight-height(37px);
+  margin: 0 20px;
+  padding: 0 15px;
+  background: $color-ds;
+  font-size: 14px;
+  color: #333333;
+  display: flex;
+  justify-content: space-between;
+  .right {
+    color: #ffcc00;
+    font-size: 12px;
+    img {
+      vertical-align: middle;
+    }
+  }
+}
+</style>

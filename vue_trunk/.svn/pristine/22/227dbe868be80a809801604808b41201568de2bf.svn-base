@@ -1,0 +1,7 @@
+import globalConfig from "@/assets/global/globalConfig";
+import { getClientWidth } from "@/utils/modules/ui";
+
+// 监听窗口resize，动态改变pxRadio
+window.addEventListener("resize", () => {
+  globalConfig.ui.pxRadio = getClientWidth() / globalConfig.ui.designWidth;
+});

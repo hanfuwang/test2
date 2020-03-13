@@ -1,0 +1,155 @@
+<!-- 责任列表-->
+<template>
+  <section class="risk-setting-liab">
+    <h2>责任列表</h2>
+    <div v-for="(item, index) in liabList" :key="index" class="content">
+      <div
+        class="icon"
+        v-if="item.required == 'false'"
+        @click="handleLib(item, index)"
+      >
+        <img
+          v-if="item.checked == 'true'"
+          src="@/assets/imgs/common/icon/icon_selected_yes.png"
+          alt=""
+          width="12"
+        />
+        <img
+          v-if="item.checked == 'false'"
+          src="@/assets/imgs/common/icon/icon_selected_no.png"
+          alt=""
+          width="12"
+        />
+      </div>
+      <div class="item">
+        <h5 @click="handleLib(item, index)">{{ item.liabName }}</h5>
+        <FormInput
+          label="基本保险金额"
+          v-model="amountList[index]"
+          rightLabel="元"
+          type="number"
+          @input="input"
+        />
+      </div>
+    </div>
+  </section>
+</template>
+
+<script>
+import FormInput from "@/components/common/form/FormInput";
+export default {
+  name: "riskSettingLiab",
+  components: { FormInput },
+  props: {
+    list: {
+      type: Array,
+      default: function() {
+        return [];
+      }
+    }
+  },
+  data() {
+    return {
+      liabList: [],
+      amountList: []
+    };
+  },
+  mounted() {
+    //let liabList = [];
+    console.log(this.list);
+    this.list.forEach(item => {
+      // if (item.checked == "true") {
+      this.liabList.push(item);
+      this.amountList.push(item.amount);
+      //}
+    });
+    // this.liabList = liabList;
+  },
+  computed: {},
+  watch: {
+    amountList: {
+      handler(newValue) {
+        console.log(newValue);
+        this.amountList[1] = newValue[0];
+        this.amountList[0] = newValue[1];
+      },
+      deep: true
+    }
+  },
+  created() {},
+  methods: {
+    //点击责任
+    handleLib(item, index) {
+      if (item.required == "true") return;
+      if (this.liabList[index].checked == "true") {
+        this.liabList[index].checked = "false";
+      } else {
+        this.liabList[index].checked = "true";
+      }
+      this.$store.commit("plan/setState", {
+        attr: "liablist",
+        data: this.liabList
+      });
+    },
+    input() {
+      this.liabList.forEach((item, index) => {
+        this.liabList[index].amount = this.amountList[index];
+        this.$store.commit("plan/setState", {
+          attr: "liablist",
+          data: this.liabList
+        });
+      });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/assets/css/common/form.scss";
+.risk-setting-liab {
+  @include overflow-emphasis;
+  margin: 20px 10px;
+  padding: 13px 20px;
+  margin-bottom: 10px;
+  box-shadow: 0 0 4px 1px #e5e9f1;
+  border-radius: 5px;
+
+  .content {
+    position: relative;
+  }
+  .icon {
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+  .item {
+    padding-left: 20px;
+  }
+  h2 {
+    font-size: 15px;
+    color: #333333;
+    font-weight: normal;
+    border-bottom: 1px solid #e5e9f1;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+  }
+  h5 {
+    font-weight: normal;
+    margin-top: 10px;
+  }
+}
+</style>
+<style>
+.risk-setting-liab .form-item {
+  padding: 0;
+}
+.risk-setting-liab .require {
+  display: none;
+}
+.risk-setting-liab .f-wrap .f-label .label {
+  font-size: 12px;
+}
+.risk-setting-liab .f-wrap {
+  height: 30px;
+}
+</style>

@@ -1,0 +1,45 @@
+/* ------------------------------------------ 全局配置文件 ------------------------------------------ */
+
+import { getClientWidth, isIphoneFullScreen } from "@/utils/modules/ui";
+
+// 设计稿宽度
+const designWidth = 375;
+
+// globalConfig
+const globalConfig = {
+  env: process.env.VUE_APP_ENV, // 当前环境
+  serverUrl: process.env.VUE_APP_SERVER_URL, // 服务器地址
+  pageUrl: process.env.VUE_APP_PAGE_URL, // 页面地址
+  comId: process.env.VUE_APP_COM_ID, // 保险公司编码
+  from: process.env.VUE_APP_FROM, // 来源
+  transfer: process.env.VUE_APP_TRANSFER, // 接口数据交互加密key
+  timeout: 60 * 1000, // 请求超时时长
+
+  // navigation
+  navKeyName: "navKey", // navigation在url中挂载参数的名字
+
+  // ui相关
+  ui: {
+    designWidth: designWidth, // 设计稿宽度
+    pxRadio: getClientWidth() / designWidth, // 当前屏幕宽度与设计稿宽度的比例
+    colorTheme: "#ffcc00", // 主题色
+    colorThemeLight: "#ffd11a", // 主题色-亮
+    colorThemeDark: "#e6b800", // 主题色-暗
+    colorBg: "#ffffff", // 背景色
+    colorSuccess: "#52c750", // 成功色
+    colorError: "#ff3333", // 错误色
+    colorWarn: "#fdd835" // 警告色
+  },
+
+  isWx:
+    window.navigator.userAgent.toLowerCase().match(/MicroMessenger/i) ==
+    "micromessenger", // 当前是否为微信
+  os: navigator.userAgent.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/)
+    ? "ios"
+    : "android", // 当前的操作系统：ios或android
+  inApp: false, // 当前是否在app中
+  inIPhone: /iphone/gi.test(window.navigator.userAgent), // 当前是否在iphone中
+  inIPhoneFullScreen: isIphoneFullScreen() // 当前是否在iphone全面屏中打开
+};
+
+export default globalConfig;

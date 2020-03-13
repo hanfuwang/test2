@@ -1,0 +1,149 @@
+<template>
+  <section class="insurant">
+    <h2>被保人信息</h2>
+    <ValiForm :form="insurant" :vali="vali">
+      <!-- 姓名 -->
+      <FormInput
+        v-model="insurant.name"
+        label="姓名"
+        :iconSrc="iconSrc"
+        :rules="rules.name"
+        @iconClick="chooseCustomer"
+      ></FormInput>
+      <!-- 性别 -->
+      <FormRadio
+        v-model="insurant.sex"
+        label="性别"
+        :selectList="sexSelectList"
+        :rules="rules.sex"
+      ></FormRadio>
+      <!-- 生日 -->
+      <FormDatepicker
+        placeholder="请选择生日"
+        label="出生日期"
+        v-model="insurant.birthday"
+        :rules="rules.birthday"
+      ></FormDatepicker>
+      <!-- 职业 -->
+      <FormSelect
+        v-model="insurant.occupation"
+        :selectList="occupationSelectList"
+        label="职业"
+        placeholder="请选择职业"
+        :rules="rules.occupation"
+      ></FormSelect>
+    </ValiForm>
+  </section>
+</template>
+
+<script>
+import ValiForm from "@/components/common/form/ValiForm";
+import FormInput from "@/components/common/form/FormInput";
+import FormRadio from "@/components/common/form/FormRadio";
+import FormDatepicker from "@/components/common/form/FormDatepicker";
+import FormSelect from "@/components/common/form/FormSelect";
+export default {
+  name: "insurant",
+  components: {
+    ValiForm,
+    FormInput,
+    FormRadio,
+    FormDatepicker,
+    FormSelect
+  },
+  props: {},
+  data() {
+    return {
+      //性别码表
+      sexSelectList: [
+        {
+          code: "0",
+          desc: "先生"
+        },
+        {
+          code: "1",
+          desc: "女士"
+        }
+      ],
+      //职业码表
+      occupationSelectList: [
+        {
+          code: "1",
+          desc: "精算师"
+        },
+        {
+          code: "2",
+          desc: "保险代理人"
+        }
+      ],
+      iconSrc: require("@/assets/imgs/common/icon/icon_search.png"), //客户小图标
+      //被保人对象
+      insurant: this.$store.state.plan.insurant,
+      //insurant验证对象
+      vali: {
+        status: false,
+        unlegalValiList: []
+      },
+      // 校验规则
+      rules: {
+        name: [
+          {
+            regExp: "require",
+            msg: "被保人姓名不能为空"
+          },
+          {
+            regExp: "chinese",
+            msg: "被保人姓名必须由汉字组成"
+          },
+          {
+            regExp: /^.{2,10}$/,
+            msg: "姓名长度必须在2~10字符之内"
+          }
+        ],
+        sex: [
+          {
+            regExp: "require",
+            msg: "被保人性别不能为空"
+          }
+        ],
+        birthday: [
+          {
+            regExp: "require",
+            msg: "被保人生日不能为空"
+          }
+        ],
+        occupation: [
+          {
+            regExp: "require",
+            msg: "被保人职业不能为空"
+          }
+        ]
+      }
+    };
+  },
+  computed: {},
+  watch: {},
+  created() {},
+  methods: {
+    //选择客户
+    chooseCustomer() {
+      utils.ui.tips("点击了选择客户");
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.insurant {
+  margin-top: 8px;
+  h2 {
+    @include lineheight-height(37px);
+    margin: 0 20px;
+    padding: 0 15px;
+    background: $color-ds;
+    font-size: 14px;
+    color: #333333;
+    font-weight: normal;
+  }
+}
+</style>

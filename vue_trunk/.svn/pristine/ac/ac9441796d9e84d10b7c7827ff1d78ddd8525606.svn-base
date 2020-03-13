@@ -1,0 +1,533 @@
+<template>
+  <section class="tips">
+    <h3>利益演示</h3>
+    <section class="con">
+      <aside
+        v-if="
+          redList.productCode == 'APWB01' || redList.productCode == 'RPPB01'
+        "
+        class="banner"
+      >
+        <div @click="selectlow" :class="{ selected: sellow }" class="low">
+          <!-- <nav>1.75%</nav> -->
+          <nav>低档分红</nav>
+        </div>
+        <div
+          @click="selectmiddle"
+          :class="{ selected: selmiddle }"
+          class="middle"
+        >
+          <!-- <nav>4.5%</nav> -->
+          <nav>中档分红</nav>
+        </div>
+        <div @click="selecthigh" :class="{ selected: selhigh }">
+          <!-- <nav>5.5%</nav> -->
+          <nav>高档分红</nav>
+        </div>
+      </aside>
+      <section class="list">
+        <div class="head">
+          被保人
+          <span>
+            {{ age }}
+          </span>
+          周岁时
+        </div>
+      </section>
+      <article class="InterestConList">
+        <section v-if="redList.productCode != 'ATRB02'">
+          <div class="left">当年保费</div>
+          <div class="right">
+            <span class="money">{{ valueList.B_PRM }}</span
+            >元
+          </div>
+        </section>
+        <section v-if="redList.productCode != 'ATRB02'">
+          <div class="left">累计保费</div>
+          <div class="right">
+            <span class="money">{{ valueList.B_ADP }}</span
+            >元
+          </div>
+        </section>
+        <section v-if="redList.productCode == 'APWB01'">
+          <div class="left">身故或全残保险金</div>
+          <div class="right">
+            <span class="money">{{ valueList.B_SGHQCBXJ }}</span
+            >元
+          </div>
+        </section>
+        <section v-if="redList.productCode == 'APWB01'">
+          <div class="left">意外身故或全残保险金</div>
+          <div class="right">
+            <span class="money">{{ valueList.B_YWSG }}</span
+            >元
+          </div>
+        </section>
+        <section v-if="redList.productCode == 'ATRB02'">
+          <div class="left">质子重离子医疗费用保险金</div>
+          <div class="right">
+            <span class="money">{{ valueList.B_ZZZLZ }}</span
+            >元
+          </div>
+        </section>
+        <section v-if="redList.productCode == 'ATRB02'">
+          <div class="left">国内及国际恶性肿瘤二次诊疗费用保险金</div>
+          <div class="right">
+            <span class="money">{{ valueList.B_RCZL }}</span
+            >元
+          </div>
+        </section>
+        <section v-if="redList.productCode == 'ATCB02'">
+          <div class="left">恶性肿瘤保险金</div>
+          <div class="right">
+            <span class="money">{{ valueList.B_EXZLBXJ }}</span
+            >元
+          </div>
+        </section>
+        <section v-if="redList.productCode == 'ATCB02'">
+          <div class="left">原位癌保险金</div>
+          <div class="right">
+            <span class="money">{{ valueList.B_YWABXJ }}</span
+            >元
+          </div>
+        </section>
+        <section
+          v-if="
+            redList.productCode != 'APWB01' &&
+              redList.productCode != 'ATRB02' &&
+              redList.productCode != 'ATNB01'
+          "
+        >
+          <div class="left">身故保险金</div>
+          <div class="right">
+            <span class="money">{{ valueList.B_SGBXJ }}</span
+            >元
+          </div>
+        </section>
+        <section v-if="redList.productCode == 'BTAB06'">
+          <div class="left">生存年金</div>
+          <div class="right">
+            <span class="money">{{ valueList.B_SCNJ }}</span
+            >元
+          </div>
+        </section>
+        <section v-if="redList.productCode == 'BTAB06'">
+          <div class="left">累计生存年金</div>
+          <div class="right">
+            <span class="money">{{ valueList.B_LJSCNJ }}</span
+            >元
+          </div>
+        </section>
+        <section
+          v-if="
+            redList.productCode == 'ATWB04' ||
+              redList.productCode == 'ATEB02' ||
+              redList.productCode == 'ATWB01' ||
+              redList.productCode == 'ATWB02' ||
+              redList.productCode == 'ATWB03' ||
+              redList.productCode == 'ATTB01' ||
+              redList.productCode == 'DTTB02' ||
+              redList.productCode == 'ATCB02'
+          "
+        >
+          <div class="left">全残保险金</div>
+          <div class="right">
+            <span class="money formula">{{ valueList.B_QCBXJ }}</span
+            >元
+          </div>
+        </section>
+
+        <section v-if="redList.productCode == 'RPPB01'">
+          <div class="left">养老年金</div>
+          <div class="right">
+            <span class="money">{{ valueList.B_YLNJ }}</span
+            >元
+          </div>
+        </section>
+        <section v-if="redList.productCode == 'RPPB01'">
+          <div class="left">累计养老年金</div>
+          <div class="right">
+            <span class="money">{{ valueList.B_LJYLNJ }}</span
+            >元
+          </div>
+        </section>
+        <section
+          v-if="
+            redList.productCode == 'APWB01' || redList.productCode == 'RPPB01'
+          "
+        >
+          <div class="left">年度红利</div>
+          <div class="right">
+            <span v-if="sellow" class="money">{{ valueList.B_DDV }}</span>
+            <span v-if="selmiddle" class="money">{{ valueList.B_ZDV }}</span>
+            <span v-if="selhigh" class="money">{{ valueList.B_GDV }}</span
+            >元
+          </div>
+        </section>
+        <section
+          v-if="
+            redList.productCode == 'APWB01' || redList.productCode == 'RPPB01'
+          "
+        >
+          <div class="left">累计红利</div>
+          <div class="right">
+            <span v-if="sellow" class="money">{{ valueList.B_DDVAPD }}</span>
+            <span v-if="selmiddle" class="money">{{ valueList.B_ZDVAPD }}</span>
+            <span v-if="selhigh" class="money">{{ valueList.B_GDVAPD }}</span
+            >元
+          </div>
+        </section>
+        <section v-if="redList.productCode != 'ATRB02'">
+          <div class="left">现金价值</div>
+          <div class="right">
+            <span class="money">{{ valueList.B_XJJZ }}</span
+            >元
+          </div>
+        </section>
+      </article>
+      <NumberSlider v-model="age" :max="max" :min="min"></NumberSlider>
+      <div>注：拖动按钮查看被保人不同年龄的利益。</div>
+      <div class="btn" @click="goTable">
+        查看利益演示表
+      </div>
+    </section>
+  </section>
+</template>
+
+<script>
+import { mapState } from "vuex";
+import NumberSlider from "@/components/common/ui/NumberSlider";
+export default {
+  components: {
+    NumberSlider
+  },
+  props: ["benifitDtoList", "benifitOutLineItemDtoList"],
+
+  data() {
+    return {
+      sellow: true, //默认低档
+      selmiddle: false, //中档
+      selhigh: false, //高档
+      age: 0, //被保人年龄
+      max: 0, //最大年龄
+      min: 0, //最小年龄
+      showList: [],
+      redList: [],
+      tableShowlist: [], //利益演示表
+      valueList: {},
+      reget: false, //背景颜色默认
+      showTableObj: {
+        //利益演示表
+        low: [],
+        middle: [],
+        high: [],
+        productCode: "" //产品编码
+      }
+    };
+  },
+  methods: {
+    //低档
+    selectlow() {
+      this.sellow = true;
+      this.selmiddle = false;
+      this.selhigh = false;
+    },
+    //中档
+    selectmiddle() {
+      this.selmiddle = true;
+      this.sellow = false;
+      this.selhigh = false;
+    },
+    //高档
+    selecthigh() {
+      this.selhigh = true;
+      this.sellow = false;
+      this.selmiddle = false;
+    },
+    //生成valueList
+    getValuelist(num) {
+      for (var i = 1; i < this.showList[0].itemAttr.length; i++) {
+        if (this.showList[0].itemAttr[i] == "B_PRM") {
+          //当年保费
+          this.valueList = { B_PRM: this.showList[num].itemAttr[i] };
+        } else if (this.showList[0].itemAttr[i] == "B_ADP") {
+          //累计保费
+          this.valueList.B_ADP = this.showList[num].itemAttr[i];
+        } else if (this.showList[0].itemAttr[i] == "B_SGHQCBXJ") {
+          //身故或全残保险金
+          this.valueList.B_SGHQCBXJ = this.showList[num].itemAttr[i];
+        } else if (this.showList[0].itemAttr[i] == "B_YWSG") {
+          //意外身故或全残保险金
+          this.valueList.B_YWSG = this.showList[num].itemAttr[i];
+        } else if (this.showList[0].itemAttr[i] == "B_ZZZLZ") {
+          //质子重离子医疗费用保险金
+          this.valueList.B_ZZZLZ = this.showList[num].itemAttr[i];
+        } else if (this.showList[0].itemAttr[i] == "B_RCZL") {
+          //国内及国际恶性肿瘤二次诊疗费用保险金
+          this.valueList.B_RCZL = this.showList[num].itemAttr[i];
+        } else if (this.showList[0].itemAttr[i] == "B_EXZLBXJ") {
+          //恶性肿瘤保险金
+          this.valueList.B_EXZLBXJ = this.showList[num].itemAttr[i];
+        } else if (this.showList[0].itemAttr[i] == "B_YWABXJ") {
+          //原位癌保险金
+          this.valueList.B_YWABXJ = this.showList[num].itemAttr[i];
+        } else if (this.showList[0].itemAttr[i] == "B_SCNJ") {
+          //生存年金
+          this.valueList.B_SCNJ = this.showList[num].itemAttr[i];
+        } else if (this.showList[0].itemAttr[i] == "B_LJSCNJ") {
+          //累计生存年金
+          this.valueList.B_LJSCNJ = this.showList[num].itemAttr[i];
+        } else if (this.showList[0].itemAttr[i] == "B_YLNJ") {
+          //养老年金
+          this.valueList.B_YLNJ = this.showList[num].itemAttr[i];
+        } else if (this.showList[0].itemAttr[i] == "B_LJYLNJ") {
+          //累计养老年金
+          this.valueList.B_LJYLNJ = this.showList[num].itemAttr[i];
+        } else if (this.showList[0].itemAttr[i] == "B_XJJZ") {
+          //现金价值
+          this.valueList.B_XJJZ = this.showList[num].itemAttr[i];
+        } else if (this.showList[0].itemAttr[i] == "B_QCBXJ") {
+          //全残保险金
+          this.valueList.B_QCBXJ = this.showList[num].itemAttr[i];
+        } else if (this.showList[0].itemAttr[i] == "B_SGBXJ") {
+          //身故保险金
+          this.valueList.B_SGBXJ = this.showList[num].itemAttr[i];
+        } else if (this.showList[0].itemAttr[i] == "B_DDV") {
+          //低档年度红利
+          this.valueList.B_DDV = this.showList[num].itemAttr[i];
+        } else if (this.showList[0].itemAttr[i] == "B_DDVAPD") {
+          //低档累计红利
+          this.valueList.B_DDVAPD = this.showList[num].itemAttr[i];
+        } else if (this.showList[0].itemAttr[i] == "B_ZDV") {
+          //中档年度红利
+          this.valueList.B_ZDV = this.showList[num].itemAttr[i];
+        } else if (this.showList[0].itemAttr[i] == "B_ZDVAPD") {
+          //中档累计红利
+          this.valueList.B_ZDVAPD = this.showList[num].itemAttr[i];
+        } else if (this.showList[0].itemAttr[i] == "B_GDV") {
+          //高档年度红利
+          this.valueList.B_GDV = this.showList[num].itemAttr[i];
+        } else if (this.showList[0].itemAttr[i] == "B_GDVAPD") {
+          //高档累计红利
+          this.valueList.B_GDVAPD = this.showList[num].itemAttr[i];
+        } else if (this.showList[0].itemAttr[i] == "B_XJJZ") {
+          //现金价值
+          this.valueList.B_XJJZ = this.showList[num].itemAttr[i];
+        }
+      }
+    },
+    //props赋值
+    drawChart() {
+      this.showList = this.redList.benifitOutLineItemDtoList;
+      if (this.showList) {
+        this.age = parseInt(this.showList[1].itemAttr[0]);
+        this.min = parseInt(this.showList[1].itemAttr[0]);
+        this.max = parseInt(
+          this.showList[this.showList.length - 1].itemAttr[0]
+        );
+        // console.log(this.showList);
+        // console.log(this.benifitOutLineItemDtoList);
+        this.getValuelist(1);
+      }
+    },
+    //进入利益演示表
+    goTable() {
+      if (this.redList.productCode == "RPPB01") {
+        //低档
+        this.showTableObj.low = this.benifitOutLineItemDtoList.map(item => {
+          const DDList = item.itemAttr.filter((item, index) => {
+            return index < 9 || index > 12;
+          });
+          return DDList;
+        });
+        //中档
+        this.showTableObj.middle = this.benifitOutLineItemDtoList.map(item => {
+          const ZDList = item.itemAttr.filter((item, index) => {
+            return index < 7 || index > 12 || index == 9 || index == 10;
+          });
+          return ZDList;
+        });
+        //高档
+        this.showTableObj.high = this.benifitOutLineItemDtoList.map(item => {
+          const GDList = item.itemAttr.filter((item, index) => {
+            return index < 7 || index > 10;
+          });
+          return GDList;
+        });
+      } else if (this.redList.productCode == "APWB01") {
+        //低档
+        this.showTableObj.low = this.benifitOutLineItemDtoList.map(item => {
+          const DDList = item.itemAttr.filter((item, index) => {
+            return index < 8 || index > 11;
+          });
+          return DDList;
+        });
+        //中档
+        this.showTableObj.middle = this.benifitOutLineItemDtoList.map(item => {
+          const ZDList = item.itemAttr.filter((item, index) => {
+            return index < 6 || index > 11 || index == 8 || index == 9;
+          });
+          return ZDList;
+        });
+        //高档
+        this.showTableObj.high = this.benifitOutLineItemDtoList.map(item => {
+          const GDList = item.itemAttr.filter((item, index) => {
+            return index < 6 || index > 9;
+          });
+          return GDList;
+        });
+      }
+
+      if (
+        this.redList.productCode != "APWB01" &&
+        this.redList.productCode != "RPPB01"
+      ) {
+        this.showTableObj.low = this.benifitOutLineItemDtoList;
+      }
+      this.showTableObj.productCode = this.redList.productCode;
+      // console.log(this.benifitOutLineItemDtoList);
+      this.$store.commit("plan/setState", {
+        attr: "showTable",
+        data: this.showTableObj
+      });
+      this.$router.push({
+        name: "showTable"
+      });
+    }
+  },
+  computed: {
+    ...mapState({
+      showTable: state => state.plan.showTable //利益演示表
+    })
+  },
+  watch: {
+    //监听benifitDtoList
+    benifitDtoList: {
+      handler(newVal) {
+        this.redList = newVal;
+        this.drawChart();
+      },
+      // 立即执行
+      immediate: true
+    },
+    // 监听年龄
+    age: {
+      handler(newVal) {
+        if (newVal) {
+          this.valueList = [];
+          this.getValuelist(newVal - this.min + 1);
+        }
+      },
+      // 立即执行
+      immediate: true
+    }
+  },
+  created() {}
+};
+</script>
+
+<style lang="scss" scoped>
+.list {
+  font-size: 14px;
+  width: 95%;
+  margin: 10px auto;
+  background: #f1f1f1;
+  border-top: 1px solid #f1f1f1;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  .head {
+    font-size: 16px;
+    height: 38px;
+    line-height: 38px;
+    text-align: center;
+    span {
+      font-size: 18px;
+      color: #eb5757;
+    }
+  }
+  .white {
+    background: #ffffff;
+  }
+}
+h3 {
+  margin: 5px 0 10px;
+  padding-left: 10px;
+  border-left: 3px solid #eb5656;
+}
+nav {
+  height: 45px;
+  line-height: 45px;
+  text-align: center;
+  width: 100%;
+  clear: both;
+}
+.con {
+  border-top: 1px solid #e5e5e5;
+  padding-top: 15px;
+}
+.selected {
+  color: #60532e;
+  background: #f7c21e;
+}
+.banner {
+  width: 90%;
+  height: 45px;
+  border: 1px solid #e5e5e5;
+  margin: 0 20px;
+  border-radius: 45px;
+  overflow: hidden;
+  border-color: #f8cc43;
+  display: flex;
+  div {
+    flex: 1;
+    height: 45px;
+    line-height: 45px;
+    float: left;
+  }
+}
+.low {
+  border-right: 1px solid #f7c21e;
+}
+.middle {
+  border-right: 1px solid #f7c21e;
+}
+.tips {
+  font-size: 14px;
+  background: #fff;
+  margin: 15px;
+  padding: 10px;
+  border-radius: 10px;
+}
+.btn {
+  font-size: 18px;
+  background: #ffd737;
+  color: #383320;
+  width: 75%;
+  height: 45px;
+  line-height: 45px;
+  text-align: center;
+  margin: 20px auto;
+  border-radius: 40px;
+}
+.InterestConList {
+  section {
+    padding: 0 10px;
+    margin-bottom: 15px;
+    display: flex;
+  }
+  .left {
+    flex: 5;
+  }
+  .right {
+    flex: 5.5;
+    text-align: right;
+  }
+  .money {
+    margin-right: 5px;
+    color: #eb5757;
+  }
+  .formula {
+    height: 100px;
+  }
+}
+</style>

@@ -1,0 +1,620 @@
+<template>
+  <Page class="demo-app" :withAppBar="!globalConfig.isWx">
+    <!-- 头部搜索bar -->
+    <AppBar v-if="!globalConfig.isWx">
+      <!-- 左侧返回箭头 -->
+      <img
+        slot="left"
+        class="icon icon-back"
+        src="@/assets/imgs/common/icon/icon_back.png"
+        @click="back()"
+      />
+      <template slot="center">
+        <input
+          v-show="isSearch"
+          v-model="itemInput"
+          class="search-ipt"
+          placeholder="请输入姓名"
+        />
+        <!-- 标题 -->
+        <div v-show="!isSearch" class="area-tips">客户列表</div>
+      </template>
+    </AppBar>
+
+    <!-- app-content -->
+    <AppContent class="app-content">
+      <ListArea
+        needLoadmore
+        needRefresh
+        @loadmore="loadmore"
+        :refreshing="refreshOpt.refreshing"
+        :loadmoreing="loadmoreOpt.loadmoreing"
+        :loadmoreFinish="loadmoreOpt.loadmoreFinish"
+        @refresh="refresh"
+      >
+        <section>
+          <div class="list" v-for="(user, index) in customerLists" :key="index">
+            <nav class="zimu">{{ user.key }}</nav>
+            <Article
+              class="row item"
+              v-for="(cust, index) in user.value"
+              :key="index"
+            >
+              <header class="item_head" @click="selectedCus(cust)">
+                <div style="text-align: center;">
+                  <img
+                    v-if="cust.sex == '0'"
+                    class="cust_sex"
+                    src="../../assets/imgs/common/icon/icon_male.png"
+                  />
+                  <img
+                    v-if="cust.sex == '1'"
+                    class="cust_sex"
+                    src="../../assets/imgs/common/icon/icon_female.png"
+                  />
+                </div>
+              </header>
+              <aside style="width:68%;float:left;">
+                <div style="display:flex;padding-top:4%">
+                  <span
+                    @click.stop="selectedCus(cust)"
+                    style="color:#000000;font-family: HYQiHei-DES;"
+                    >{{ cust.name }}</span
+                  >
+                  <div style="margin-left: 5%">
+                    <img
+                      class="star"
+                      src="../../assets/imgs/common/icon/icon_Fill .png"
+                    />
+                    <img
+                      class="star"
+                      v-if="cust.grade >= 2"
+                      src="../../assets/imgs/common/icon/icon_Fill .png"
+                    />
+                    <img
+                      class="star"
+                      v-if="cust.grade >= 3"
+                      src="../../assets/imgs/common/icon/icon_Fill .png"
+                    />
+                    <img
+                      class="star"
+                      v-if="cust.grade >= 4"
+                      src="../../assets/imgs/common/icon/icon_Fill .png"
+                    />
+                    <img
+                      class="star"
+                      v-if="cust.grade >= 5"
+                      src="../../assets/imgs/common/icon/icon_Fill .png"
+                    />
+                    <img
+                      class="star"
+                      v-if="cust.grade >= 6"
+                      src="../../assets/imgs/common/icon/icon_Fill .png"
+                    />
+                  </div>
+                </div>
+                <div style="padding:2% 0">
+                  <span class="item_age" @click.stop="selectedCus(cust)"
+                    >{{ cust.age }}岁</span
+                  >
+                  <span class="item_mobile" @click.stop="selectedCus(cust)">{{
+                    cust.mobile
+                  }}</span>
+                </div>
+
+                <div
+                  v-show="cust.infoType == '0' || cust.infoType == ''"
+                  class="new_customer"
+                >
+                  新客户
+                </div>
+                <div
+                  v-show="cust.infoType != '0' && cust.infoType != ''"
+                  class="new_customer2"
+                >
+                  新客户
+                </div>
+              </aside>
+              <div class="item_modeify">
+                <img
+                  src="../../assets/imgs/common/icon/icon_bianji.png"
+                  @click="modifyCusInfo(cust.infoId, '3')"
+                  style="width: 18px;"
+                />
+              </div>
+            </Article>
+          </div>
+        </section>
+      </ListArea>
+    </AppContent>
+    <AppFloatMenu>
+      <img
+        slot="top"
+        src="../../assets/imgs/common/icon/icon_fix_search.png"
+        @click="search"
+        class="icon_search"
+      />
+      <img
+        slot="bottom"
+        src="../../assets/imgs/common/icon/icon_fix_add.png"
+        @click="addCus"
+        class="icon_search"
+      />
+    </AppFloatMenu>
+  </Page>
+</template>
+
+<script>
+import ListArea from "@/components/common/ListArea";
+import { mapState } from "vuex";
+import AppFloatMenu from "@/components/global/AppFloatMenu";
+export default {
+  name: "chooseCustomer",
+  components: {
+    ListArea,
+    AppFloatMenu
+  },
+  data() {
+    return {
+      result: {},
+      id: this.$route.query.id,
+      loadmoreOpt: {
+        loadmoreing: false,
+        loadmoreFinish: false
+      },
+      //下拉刷新配置
+      refreshOpt: {
+        refreshing: false
+      },
+      //loading配置
+      isLoading: {
+        needLoading: true
+      },
+      customerLists: [],
+      pageNum: 0,
+      pageSize: 10,
+      itemInput: "", //搜索框元素
+      isSearch: false //默认不显示搜索框
+    };
+  },
+  computed: {
+    ...mapState({
+      insurant: state => state.plan.insurant,
+      applicant: state => state.plan.applicant,
+      userInfo: state => state.user.userInfo,
+      customerName: state => state.plan.customerName //客户姓名(s搜索)
+    })
+  },
+  watch: {
+    pageNum(newVal) {
+      if (newVal == 10) {
+        this.isLoading.needLoading = false;
+      }
+    }
+  },
+  created() {
+    //初始化页面
+    if (this.customerName) {
+      this.itemInput = this.customerName;
+      this.searchCusList();
+    }
+    this.initPage();
+    // this.searchCusList();
+  },
+  methods: {
+    // 初始化页面
+    initPage() {
+      // 加载更多
+      this.loadmore();
+    },
+    //点击搜索
+    search() {
+      this.$router.push("/plan/QueryCustomer");
+    },
+    //新增客户
+    addCus() {
+      // console.log("111111111111111");
+      if (this.id == "0" || this.id == "1") {
+        this.$router.push({
+          name: "addCustomer",
+          query: {
+            id: this.id
+          }
+        });
+      } else {
+        this.$router.push({
+          name: "addCustomer"
+        });
+      }
+    },
+    //获取客户列表
+    searchCusList() {
+      const params = {
+        agentCode: globalConfig.isWx
+          ? this.userInfo.weChatAgenctDTO.agentCode
+          : this.userInfo.user.agentCode, //代理人工号
+        personId: globalConfig.isWx
+          ? this.userInfo && this.userInfo.weChatAgenctDTO.infoId
+          : this.userInfo && this.userInfo.user && this.userInfo.user.personId,
+        infoId: "", //客户主键id  当flag为1时必填
+        attrKey: this.insurant.holderRelation, //客户关系
+        infoId2: "", //客户2主键id
+        flag: "3", //模块标识  1.客户管理转介绍 2.投保客户列表 3.建议书 4.财务分析 5.客户管理 6.日程 7.健康管理
+        name: this.itemInput,
+        startNum: this.pageNum, //请求数据开始的位置0、10、1...
+        pageSize: this.pageSize, //请求数据一次的条数
+        sex: undefined, //性别  财务分析需要用到 0-男 1-女
+        isShowFamly: "" //是否显示本人及家庭成员 0-不显示 1-显示
+      };
+      //请求的方法体
+      //CUSMEMBERLIST;
+      return new Promise(resolve => {
+        utils.http
+          .post(interfaces.plan.getCustomerList, params, this.isLoading)
+          .then(res => {
+            resolve(res.returnMap);
+            this.isLoading.needLoading = false;
+            // this.isReq = true;
+            // for (var i = 0; i < res.returnMap.length; i++) {
+            //   this.customerLists.push(res.returnMap[i]);
+            // }
+            // this.pageNum += 1;
+
+            // this.pageNum = parseInt(this.pageNum) + this.pageSize;
+            //console.log(res.returnMap);
+            //console.log(res.returnMap.length);
+            // if (res.returnMap.length < 1) {
+            //   this.loadmoreOpt.loadmoreFinish = true;
+            // }
+          });
+      });
+    },
+    //选中客户
+    selectedCus(cust) {
+      // console.log("--------------");
+      // console.log(cust);
+      const certNo = cust.certNo,
+        name = cust.name;
+      this.$emit("yyInfo", { certNo, name });
+      //查询回显数据再回调
+      this.getCusInfoDetail(cust.infoId, "1");
+    },
+    getCusInfoDetail(infoId, num) {
+      const params = {
+        infoId: infoId
+      };
+      //QUERYMEMBERINFOEDIT
+      utils.http.post(interfaces.plan.queryMember, params).then(res => {
+        // console.log(res);
+        // console.log(this.$route);
+        this.result = res.cusMemberInfoList[0];
+        this.submitForm(num);
+      });
+    },
+    // 下拉刷新
+    async refresh() {
+      // 重置pageNum为1
+      this.pageNum = 0;
+      // 重置loadmoreFinish为false
+      this.loadmoreOpt.loadmoreFinish = false;
+      // 设置refreshing为true
+      this.refreshOpt.refreshing = true;
+      // 获取数据
+      const data = await this.searchCusList().catch(() => {});
+      // 设置refreshing为false
+      this.refreshOpt.refreshing = false;
+
+      if (data) {
+        // 查询成功的情况
+        // pageNum + 1
+        // this.pageNum += 1;
+        this.pageNum = parseInt(this.pageNum) + this.pageSize;
+
+        // 赋值list
+        this.customerLists = data;
+        // 处理加载完毕的情况
+        if (data.length < 10) {
+          this.loadmoreOpt.loadmoreFinish = true;
+        }
+      }
+    },
+    // 加载更多
+    async loadmore() {
+      console.log("loadmore");
+      // 设置loadmoreing为true
+      this.loadmoreOpt.loadmoreing = true;
+      // 获取数据
+      const data = await this.searchCusList().catch(() => {});
+      // 设置loadmoreing为false
+      this.loadmoreOpt.loadmoreing = false;
+
+      if (data) {
+        // 查询成功的情况
+        // this.pageNum += 1;
+        this.pageNum = parseInt(this.pageNum) + this.pageSize;
+
+        // 叠加list
+        this.customerLists = this.customerLists.concat(data);
+        // 处理加载完毕的情况
+        if (data.length < 10) {
+          this.loadmoreOpt.loadmoreFinish = true;
+        }
+      }
+    },
+    submitForm(num) {
+      //  console.log(this.result);
+      if (num == "3") {
+        //编辑
+        this.$router.push({
+          name: "addCustomer",
+          params: {
+            result: this.result,
+            num: num
+          }
+        });
+        return;
+      }
+      //字段统一转换
+      //生日
+      this.result["birthdate"] = String(this.result.birthday).replace(
+        /\s\s*$/,
+        ""
+      )
+        ? String(this.result.birthday).substr(0, 10)
+        : "";
+      //delete this.result.birthday;
+      //新老客户
+      this.result["isoldCustomer"] = this.result.category;
+      delete this.result.category;
+      //console.log(this.result);
+      //职业
+      //console.log(this.result)
+      this.result.cdOccupation = {
+        occupationCode: this.result.profession,
+        occupationLevel: "",
+        occupationName: this.result.professionName,
+        occupationRiskLevel: this.result.professionLevel, //这个需要加上去
+        occupationRiskMetical: ""
+      };
+
+      if (this.id == "0") {
+        //选择被保人
+        this.$store.commit("plan/setState", {
+          attr: "insurant",
+          data: Object.assign(
+            {
+              name: "",
+              sex: "0", //性别
+              birthdate: "",
+              //职业信息
+              cdOccupation: {
+                occupationCode: "",
+                occupationLevel: "",
+                occupationName: "",
+                occupationRiskLevel: "",
+                occupationRiskMetical: ""
+              },
+              isoldCustomer: "0", //默认是新客户
+              holderRelation: ""
+            },
+            this.result
+          )
+        });
+        this.$store.commit("plan/setState", {
+          attr: "applicant",
+          data: {
+            name: "",
+            sex: "0", //性别
+            birthdate: "",
+            //职业信息
+            cdOccupation: {
+              occupationCode: "",
+              occupationLevel: "",
+              occupationName: "",
+              occupationRiskLevel: "",
+              occupationRiskMetical: ""
+            },
+            isoldCustomer: "0" //默认是新客户
+          }
+        });
+        //主险清空
+        this.$store.commit("plan/setState", {
+          attr: "mainProposalProductList",
+          data: []
+        });
+        //附加清空
+        this.$store.commit("plan/setState", {
+          attr: "riskProposalProductList",
+          data: []
+        });
+        //总保费清空
+        this.$store.commit("plan/setState", {
+          attr: "totalPremium",
+          data: ""
+        });
+      } else {
+        //选择投保人
+        this.$store.commit("plan/setState", {
+          attr: "applicant",
+          data: Object.assign(
+            {
+              name: "",
+              sex: "0", //性别
+              birthdate: "",
+              //职业信息
+              cdOccupation: {
+                occupationCode: "",
+                occupationLevel: "",
+                occupationName: "",
+                occupationRiskLevel: "",
+                occupationRiskMetical: ""
+              },
+              isoldCustomer: "0" //默认是新客户
+            },
+            this.result
+          )
+        });
+        // console.log(this.applicant);
+      }
+      this.back("makePlan");
+    },
+    //编辑
+    modifyCusInfo(infoId, num) {
+      this.getCusInfoDetail(infoId, num);
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/assets/css/demo/index.scss";
+.area-tips {
+  @include display-flex;
+  height: 34px;
+  flex: 1;
+  letter-spacing: 1px;
+  color: #000000;
+}
+
+.icon {
+  height: auto;
+  &.icon-back {
+    width: 12px;
+    margin-right: 10px;
+  }
+  &.icon-search {
+    width: 20px;
+    margin-left: 10px;
+  }
+  &.icon-head {
+    width: 20px;
+    margin-left: 10px;
+  }
+}
+.search-ipt {
+  @include reset-input;
+  @include display-flex;
+  height: 34px;
+  line-height: 20px;
+  justify-content: flex-start;
+  flex: 1;
+  background: #f3f3f3;
+  border-radius: 17px;
+  font-size: 14px;
+  color: #000000;
+  padding: 0 20px;
+  letter-spacing: 1px;
+  // x去除
+  &::-webkit-search-cancel-button {
+    display: none;
+  }
+  // placeholder样式重写
+  &::placeholder {
+    font-size: 15px;
+    color: #c0c0c0;
+    text-align: center;
+  }
+}
+.app-content {
+  //字母的样式
+  .zimu {
+    color: #949495;
+    width: 100%;
+    background: #f8f8f8;
+    line-height: 20px;
+    padding-left: 10px;
+    margin-bottom: 1px;
+    font-family: PingFang-SC-Medium;
+    font-size: 12px;
+    color: #9b9b9b;
+    letter-spacing: -0.29px;
+  }
+  .row {
+    display: flex;
+    width: 100%;
+    border-top: 0px;
+    border-right: 0px;
+    border-bottom: 7px solid #f8f8f8;
+  }
+  .item {
+    background-color: #fff;
+    color: #444;
+    position: relative;
+    font-size: 16px;
+  }
+  //头像栏
+  .item_head {
+    float: left;
+    width: 20%;
+    margin-top: 3%;
+  }
+  //头像性别显示图像
+  .cust_sex {
+    width: 48px;
+  }
+  .star {
+    width: 10px;
+    height: 10px;
+  }
+  //姓名
+  .item_name {
+    width: 25%;
+    text-align: left !important;
+    display: inline-block;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+  //年纪
+  .item_age {
+    width: 10%;
+    font-family: HYQiHei-DES;
+    font-size: 14px;
+    color: #999999;
+    letter-spacing: 0;
+  }
+  //手机号
+  .item_mobile {
+    width: 27%;
+    font-family: HYQiHei-DES;
+    font-size: 14px;
+    color: #999999;
+    letter-spacing: 0;
+  }
+  //修改的图标
+  .item_modeify {
+    width: 12%;
+    margin: auto;
+    float: right;
+  }
+  //新客户
+  .new_customer {
+    background: #71a8f9;
+    border-radius: 2px;
+    font-family: HYQiHei-DES;
+    font-size: 10px;
+    color: #ffffff;
+    letter-spacing: 0;
+    text-align: center;
+    width: 20%;
+    height: 18px;
+    line-height: 18px;
+    margin-bottom: 3%;
+  }
+  .new_customer2 {
+    border-radius: 2px;
+    font-family: HYQiHei-DES;
+    font-size: 10px;
+    color: #ffffff;
+    letter-spacing: 0;
+    text-align: center;
+    width: 20%;
+    height: 18px;
+    line-height: 18px;
+    margin-bottom: 3%;
+  }
+}
+.icon_search {
+  width: 46px;
+}
+</style>

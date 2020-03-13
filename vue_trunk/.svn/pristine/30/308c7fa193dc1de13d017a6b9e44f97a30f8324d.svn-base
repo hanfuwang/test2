@@ -1,0 +1,285 @@
+<template>
+  <div class="bank-selector">
+    <!-- 头部搜索bar -->
+    <section class="search-bar">
+      <!-- 左侧返回箭头 -->
+      <img
+        class="icon icon-back"
+        src="@/assets/imgs/common/icon/icon_back.png"
+        @click="back"
+      />
+      <!-- 搜索框 -->
+      <input
+        class="search-ipt"
+        type="search"
+        placeholder="请输入网点名称"
+        v-model="keywords"
+        @focus="handlerIptFocus"
+        @blur="handlerIptBlur"
+      />
+      <!-- 右侧搜索按钮 -->
+      <img
+        v-show="selectType === 'search'"
+        class="icon icon-search"
+        src="@/assets/imgs/common/icon/icon_search.png"
+        @click="search"
+      />
+    </section>
+
+    <!-- 银行网点树 -->
+    <!-- <section
+      class="website-tree selector-content"
+      v-show="selectType === 'click'"
+    ></section> -->
+
+    <!-- 搜索结果 -->
+    <section
+      class="search-result selector-content"
+      v-show="selectType === 'search'"
+    >
+      <!-- 有数据 -->
+      <div class="have-data" v-show="searchResult && searchResult.length > 0">
+        <p
+          class="result-line"
+          v-for="item of searchResult"
+          :key="item.bankId"
+          @click="select(item)"
+        >
+          {{ item.bankName }}
+        </p>
+      </div>
+      <!-- 无数据 -->
+      <div class="no-data" v-show="!searchResult || searchResult.length == 0">
+        {{ hadSearch ? "暂无数据" : "请输入关键字后开始搜索" }}
+      </div>
+    </section>
+  </div>
+</template>
+
+<script>
+export default {
+  name: "bankSelector",
+  data() {
+    return {
+      isIptFocus: false, // 输入框是否获取焦点
+      selectType: "search", // 选择类型，click直接选择，search查找后选择
+      keywords: "", // 搜索关键字
+      hadSearch: false, // 是否已经搜索过
+      // 搜索结果
+      searchResult: []
+    };
+  },
+  computed: {},
+  mounted() {},
+  methods: {
+    // 查询
+    search() {
+      // 设置当前已经搜索过
+      this.hadSearch = true;
+      // 请求参数
+      // const params = {
+      //   keywords: this.keywords
+      // }
+      this.searchResult = [
+        {
+          bankId: "10090",
+          bankName: "光大银行"
+        },
+        {
+          bankId: "100901",
+          bankName: "光大银行1"
+        },
+        {
+          bankId: "100902",
+          bankName: "光大银行2"
+        },
+        {
+          bankId: "100903",
+          bankName: "光大银行3"
+        },
+        {
+          bankId: "100904",
+          bankName: "光大银行4"
+        },
+        {
+          bankId: "100905",
+          bankName: "光大银行5"
+        },
+        {
+          bankId: "100906",
+          bankName: "光大银行6"
+        },
+        {
+          bankId: "100907",
+          bankName: "光大银行7"
+        },
+        {
+          bankId: "100908",
+          bankName: "光大银行8"
+        },
+        {
+          bankId: "100909",
+          bankName: "光大银行9"
+        },
+        {
+          bankId: "1009010",
+          bankName: "光大银行10"
+        },
+        {
+          bankId: "1009011",
+          bankName: "光大银11"
+        },
+        {
+          bankId: "1009012",
+          bankName: "光大银行12朝的色温反对法地方给踩踩踩"
+        },
+        {
+          bankId: "1009013",
+          bankName: "光大银行13"
+        },
+        {
+          bankId: "1009014",
+          bankName: "光大银行14"
+        },
+        {
+          bankId: "1009015",
+          bankName: "光大银行15"
+        },
+        {
+          bankId: "100901016",
+          bankName: "光大银行16"
+        }
+      ].filter(item => item.bankName.indexOf(this.keywords) >= 0);
+    },
+    // 返回
+    back() {
+      // if (this.selectType === "search") {
+      //   // search状态返回到click
+      //   this.selectType = "click";
+      // } else if (this.selectType === "click") {
+      // click状态返回，关闭页面
+      this.$emit("close");
+      // }
+    },
+    // 选中
+    select(item) {
+      this.$emit("select", item);
+    },
+
+    // ipt得到焦点
+    handlerIptFocus() {
+      this.isIptFocus = true;
+      this.selectType = "search";
+    },
+    // ipt失去焦点
+    handlerIptBlur() {
+      this.isIptFocus = false;
+      // ios微信键盘bug修复 开始
+      if (globalConfig.isWx && globalConfig.os === "ios") {
+        // 获取当前滚动的高度
+        const scrollTop = utils.ui.getScrollTop();
+        setTimeout(() => {
+          // 向上滚动1px，防止键盘顶出的高度不回弹
+          window.scrollTo(0, scrollTop - 1);
+        }, 100);
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+$search-bar-height: 60px;
+
+.bank-selector {
+  border-top: 1px solid rgba(255, 255, 255, 0);
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #ffffff;
+  z-index: $zIndex-popup;
+}
+// search-bar
+.search-bar {
+  @include display-flex;
+  justify-content: space-between;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: $search-bar-height;
+  padding: 0 20px;
+  box-shadow: 0 -2px 8px 0 rgba(0, 0, 0, 0.1);
+  background: #ffffff;
+  z-index: 1;
+  .search-ipt {
+    @include reset-input;
+    @include display-flex;
+    height: 34px;
+    line-height: 20px;
+    justify-content: flex-start;
+    flex: 1;
+    background: #f3f3f3;
+    border-radius: 17px;
+    font-size: 14px;
+    color: #000000;
+    padding: 0 20px;
+    letter-spacing: 1px;
+    // x去除
+    &::-webkit-search-cancel-button {
+      display: none;
+    }
+    // placeholder样式重写
+    &::placeholder {
+      font-size: 15px;
+      color: #c0c0c0;
+      text-align: center;
+    }
+  }
+  .icon {
+    height: auto;
+    &.icon-back {
+      width: 12px;
+      margin-right: 10px;
+    }
+    &.icon-search {
+      width: 20px;
+      margin-left: 10px;
+    }
+  }
+}
+
+.selector-content {
+  position: relative;
+  margin-top: $search-bar-height;
+  height: calc(100vh - #{$search-bar-height});
+  overflow-y: scroll;
+  -webkit-overflow-scrolling: touch;
+}
+// website-tree
+// .website-tree {
+// }
+
+// search-result
+.search-result {
+  padding: 0 30px;
+  font-size: 15px;
+  color: #333333;
+  // have-data
+  .have-data {
+    .result-line {
+      @include overflow-emphasis;
+      @include lineheight-height(42px);
+      border-bottom: 1px solid #f3f3f3;
+    }
+  }
+  // no-data
+  .no-data {
+    @include display-flex;
+    height: 100px;
+    color: #999999;
+  }
+}
+</style>

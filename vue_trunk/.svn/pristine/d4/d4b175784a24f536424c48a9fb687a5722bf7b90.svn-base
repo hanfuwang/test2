@@ -1,0 +1,45 @@
+<template>
+  <div class="vali-form">
+    <slot></slot>
+  </div>
+</template>
+
+<script>
+export default {
+  name: "valiForm",
+  data() {
+    return {};
+  },
+  computed: {},
+  created() {},
+  methods: {
+    // 获取form的校验对象
+    getVali() {
+      // 取得所有的formItem
+      const formItemList = this.$children;
+      // 取得所有不符合校验规则的验证对象
+      const unlegalValiList = formItemList
+        .map(formItem => formItem.vali)
+        // 过滤掉没有验证对象的数据
+        .filter(item => item)
+        // 筛选出不符合校验规则的数据
+        .filter(item => (item.status === false ? true : false));
+
+      if (unlegalValiList && unlegalValiList.length > 0) {
+        // 有不符合校验规则的数据
+        return {
+          status: false,
+          unlegalValiList: unlegalValiList
+        };
+      } else {
+        // 全部符合
+        return {
+          status: true
+        };
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped></style>

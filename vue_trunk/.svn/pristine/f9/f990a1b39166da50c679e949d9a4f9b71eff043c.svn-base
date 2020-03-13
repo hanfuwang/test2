@@ -1,0 +1,53 @@
+<template>
+  <header class="app-bar">
+    <div class="bar-left">
+      <slot name="left"></slot>
+    </div>
+    <div class="bar-center">
+      <slot name="center"></slot>
+    </div>
+    <div class="bar-right">
+      <slot name="right"></slot>
+    </div>
+  </header>
+</template>
+
+<script>
+export default {
+  name: "appBar",
+  props: {},
+  data() {
+    return {};
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.app-bar {
+  @include display-flex;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  padding: 0 20px;
+  height: $height-app-bar;
+  background-color: $color-app-bar;
+  z-index: $zIndex-app-bar;
+  .bar-left {
+    width: 70px;
+    @include display-flex;
+    justify-content: flex-start;
+  }
+  .bar-center {
+    @include display-flex;
+    flex: 1;
+    font-size: 18px;
+    color: #333333;
+  }
+  .bar-right {
+    width: 70px;
+    @include display-flex;
+    justify-content: flex-end;
+  }
+}
+</style>

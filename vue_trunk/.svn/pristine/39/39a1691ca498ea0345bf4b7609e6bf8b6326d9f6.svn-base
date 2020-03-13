@@ -1,0 +1,4 @@
+NODE_ENV = "production"
+VUE_APP_ENV = "sit"
+VUE_APP_SERVER_URL = "https://sitwa.aixin-life.net/com.ifp.ipartner/"
+VUE_APP_PAGE_URL = "https://sita.aixin-life.net/patvue/"

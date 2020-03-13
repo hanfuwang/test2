@@ -1,0 +1,49 @@
+<template>
+  <div>
+    <h3>投保险种</h3>
+    <ul>
+      <li>
+        <p><span>首期总保费(变量)</span><span>金额多少元</span></p>
+      </li>
+      <li>
+        <p @click="isShow = !isShow">
+          <span>爱心人寿巨爱一生终身寿险</span><span>金额000元</span>
+        </p>
+        <div v-show="isShow">
+          <p>
+            <span>保险期</span><span></span><span>险种保额</span><span></span>
+          </p>
+          <p>
+            <span>缴费期</span><span></span><span>交费频率</span><span></span>
+          </p>
+          <p>
+            <span>保险计划</span>
+            <span></span>
+            <span>被保险人类型</span><span></span>
+          </p>
+          <p>
+            <span>领取方式</span>
+            <span></span><span>年金开始领取频率年龄</span><span></span>
+          </p>
+          <p><span>年金开始领取频率</span><span></span></p>
+        </div>
+      </li>
+    </ul>
+  </div>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      isShow: false
+    };
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+ul li {
+  list-style: none;
+}
+</style>

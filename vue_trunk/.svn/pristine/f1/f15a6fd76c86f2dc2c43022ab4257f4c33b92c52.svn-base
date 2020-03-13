@@ -1,0 +1,108 @@
+<template>
+  <div class="form-bank-website">
+    <!-- disabled 输入框 -->
+    <FormInput
+      v-model="bankWebsite.bankName"
+      :label="label"
+      :placeholder="placeholder"
+      :rules="rules"
+      :iconSrc="iconSrc"
+      :iconWidth="7"
+      :showBottomUnlegalMsg="showBottomUnlegalMsg"
+      disabled
+      @formInputClick="open"
+      @iconClick="open"
+      ref="fi"
+    ></FormInput>
+
+    <transition name="bottomToTop05">
+      <BankSelector
+        v-show="showSelector"
+        @select="select"
+        @close="close"
+      ></BankSelector>
+    </transition>
+  </div>
+</template>
+
+<script>
+import FormInput from "./FormInput";
+import BankSelector from "./child/BankSelector";
+export default {
+  name: "formBankWebsite",
+  components: {
+    FormInput,
+    BankSelector
+  },
+  props: {
+    // 左侧的label描述
+    label: {
+      type: String,
+      default: undefined
+    },
+    // bankWebsite银行网点对象
+    bankWebsite: {
+      type: Object,
+      default: function() {
+        return {};
+      }
+    },
+    // rules校验规则
+    rules: {
+      type: Array,
+      default: () => {
+        return [];
+      }
+    },
+    // placeholder
+    placeholder: {
+      type: String,
+      default: undefined
+    },
+    // disabled
+    disabled: {
+      type: Boolean,
+      default: false
+    }
+  },
+  data() {
+    return {
+      iconSrc: require("@/assets/imgs/common/icon/icon_arrow_right.png"), // 右箭头图标
+      showBottomUnlegalMsg: false, // 是否显示底部错误信息
+      showSelector: false // 是否显示银行网点选择
+    };
+  },
+  computed: {},
+  watch: {
+    // 在银行网点选择器弹出的时候，不显示底部错误信息
+    showSelector(newVal) {
+      newVal
+        ? (this.showBottomUnlegalMsg = false)
+        : (this.showBottomUnlegalMsg = true);
+    }
+  },
+  mounted() {},
+  methods: {
+    // 打开银行网点选择器
+    open() {
+      if (this.disabled) return;
+
+      this.showSelector = true;
+    },
+    // 关闭银行网点选择器
+    close() {
+      this.showSelector = false;
+    },
+    // 选中
+    select(item) {
+      // 赋值对象属性
+      this.bankWebsite.bankId = item.bankId;
+      this.bankWebsite.bankName = item.bankName;
+      // 关闭银行网点选择器
+      this.close();
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped></style>

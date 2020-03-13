@@ -1,0 +1,196 @@
+<template>
+  <Page class="query-plan" :withAppBar="!globalConfig.isWx">
+    <AppBar class="app-bar" v-if="!globalConfig.isWx">
+      <img
+        slot="left"
+        src="../../assets/imgs/common/icon/icon_back.png"
+        class="icon icon-back"
+        @click="goBack"
+      />
+      <template slot="center">
+        规划书查询
+      </template>
+    </AppBar>
+    <AppContent>
+      <ValiForm :form="searchParams" :vali="vali">
+        <FormSelect
+          v-model="searchParams.insuranceType"
+          :selectList="purposeSelectList"
+          label="险种名称"
+          placeholder="请选择"
+        ></FormSelect>
+        <FormInput
+          v-model="searchParams.policyHolderName"
+          label="投保人姓名"
+          placeholder="请输入客户姓名"
+          :rules="rules.policyHolderName"
+        ></FormInput>
+        <FormDatepickerGroup
+          :begin.sync="searchParams.quertStartTime"
+          :end.sync="searchParams.queryEndTime"
+          label="制作日期"
+        >
+        </FormDatepickerGroup>
+      </ValiForm>
+      <div class="btn-wrap" @touchmove.prevent>
+        <button class="btn cancel" @click="handlerCancel">取消</button>
+        <button class="btn confirm" @click="handlerConfirm">确定</button>
+      </div>
+    </AppContent>
+  </Page>
+</template>
+
+<script>
+import { mapState } from "vuex";
+import ValiForm from "@/components/common/form/ValiForm";
+import FormSelect from "@/components/common/form/FormSelect";
+import FormInput from "@/components/common/form/FormInput";
+import FormDatepickerGroup from "@/components/common/form/FormDatepickerGroup";
+
+export default {
+  name: "queryPlan",
+  components: {
+    ValiForm,
+    FormSelect,
+    FormInput,
+    FormDatepickerGroup
+  },
+  data() {
+    return {
+      // form: {
+      //   policyHolderName: "", //投保人姓名
+      //   insuranceType: "", //险种code
+      //   quertStartTime: utils.format.dateToStr(new Date(), "yyyy-MM-dd"), //制作日期（开始）
+      //   queryEndTime: utils.format.dateToStr(new Date(), "yyyy-MM-dd") //制作日期(结束)
+      // },
+      purposeSelectList: [],
+      // form验证对象
+      vali: {
+        status: false,
+        unlegalValiList: []
+      },
+      rules: {
+        policyHolderName: [
+          {
+            regExp: "chinese",
+            msg: "姓名必须由汉字组成"
+          },
+          {
+            regExp: /^.{2,10}$/,
+            msg: "姓名长度必须在2~10字符之内"
+          }
+        ]
+      }
+    };
+  },
+  created() {
+    this.initPage();
+  },
+  computed: {
+    ...mapState({
+      userInfo: state => state.user.userInfo, //用户信息
+      searchParams: state => state.plan.searchParams //查询参数
+    })
+  },
+  methods: {
+    // 返回
+    goBack() {
+      this.reset();
+      this.back();
+    }, //取消
+    handlerCancel() {
+      this.reset();
+      this.back();
+    },
+    // 处理确定
+    handlerConfirm() {
+      if (!this.vali.status) {
+        // utils.ui.confirm(this.vali.unlegalValiList[0].msg);
+        return;
+      } else {
+        this.back();
+      }
+    },
+    //产品列表请求
+    initPage(type, val, name) {
+      const params = {
+        attrName: type || "product_type_category", //产品分类(Y)
+        attrValue: val || "all", //分类代码(Y)
+        infoId: globalConfig.isWx
+          ? this.userInfo && this.userInfo.weChatAgenctDTO.infoId
+          : this.userInfo && this.userInfo.user && this.userInfo.user.personId, //查询持有人ID
+        // infoId: "557f6da8ce8148e7a4e777824c33f4b0" || "1010000011", //规划师工号(Y),
+        productName: name || "", //产品名称(N))
+        channelId: "" || "01", //渠道(Y)
+        orgCode: globalConfig.isWx
+          ? this.userInfo &&
+            this.userInfo.orgLdcom &&
+            this.userInfo.orgLdcom.comcode
+          : this.userInfo && this.userInfo.ldcom && this.userInfo.ldcom.comcode, //机构code,//机构code,
+        // orgCode: "86010000", //管理机构(Y)
+        pageNum: 0, //页码(Y)
+        pageSize: 100 //分页大小(Y)
+      };
+      utils.http.post(interfaces.policy.productlist, params).then(res => {
+        console.log(res);
+        if (res.flag == "true") {
+          this.purposeSelectList = res.returnList.map(item => {
+            return {
+              code: item.productCode,
+              desc: item.name
+            };
+          });
+        }
+      });
+    },
+    //重置
+    reset() {
+      this.$store.commit("plan/setState", {
+        attr: "searchParams",
+        data: {
+          policyHolderName: "", //投保人姓名
+          insuranceType: "", //险种code
+          quertStartTime: "", //制作日期（开始）
+          queryEndTime: "" //制作日期(结束)
+        }
+      });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/assets/css/common/form.scss";
+.app-bar {
+  .icon {
+    height: auto;
+    &.icon-back {
+      width: 11.5px;
+    }
+  }
+}
+.btn-wrap {
+  @include display-flex;
+  justify-content: space-between;
+  font-size: 18px;
+  margin-top: 100px;
+  padding: 0 65px;
+  .btn {
+    @include display-flex;
+    @include reset-button;
+    border-radius: 20px;
+    height: 38px;
+    width: 102px;
+    font-family: HYQiHei-DES;
+    &.cancel {
+      background-color: white;
+      color: $color-theme;
+      border: 1px solid $color-theme;
+    }
+    &.confirm {
+      background-color: $color-theme;
+      color: $font-color;
+    }
+  }
+}
+</style>

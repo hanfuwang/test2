@@ -1,0 +1,135 @@
+<template>
+  <section class="insurant">
+    <h2>被保人信息</h2>
+    <ValiForm :form="insurant" :vali="vali">
+      <!-- 姓名 -->
+      <FormInput
+        v-model="insurant.name"
+        label="姓名"
+        placeholder="请选择客户"
+        :iconSrc="iconSrc"
+        @iconClick="chooseCustomer"
+        :disabled="true"
+      ></FormInput>
+      <!-- 性别 -->
+      <FormRadio
+        v-model="insurant.sex"
+        label="性别"
+        :selectList="sexSelectList"
+        :disabled="insurant.isoldCustomer == '1'"
+      ></FormRadio>
+      <!-- 生日 -->
+      <FormDatepicker
+        placeholder="请选择生日"
+        label="出生日期"
+        v-model="insurant.birthdate"
+        :disabled="insurant.isoldCustomer == '1'"
+      ></FormDatepicker>
+      <!-- 职业 -->
+      <FormSelector
+        :selectData.sync="insurant.cdOccupation"
+        type="job"
+        label="职业"
+        placeholder="请选择职业"
+        ref="jobSelector"
+      ></FormSelector>
+    </ValiForm>
+  </section>
+</template>
+
+<script>
+import ValiForm from "@/components/common/form/ValiForm";
+import FormInput from "@/components/common/form/FormInput";
+import FormRadio from "@/components/common/form/FormRadio";
+import FormDatepicker from "@/components/common/form/FormDatepicker";
+import FormSelector from "@/components/common/form/FormSelector";
+import { mapState } from "vuex";
+export default {
+  name: "insurant",
+  components: {
+    ValiForm,
+    FormInput,
+    FormRadio,
+    FormDatepicker,
+    FormSelector
+  },
+  props: {},
+  data() {
+    return {
+      //性别码表
+      sexSelectList: [],
+      iconSrc: require("@/assets/imgs/common/icon/icon_search.png"), //客户小图标
+
+      //insurant验证对象
+      vali: {
+        status: false,
+        unlegalValiList: []
+      }
+    };
+  },
+  computed: {
+    ...mapState({
+      insurant: state => state.plan.insurant, //被保人对象
+      applicant: state => state.plan.applicant //投保人对象
+    })
+  },
+  watch: {
+    insurant: {
+      handler(newValue) {
+        //console.log(this.applicant);
+        if (this.insurant.holderRelation == "00") {
+          // alert("77");
+          //关系为本人时，当被保人信息更改投保人同步更新
+          this.$store.commit("plan/setState", {
+            attr: "applicant",
+            data: Object.assign(
+              {
+                name: newValue.name,
+                sex: newValue.sex,
+                birthdate: newValue.birthdate,
+                cdOccupation: newValue.cdOccupation,
+                isoldCustomer: newValue.isoldCustomer
+              },
+              this.insurant
+            )
+          });
+        }
+      },
+      deep: true
+    }
+  },
+  created() {
+    this.initCodeList();
+  },
+  methods: {
+    //选择客户
+    chooseCustomer() {
+      this.$emit("chooseInsurant");
+    },
+    //初始化码表
+    async initCodeList() {
+      // console.log(JSON.parse(JSON.stringify(this.insurant)));
+      //性别码表
+      let sexSelectList = await utils.code.getCode("sys_user_sex");
+      this.sexSelectList = sexSelectList.filter(item => {
+        return item.code != "2";
+      });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.insurant {
+  padding-top: 8px;
+  h2 {
+    @include lineheight-height(37px);
+    margin: 0 20px;
+    padding: 0 15px;
+    background: $color-ds;
+    font-size: 14px;
+    color: #333333;
+    font-weight: normal;
+  }
+}
+</style>

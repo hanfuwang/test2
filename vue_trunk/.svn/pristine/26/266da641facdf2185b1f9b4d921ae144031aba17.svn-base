@@ -1,0 +1,47 @@
+/* ------------------------------------------ iphone适配样式 ------------------------------------------ */
+
+// 当前页面在app中打开 && 是iphone全面屏
+#app.in-app.in-iphone.in-iphone-full-screen {
+  // 页面
+  .page {
+    // 顶部padding安全距离
+    padding-top: $safe-top-full-screen!important;
+    &.with-app-bar {
+      // 带appbar的顶部padding安全距离 + appbar高度
+      padding-top: calc(#{$safe-top-full-screen} + #{$height-app-bar})!important;
+    }
+    // appbar padding安全距离
+    .app-bar {
+      padding-top: $safe-top-full-screen!important;
+      height: calc(#{$safe-top-full-screen} + #{$height-app-bar})!important;
+    }
+  }
+  // 全局提示
+  .global-tips {
+    // 下移安全距离
+    top: $safe-top-full-screen!important;
+  }
+}
+
+// 当前页面在app中打开 && 是iphone非全面屏
+#app.in-app.in-iphone:not(.in-iphone-full-screen) {
+  // 页面
+  .page {
+    // 顶部padding安全距离
+    padding-top: $safe-top-normal!important;
+    &.with-app-bar {
+      // 带appbar的顶部padding安全距离 + appbar高度
+      padding-top: calc(#{$safe-top-normal} + #{$height-app-bar})!important;
+    }
+    // appbar padding安全距离
+    .app-bar {
+      padding-top: $safe-top-normal!important;
+      height: calc(#{$safe-top-normal} + #{$height-app-bar})!important;
+    }
+  }
+  // 全局提示
+  .global-tips {
+    // 下移安全距离
+    top: $safe-top-normal!important;
+  }
+}

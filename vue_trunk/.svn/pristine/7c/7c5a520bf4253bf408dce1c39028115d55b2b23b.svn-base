@@ -1,0 +1,69 @@
+<template>
+  <section class="tips">
+    <h4>风险提示</h4>
+    <ul>
+      <li>
+        <span class="star">*</span>
+        投保人在犹豫期后解除合同会遭受一定的损失，具体保单利益以保险合同为准；
+      </li>
+      <li>
+        <span class="star">*</span>
+        上述所有利益演示均基于保险公司的假设，不代表该公司的历史经营业绩和对未来经营业绩的预期；
+      </li>
+      <li>
+        <span class="star">*</span>
+        万能险的最低保障利率之上的投资利益是不确定的，实际保单账号价值可能低于中、高档利益演示水平；
+      </li>
+    </ul>
+    <div class="aixin">
+      <img src="@/assets/imgs/plan/icon/icon_love.png" />
+      <span class="star">温馨提示：</span>
+      <span class="foot">
+        以上利益演示说明为本平台对上述产品的理解，便于保险从业人员学习交流，演示数据仅供参考，请以实际为准。
+      </span>
+    </div>
+  </section>
+</template>
+
+<script>
+export default {
+  components: {},
+  data() {
+    return {};
+  },
+  methods: {}
+};
+</script>
+
+<style lang="scss" scoped>
+ul {
+  margin-top: 10px;
+  border-top: 1px solid #e5e5e5;
+  padding: 10px;
+}
+ul li {
+  list-style: none;
+  line-height: 25px;
+}
+h4 {
+  margin: 5px 0;
+  padding-left: 10px;
+  border-left: 3px solid #eb5656;
+}
+.tips {
+  font-size: 14px;
+  background: #fff;
+  margin: 10px;
+  padding: 10px;
+  border-radius: 10px;
+}
+.star {
+  color: red;
+}
+.foot {
+  line-height: 25px;
+}
+.aixin {
+  padding: 0 10px 10px;
+}
+</style>

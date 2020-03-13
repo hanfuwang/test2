@@ -1,0 +1,217 @@
+<template>
+  <page class="demo-app" :withAppBar="!globalConfig.isWx">
+    <AppBar class="app-bar" v-if="!globalConfig.isWx">
+      <img
+        slot="left"
+        src="../../assets/imgs/common/icon/icon_back.png"
+        class="icon icon-back"
+        @click="$router.go(-1)"
+      />
+      <template slot="center">
+        保单查询
+      </template>
+      <span slot="right" class="reset" @click="reset()">重置</span>
+    </AppBar>
+    <AppContent class="app-content">
+      <FormInput
+        v-model="Currentbound.Numbers"
+        label="投保单号:"
+        placeholder="请输入"
+      ></FormInput>
+
+      <FormSelect
+        v-model="Currentbound.purpose"
+        :selectList="rules.purposeSelectList"
+        label="险种名称:"
+        placeholder="请选择险种名称"
+      ></FormSelect>
+
+      <FormInput
+        v-model="Currentbound.Applicant"
+        label="投保人:"
+        placeholder="请输入"
+      ></FormInput>
+
+      <FormInput
+        v-model="Currentbound.recognizee"
+        label="被保险人:"
+        placeholder="请输入"
+      ></FormInput>
+
+      <div class="box">
+        <span class="left" @click="$router.push('/policy/policyList')"
+          >取消</span
+        >
+        <span class="right" @click="isok">确定</span>
+      </div>
+    </AppContent>
+  </page>
+</template>
+
+<script>
+import FormInput from "@/components/common/form/FormInput";
+import FormSelect from "@/components/common/form/FormSelect";
+import { mapState } from "vuex";
+export default {
+  name: "policyQuery",
+  components: {
+    FormSelect,
+    FormInput
+  },
+  data() {
+    return {
+      Currentbound: {
+        Numbers: "",
+        Applicant: "",
+        recognizee: "",
+        purpose: ""
+      },
+      page: 1,
+      pageSize: 10,
+      rules: {
+        purposeSelectList: []
+      }
+    };
+  },
+  computed: {
+    ...mapState({
+      insurant: state => state.plan.insurant, //被保人
+      applicant: state => state.plan.applicant, //投保人
+      userInfo: state => state.plan.userInfo //用户信息
+    })
+  },
+  created() {
+    this.loadata();
+  },
+  methods: {
+    reset() {
+      this.Currentbound.Numbers = "";
+      this.Currentbound.types = "";
+      this.Currentbound.Applicant = "";
+      this.Currentbound.recognizee = "";
+      this.Currentbound.purpose = "";
+    },
+    isok() {
+      this.Queryrequest();
+    },
+    //产品列表请求
+    loadata() {
+      const params = {
+        agentDto: {
+          agent: {
+            channelId: "01",
+            fpInfoId:
+              (this.userInfo && this.userInfo.infoId) ||
+              "e37fb59a626543afb04f218659419a44",
+            qualificationId: ""
+          },
+          ldcom: {
+            comcode: "86110101",
+            id: "e99fdd70882a40eba707f9b07b038319"
+          }
+        },
+        productSelect: {
+          attrName: "CPBZLX",
+          attrValue: 1
+        }
+      };
+      utils.http.post(interfaces.policy.productlist, params).then(res => {
+        console.log(res);
+        for (let i = 1; i < res.returnList.length; i++) {
+          this.rules.purposeSelectList.push({
+            code: res.returnList[i].productCode,
+            desc: res.returnList[i].name
+          });
+        }
+      });
+    },
+    //查询请求
+    Queryrequest() {
+      const params = {
+        policyQuery: {
+          fpInfoId:
+            (this.userInfo && this.userInfo.infoId) ||
+            "e37fb59a626543afb04f218659419a44",
+          // "agentCode": utils.locals.get('userInform').cusMember.userName,//代理人工号
+          agentCode: "1110101301",
+          // "memberInfoId":'',//客户管理过来的infoId  数据中心过来为空
+          memberInfoId: undefined,
+          applyCode: "",
+          policyCode: this.Currentbound.Numbers, //投保单号
+          holderName: this.Currentbound.Applicant, //投保人姓名
+          insuredName: this.Currentbound.recognizee, //被保人姓名
+          pageNum: this.page, //查询第几页
+          pageSize: this.pageSize, //每页显示多少条
+          riskCode: this.Currentbound.purpose, //第一主险名称
+          riskName: "",
+          status: 1, //状态：0查询未完成，1查询已完成
+          familyNum: "" //家庭单号
+        }
+      };
+      this.$router.push({ name: "policyList", params: { req: params } });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.app-bar {
+  border-bottom: 1px solid #cccccc;
+  .icon {
+    height: auto;
+    &.icon-back {
+      width: 11.5px;
+    }
+    &.icon-search {
+      width: 20px;
+    }
+  }
+  .reset {
+    font-family: HYQiHei-DES;
+    font-size: 14px;
+    color: #71a8f9;
+    letter-spacing: 0;
+  }
+}
+.box {
+  text-align: center;
+  font-family: HYQiHei-DES;
+  font-size: 18px;
+  .left {
+    width: 102px;
+    border: 1px solid #ffcc00;
+    border-radius: 19px;
+    height: 38px;
+    display: inline-block;
+    margin-top: 73px;
+    margin-right: 37px;
+    color: #ffcc00;
+    line-height: 38px;
+    color: #ffcc00;
+  }
+  .right {
+    width: 102px;
+    background: #ffcc00;
+    border-radius: 19px;
+    height: 38px;
+    display: inline-block;
+    line-height: 38px;
+  }
+}
+.bga::after {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  border-top: 5px solid;
+  border-right: 5px solid transparent;
+  border-left: 5px solid transparent;
+  color: #999;
+  content: "";
+  pointer-events: none;
+}
+.f-wrap {
+  >>> .btn-wrap {
+    border: 0px solid #e7e7e7;
+  }
+}
+</style>

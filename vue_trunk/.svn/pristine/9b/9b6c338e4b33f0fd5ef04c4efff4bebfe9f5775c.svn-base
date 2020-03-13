@@ -1,0 +1,186 @@
+<template>
+  <Page class="demo-scroll-table" :withAppBar="!globalConfig.isWx">
+    <AppBar class="app-bar" v-if="!globalConfig.isWx">
+      <img
+        slot="left"
+        src="../../assets/imgs/common/icon/icon_goback.png"
+        class="icon icon-back"
+        @click="$router.go(-1)"
+      />
+      <!-- AXPROPOSALSHARE -->
+      <template slot="center">
+        利益演示表
+      </template>
+    </AppBar>
+    <AppContent class="app-content">
+      <FormRadio
+        v-if="showProfit"
+        v-model="divide"
+        :selectList="productSelectList"
+      ></FormRadio>
+      <ScrollTable
+        :leftHeader="leftHeader"
+        :leftList="leftList"
+        :rightHeader="rightHeader"
+        :rightList="rightList"
+        :tableHeight="tableHeight"
+      ></ScrollTable>
+    </AppContent>
+  </Page>
+</template>
+
+<script>
+import { mapState } from "vuex";
+import ScrollTable from "../../components/common/ScrollTable";
+import FormRadio from "@/components/common/form/FormRadio";
+export default {
+  name: "showTable",
+  components: {
+    ScrollTable,
+    FormRadio
+  },
+  data() {
+    return {
+      divide: "0",
+      productSelectList: [
+        {
+          code: "0",
+          desc: "低档分红"
+        },
+        {
+          code: "2",
+          desc: "中档分红"
+        },
+        {
+          code: "1",
+          desc: "高档分红"
+        }
+      ],
+      tableList: [],
+      // 左侧头
+      leftHeader: [],
+      // 左侧list
+      leftList: [],
+      // 右侧头
+      rightHeader: [],
+      // 右侧list
+      rightList: []
+    };
+  },
+  computed: {
+    ...mapState({
+      showTable: state => state.plan.showTable //利益演示表
+    }),
+    // 是否显示分红选项
+    showProfit() {
+      // 路由中的产品号
+      const productCode = this.showTable.productCode;
+      // 带分红的产品列表
+      const profitProList = ["APWB01", "RPPB01"];
+      // 当前产品是否在分红产品列表中
+      return profitProList.find(item => item === productCode);
+    },
+    // table高度
+    tableHeight() {
+      // 当前pxRadio
+      const pxRadio = globalConfig.ui.pxRadio;
+      // 当前上部的保留高度
+      let topRemain = globalConfig.ui.topRemain;
+      if (this.showProfit) {
+        // 显示分红选项，需减去分红选项的高度
+        topRemain += 45 * pxRadio;
+      }
+      return `100vh - ${topRemain}px`;
+    }
+  },
+  watch: {
+    divide: {
+      handler(newVal) {
+        // 更新iptValue
+        this.divide = newVal;
+        if (this.divide == "0") {
+          this.tableList = this.transDataLine(this.showTable.low);
+          this.divice();
+        } else if (this.divide == "2") {
+          this.tableList = this.transDataLine(this.showTable.middle);
+          this.divice();
+        } else if (this.divide == "1") {
+          this.tableList = this.transDataLine(this.showTable.high);
+          this.divice();
+        }
+      },
+      // 立即执行
+      immediate: true
+    }
+  },
+  created() {
+    this.tableList = this.transDataLine(this.showTable.low);
+    this.divice();
+  },
+
+  methods: {
+    divice() {
+      this.leftHeader = this.tableList.leftHeader;
+      this.leftList = this.tableList.leftList;
+      this.rightHeader = this.tableList.rightHeader;
+      this.rightList = this.tableList.rightList;
+    },
+    //转义行数据=>scollTable参数
+    transDataLine(dataLine, fixedRowCount = 2) {
+      //将数据从itemAttr属性中拿出来
+      if (this.showProfit) {
+        dataLine = dataLine.map(line => line);
+      } else {
+        dataLine = dataLine.map(line => line.itemAttr);
+      }
+      //头部数据
+      const header = dataLine[0].map((item, index) => {
+        return {
+          param: item, //键
+          paramIndex: index, //属性在原始数组的下标
+          desc: item //描述
+        };
+      });
+      //左头部
+      const leftHeader = header.slice(0, fixedRowCount);
+      //右头部
+      const rightHeader = header.slice(fixedRowCount);
+      //左list
+      const leftList = dataLine.slice(1).map(item => {
+        const returnItem = {};
+        leftHeader.forEach(header => {
+          returnItem[header.param] = item[header.paramIndex];
+        });
+        return returnItem;
+      });
+      //右list
+      const rightList = dataLine.slice(1).map(item => {
+        const returnItem = {};
+        rightHeader.forEach(header => {
+          returnItem[header.param] = item[header.paramIndex];
+        });
+        return returnItem;
+      });
+      //返回scollTable参数
+      return {
+        leftHeader,
+        rightHeader,
+        leftList,
+        rightList
+      };
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.app-bar {
+  font-family: HYQiHei-DES;
+  .icon {
+    height: auto;
+    &.icon-back {
+      width: 11.5px;
+    }
+  }
+}
+</style>

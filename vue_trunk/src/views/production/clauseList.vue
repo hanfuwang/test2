@@ -1,0 +1,125 @@
+<template>
+  <Page class="clause-list" :withAppBar="true">
+    <AppBar class="app-bar">
+      <img
+        slot="left"
+        src="@/assets/imgs/common/icon/icon_back.png"
+        class="icon icon-back"
+        @click="goBack"
+      />
+      <template slot="center">
+        {{ tittle }}
+      </template>
+    </AppBar>
+    <AppContent class="tiaokuan">
+      <ul class="tiaokuan_ul">
+        <li @click="openPdf(proa)" v-for="proa in tiaokuan" :key="proa.id">
+          {{ proa.fileName }}
+        </li>
+        <!--<li ng-click="pro.tiaokuan(2)" 
+    			ng-if="policyReqData.order.policyRiskList.length==2">
+    			爱心人寿附加爱家无忧家庭收入保障定期寿险
+    		</li>-->
+      </ul>
+    </AppContent>
+  </Page>
+</template>
+<script>
+import { mapState } from "vuex";
+export default {
+  name: "",
+  components: {},
+  props: {},
+  mixins: [],
+  data() {
+    return {
+      tiaokuan: [], //符合要求条款的列表
+      tittle: "", //头部的内容,
+      url: ""
+    };
+  },
+  computed: {
+    ...mapState({
+      proIframeTittle: state => state.production.proIframeTittle, //iframe的头部的内容
+      selectAllRisk: state => state.production.selectAllRisk, //选中的附件险
+      clauseList: state => state.production.clauseList, //条款的列表
+      productionItem: state => state.production.productItem //选中的产品内容
+    })
+  },
+  created() {
+    if (this.proIframeTittle == "PD001") {
+      this.tittle = "投保条款";
+      this.clauseList.map(item => {
+        switch (item.docType) {
+          case "PD001":
+            if (this.productionItem.productCode == item.bizId)
+              this.tiaokuan.push(item);
+            this.selectAllRisk.map(val => {
+              if (val.productCode == item.bizId) this.tiaokuan.push(item);
+            });
+            break;
+        }
+      });
+    } else if (this.proIframeTittle == "PD004") {
+      this.tittle = "投保须知";
+      this.clauseList.map(item => {
+        switch (item.docType) {
+          case "PD004":
+            if (this.productionItem.productCode == item.bizId)
+              this.tiaokuan.push(item);
+            this.selectAllRisk.map(val => {
+              if (val.productCode == item.bizId) this.tiaokuan.push(item);
+            });
+            break;
+        }
+      });
+    }
+    console.log(this.tiaokuan);
+    this.tiaokuan.reverse();
+  },
+  beforeRouteEnter(to, from, next) {
+    next();
+  },
+  methods: {
+    // 返回
+    goBack() {
+      this.back();
+    },
+    //打开pdf
+    openPdf(item) {
+      if (item.fileUrl.indexOf("https://") != -1) {
+        this.url = globalConfig.openOfficeUrl + "?ssl=1&furl=" + item.fileUrl;
+      } else if (item.fileUrl.indexOf("http://") != -1) {
+        this.url = globalConfig.openOfficeUrl + "?furl=" + item.fileUrl;
+      }
+      this.go("proIframe");
+      this.$store.commit("production/setState", {
+        attr: "iframeContent",
+        data: Object.assign({
+          tittle: this.tittle,
+          url: this.url
+        })
+      });
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.app-bar {
+  .icon {
+    height: auto;
+    &.icon-back {
+      width: 11.5px;
+    }
+  }
+}
+.tiaokuan_ul {
+  background: #fff;
+  li {
+    font-size: 14px;
+    line-height: 26px;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+  }
+}
+</style>

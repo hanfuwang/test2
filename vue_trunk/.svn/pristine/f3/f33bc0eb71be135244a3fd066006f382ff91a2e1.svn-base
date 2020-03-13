@@ -1,0 +1,48 @@
+<template>
+  <Modal
+    class="share-wx-tips"
+    :style="{ backgroundImage: `url(${shareTipsBg})` }"
+    :show="show"
+    clickModalToClose
+    @close="close"
+  >
+  </Modal>
+</template>
+
+<script>
+import Modal from "./ui/Modal";
+export default {
+  name: "shareWxTips",
+  components: {
+    Modal
+  },
+  props: {
+    // 是否显示tips
+    show: {
+      type: Boolean,
+      default: false
+    }
+  },
+  data() {
+    return {
+      shareTipsBg: require("@/assets/imgs/global/pic/pic_wechat_share_tips.png") // 微信分享tips背景图
+    };
+  },
+  computed: {},
+  created() {},
+  methods: {
+    // 关闭
+    close() {
+      this.$emit("close");
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.share-wx-tips {
+  background-position: top center;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+</style>

@@ -1,0 +1,83 @@
+<template>
+  <div>
+    <h3>保障责任</h3>
+    <ul>
+      <li>
+        <p><span>爱心随意保意外伤害保险</span><span>条款</span></p>
+      </li>
+      <li>
+        <p>
+          <span>身故或全残保险金</span>
+          <span>最高付给{{}}元</span><span @click="isShowModal">详情</span>
+        </p>
+      </li>
+    </ul>
+    <ul>
+      <li>
+        <p><span>爱心人寿尊享版终身寿险(分红型)</span><span>条款</span></p>
+      </li>
+      <li>
+        <p>
+          <span>身故或全残保险金</span><span @click="isShowModal">详情</span>
+        </p>
+      </li>
+    </ul>
+    <!-- 模态框 -->
+    <Modal
+      :show="isShow"
+      :clickModalToClose="clickModalToClose"
+      :backgroundColor="backgroundColor"
+    >
+      <div class="modal" @click="closeModal">
+        <div class="inner" @click.stop=""></div>
+      </div>
+    </Modal>
+  </div>
+</template>
+
+<script>
+import Modal from "@/components/common/ui/Modal";
+export default {
+  components: { Modal },
+  data() {
+    return {
+      //模态框
+      isShow: false, //是否关闭模态框
+      // 点击模态层关闭confirm框
+      clickModalToClose: false,
+      // 背景色
+      backgroundColor: "rgba(0, 0, 0, 0.4)"
+    };
+  },
+  methods: {
+    //模态框
+    isShowModal() {
+      this.isShow = true;
+      this.clickModalToClose = true;
+    },
+    closeModal() {
+      this.isShow = false;
+      this.clickModalToClose = false;
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+ul li {
+  list-style: none;
+}
+.modal {
+  width: 100%;
+  height: 100%;
+  .inner {
+    width: 300px;
+    height: 150px;
+    border-radius: 10px;
+    background: white;
+    position: absolute;
+    top: 200px;
+    left: 40px;
+  }
+}
+</style>

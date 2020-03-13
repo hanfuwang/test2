@@ -1,0 +1,153 @@
+<template>
+  <section>
+    <div class="risk-calc-button">
+      <button class="cancel">取消</button>
+      <button class="sure" @click="handleSure">确定</button>
+    </div>
+  </section>
+</template>
+
+<script>
+import { mapState } from "vuex";
+export default {
+  name: "riskCalcButton",
+  components: {},
+  props: {
+    mainRiskList: {
+      //主险列表
+      type: Array
+    },
+    mainSetting: {
+      //主险配置
+      type: Object
+    },
+    selectMainCode: {
+      //当前主险code
+      type: String
+    },
+    selectMain: {
+      //被选的主险项
+      type: Object
+    }
+  },
+  data() {
+    return {};
+  },
+  mounted() {
+    console.log(this.itemObj);
+  },
+  computed: {
+    ...mapState({
+      // mainProposalProductList: state => state.plan.mainProposalProductList, //主险列表
+      insurant: state => state.plan.insurant, //被保人对象
+      applicant: state => state.plan.applicant, //投保人
+      userInfo: state => state.user.userInfo //用户信息
+    })
+  },
+  watch: {},
+  created() {},
+  methods: {
+    //确定
+    handleSure() {
+      const params = this.initParams();
+      console.log(params);
+      // utils.http.post(interfaces.plan.premiumCalc, params).then(res => {});
+    },
+    initParams() {
+      //处理被保人
+      let insurant = this.insurant;
+      insurant.jobLevel = insurant.cdOccupation.occupationRiskLevel;
+      insurant.job = insurant.cdOccupation.occupationCode;
+      //处理投保人
+      let applicant = this.applicant;
+      applicant.jobLevel = applicant.cdOccupation.occupationRiskLevel;
+      applicant.job = applicant.cdOccupation.occupationCode;
+      let params = {
+        proposalPlan: {
+          holder: applicant, //投保人
+          insurantProductList: [
+            {
+              insurant, //投保人
+              insuredId: "",
+              planId: "",
+              planInsureDate: "",
+              productList: [], //附加险种
+              proposalId: "",
+              totalPremium: ""
+            }
+          ], //主险
+          orgAgent: {},
+          totalAmount: "",
+          totalPremium: ""
+        }
+      };
+      //处理主险
+      let mainProposalProductItem = {
+        amount: "",
+        attList: [],
+        bookId: "",
+        chargeType: "",
+        chargeWay: "",
+        coverageType: "",
+        createTime: "",
+        createdBy: "",
+        description: "",
+        drawFreq: "",
+        drawStartAge: "",
+        extraList: [],
+        grade: "",
+        id: "",
+        isMaster: "",
+        lastUpdatedBy: "",
+        liabList: [],
+        payMode: "",
+        payPeriod: "",
+        payintv: "",
+        policyPeriod: "",
+        premium: "",
+        premiumDes: "",
+        productCode: "",
+        productId: "",
+        productName: "",
+        productShortName: "",
+        productType: "",
+        qxFlag: "",
+        relationType: "",
+        shebao: "",
+        sourceId: "",
+        subflag: "",
+        updateTime: " ",
+        userDefine1: "",
+        userDefine2: ""
+      }; //主险模板
+      let selectMain = this.selectMain; //被选中的主险
+      console.log(selectMain);
+      console.log(mainProposalProductItem);
+      return params;
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/assets/css/common/form.scss";
+.risk-calc-button {
+  padding: 40px 40px 20px 40px;
+  @include display-flex;
+  justify-content: space-around;
+  .sure {
+    background: $color-theme;
+  }
+  .cancel {
+    color: $color-theme;
+  }
+  button {
+    width: 102px;
+    height: 38px;
+    border: 1px solid $color-theme;
+    border-radius: 19px;
+    background: $color-bg;
+    font-size: 18px;
+  }
+}
+</style>

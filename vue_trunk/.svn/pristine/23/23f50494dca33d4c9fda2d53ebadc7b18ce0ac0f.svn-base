@@ -1,0 +1,136 @@
+<template>
+  <Page class="make-plan" :withAppBar="!globalConfig.isWx">
+    <!-- 导航栏 -->
+    <AppBar class="app-bar" v-if="!globalConfig.isWx">
+      <img
+        slot="left"
+        src="../../assets/imgs/common/icon/icon_back.png"
+        class="icon icon-back"
+        @click="goBack"
+      />
+      <template slot="center">
+        制作规划书
+      </template>
+    </AppBar>
+
+    <!-- 主体 -->
+    <AppContent class="app-content">
+      <!-- 被保人信息 -->
+      <Insurant ref="insurantRef" />
+
+      <!-- 投保人信息 -->
+      <Applicant ref="applicantRef" @changeRelation="changeRelation" />
+
+      <!-- 险种信息 -->
+      <ProductMsg @addProduct="addProduct" />
+
+      <!-- 按钮组 -->
+      <div class="btns">
+        <button class="view" @click="viewPlan">查看规划书</button>
+        <button class="send" @click="sendPlan">生成规划书并发送</button>
+      </div>
+    </AppContent>
+  </Page>
+</template>
+
+<script>
+import Applicant from "@/components/plan/Applicant";
+import Insurant from "@/components/plan/Insurant";
+import ProductMsg from "@/components/plan/ProductMsg";
+export default {
+  name: "makePlan",
+  components: {
+    Applicant,
+    Insurant,
+    ProductMsg
+  },
+  data() {
+    return {};
+  },
+  computed: {},
+  watch: {},
+  created() {},
+  methods: {
+    // 返回
+    goBack() {
+      this.back();
+    },
+
+    //查看规划书
+    viewPlan() {
+      if (!this.isMsgEmpty()) return;
+    },
+
+    //发送规划书
+    sendPlan() {
+      if (!this.isMsgEmpty()) return;
+    },
+
+    //添加险种
+    addProduct() {
+      if (!this.isMsgEmpty()) return;
+      let applicant = this.$store.state.plan.applicant; //投保人信息
+      let insurant = this.$store.state.plan.insurant; //被保人信息
+      this.goWithQuery("insuranceSelect", {
+        applicantBirthday: applicant.birthday, //投保人生日
+        insurantBirthday: insurant.birthday, //被保人生日
+        insurantSex: insurant.sex, //被保人性别
+        relation: applicant.relation //关系
+      });
+    },
+    //选择了关系
+    changeRelation() {
+      utils.ui.tips("选择了关系");
+    },
+    //校验投被保人信息
+    isMsgEmpty() {
+      console.log(this.$refs.insurantRef.vali);
+      console.log(this.$refs.applicantRef.vali);
+      if (!this.$refs.insurantRef.vali.status) {
+        //被保人信息校验
+        utils.ui.confirm(this.$refs.insurantRef.vali.unlegalValiList[0].msg);
+        return false;
+      }
+
+      if (!this.$refs.applicantRef.vali.status) {
+        //投保人信息校验
+        utils.ui.confirm(this.$refs.applicantRef.vali.unlegalValiList[0].msg);
+        return false;
+      }
+      return true;
+    }
+  },
+  activated() {
+    console.log(this.$store.state.plan.insurant);
+    console.log(this.$store.state.plan.applicant);
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.app-bar {
+  .icon {
+    height: auto;
+    &.icon-back {
+      width: 11.5px;
+    }
+  }
+}
+.make-plan {
+  .btns {
+    padding: 0 40px 20px 40px;
+    .view {
+      margin-right: 30px;
+    }
+    button {
+      width: 130px;
+      height: 33px;
+      display: inline-block;
+      border: 1px solid $color-theme;
+      border-radius: 16.5px;
+      background: $color-bg;
+      font-size: 13px;
+    }
+  }
+}
+</style>

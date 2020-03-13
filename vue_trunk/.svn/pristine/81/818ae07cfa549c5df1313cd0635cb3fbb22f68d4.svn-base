@@ -1,0 +1,384 @@
+<template>
+  <article class="scroll-table">
+    <!-- 左侧 -->
+    <section class="left">
+      <!-- 左侧头部 -->
+      <header class="left-header">
+        <!-- 左侧头部table -->
+        <table
+          class="left-header-table"
+          :style="{ width: leftTableWidth + 'px' }"
+        >
+          <tbody>
+            <tr>
+              <th
+                v-for="(header, index) of leftHeader"
+                :key="header.param"
+                :style="leftThStyleList[index]"
+              >
+                {{ header.desc }}
+              </th>
+            </tr>
+          </tbody>
+        </table>
+      </header>
+
+      <!-- 左侧内容 -->
+      <div class="left-content" :style="{ height: contentHeight }">
+        <!-- 左侧内容table -->
+        <table
+          class="left-content-table"
+          :style="{ width: leftTableWidth + 'px' }"
+          ref="leftContentTable"
+        >
+          <tr v-for="(item, index) of leftList" :key="index">
+            <td
+              v-for="(header, index) of leftHeader"
+              :key="header.param"
+              :style="leftTdStyleList[index]"
+            >
+              {{ item[header.param] }}
+            </td>
+          </tr>
+        </table>
+      </div>
+    </section>
+
+    <!-- 右侧 -->
+    <section class="right">
+      <!-- 右侧头部 -->
+      <header class="right-header">
+        <table
+          class="right-header-table"
+          :style="{ width: rightTableWidth + 'px' }"
+          ref="rightHeaderTable"
+        >
+          <tbody>
+            <tr>
+              <th
+                v-for="(header, index) of rightHeader"
+                :key="header.param"
+                :style="rightThStyleList[index]"
+              >
+                {{ header.desc }}
+              </th>
+            </tr>
+          </tbody>
+        </table>
+      </header>
+
+      <!-- 右侧内容 -->
+      <div
+        class="right-content"
+        :style="{ height: contentHeight }"
+        ref="rightContent"
+      >
+        <table
+          class="right-content-table"
+          :style="{ width: rightTableWidth + 'px' }"
+        >
+          <tr v-for="(item, index) of rightList" :key="index">
+            <td
+              v-for="(header, index) of rightHeader"
+              :key="header.param"
+              :style="rightTdStyleList[index]"
+            >
+              {{ item[header.param] }}
+            </td>
+          </tr>
+        </table>
+      </div>
+    </section>
+  </article>
+</template>
+
+<script>
+import IScroll from "iscroll/build/iscroll-probe";
+export default {
+  name: "scrollTable",
+  props: {
+    // 左侧头
+    leftHeader: {
+      type: Array,
+      default: function() {
+        return [];
+      }
+    },
+    // 左侧list
+    leftList: {
+      type: Array,
+      default: function() {
+        return [];
+      }
+    },
+    // 右侧头
+    rightHeader: {
+      type: Array,
+      default: function() {
+        return [];
+      }
+    },
+    // 右侧list
+    rightList: {
+      type: Array,
+      default: function() {
+        return [];
+      }
+    },
+    // 表格高度
+    tableHeight: {
+      default: 300
+    },
+    // 默认的单元格宽度
+    defaultCellWidth: {
+      type: Number,
+      default: 70
+    },
+    // 表头高度
+    thHeight: {
+      type: Number,
+      default: 50
+    },
+    // 行高度
+    tdHeight: {
+      type: Number,
+      default: 40
+    },
+    // 左侧表头单元格样式
+    leftThStyle: {
+      type: Object,
+      default: function() {
+        return {};
+      }
+    },
+    // 左侧内容单元格样式
+    leftTdStyle: {
+      type: Object,
+      default: function() {
+        return {};
+      }
+    },
+    // 右侧表头单元格样式
+    rightThStyle: {
+      type: Object,
+      default: function() {
+        return {};
+      }
+    },
+    // 右侧内容单元格样式
+    rightTdStyle: {
+      type: Object,
+      default: function() {
+        return {};
+      }
+    }
+  },
+  data() {
+    return {
+      // iscroll实例化对象
+      iscrollObj: {}
+    };
+  },
+  computed: {
+    // 当前屏幕宽度与设计稿宽度的比例
+    pxRadio() {
+      return this.globalConfig.ui.pxRadio;
+    },
+    // 左侧table宽度
+    leftTableWidth() {
+      const sumWidth = this.leftHeader.reduce((acc, item) => {
+        return acc + (item.width || this.defaultCellWidth);
+      }, 0);
+      // 返回当前页面宽度适配的宽度
+      return sumWidth * this.pxRadio;
+    },
+    // 右侧table宽度
+    rightTableWidth() {
+      const sumWidth = this.rightHeader.reduce((acc, item) => {
+        return acc + (item.width || this.defaultCellWidth);
+      }, 0);
+      // 返回当前页面宽度适配的宽度
+      return sumWidth * this.pxRadio;
+    },
+    // 内容区高度
+    contentHeight() {
+      const tableHeight = this.tableHeight;
+      const thHeight = this.thHeight;
+      const pxRadio = this.pxRadio;
+
+      if (typeof tableHeight === "string") {
+        // 指定了具体高度
+        return `calc(${tableHeight} - ${thHeight * pxRadio}px)`;
+      } else {
+        // 指定了数字形式的适配高度
+        return `${(tableHeight - thHeight) * pxRadio}px`;
+      }
+    },
+    // 左侧头部表格单元格样式
+    leftThStyleList() {
+      const returnList = [];
+      this.leftHeader.forEach(header => {
+        returnList.push({
+          width: (header.width || this.defaultCellWidth) * this.pxRadio + "px",
+          height: this.thHeight * this.pxRadio + "px",
+          // 扩展样式
+          ...this.leftThStyle
+        });
+      });
+      return returnList;
+    },
+    // 左侧内容表格单元格样式
+    leftTdStyleList() {
+      const returnList = [];
+      this.leftHeader.forEach(header => {
+        returnList.push({
+          width: (header.width || this.defaultCellWidth) * this.pxRadio + "px",
+          height: this.tdHeight * this.pxRadio + "px",
+          // 扩展样式
+          ...this.leftTdStyle
+        });
+      });
+      return returnList;
+    },
+    // 右侧头部表格单元格样式
+    rightThStyleList() {
+      const returnList = [];
+      this.rightHeader.forEach(header => {
+        returnList.push({
+          width: (header.width || this.defaultCellWidth) * this.pxRadio + "px",
+          height: this.thHeight * this.pxRadio + "px",
+          // 扩展样式
+          ...this.rightThStyle
+        });
+      });
+      return returnList;
+    },
+    // 右侧内容表格单元格样式
+    rightTdStyleList() {
+      const returnList = [];
+      this.rightHeader.forEach(header => {
+        returnList.push({
+          width: (header.width || this.defaultCellWidth) * this.pxRadio + "px",
+          height: this.tdHeight * this.pxRadio + "px",
+          // 扩展样式
+          ...this.rightTdStyle
+        });
+      });
+      return returnList;
+    }
+  },
+  created() {},
+  mounted() {
+    // 初始化iscroll
+    this.initIscroll();
+  },
+  methods: {
+    // 初始化iscroll
+    initIscroll() {
+      // iscroll附体的元素
+      const rightContent = this.$refs.rightContent;
+      // 禁止掉该元素原有的touchmove与mousewheel事件，交给iscroll处理
+      rightContent.addEventListener("touchmove", e => {
+        e.preventDefault();
+      });
+      rightContent.addEventListener("mousewheel", e => {
+        e.preventDefault();
+      });
+
+      // 创建iscroll实例对象
+      this.iscrollObj = new IScroll(rightContent, {
+        scrollX: true,
+        scrollY: true,
+        probeType: 3 // 像素级触发事件
+      });
+
+      // 监听iscroll的scroll事件
+      this.iscrollObj.on("scroll", this.updatePosition);
+      this.iscrollObj.on("scrollEnd", this.updatePosition);
+    },
+    // 更新leftContentTable与rightHeaderTable的定位
+    updatePosition() {
+      const leftContentTable = this.$refs.leftContentTable;
+      const rightHeaderTable = this.$refs.rightHeaderTable;
+      const iscrollObj = this.iscrollObj;
+      // 根据当前的iscrollObj对象更新定位
+      leftContentTable.style.transform =
+        "translate(0px, " + iscrollObj.y + "px) translateZ(0px)";
+      rightHeaderTable.style.transform =
+        "translate(" + iscrollObj.x + "px, 0px) translateZ(0px)";
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+$cell-border: 1px solid #e9ecf5;
+
+// scroll-table
+.scroll-table {
+  position: relative;
+  display: flex;
+  table {
+    border: none;
+    border-spacing: 0;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+  th,
+  td {
+    @include overflow-emphasis;
+    border: $cell-border;
+    text-align: center;
+    vertical-align: middle;
+    font-weight: normal;
+    font-size: 13px;
+  }
+  th {
+    color: #fff;
+  }
+  td {
+    background-color: #fafbff;
+    color: black;
+  }
+}
+
+// left
+.left {
+  // 左侧头部table
+  .left-header-table {
+    th {
+      background-color: #f34c7b;
+    }
+  }
+  // 左侧内容区
+  .left-content {
+    // 禁止滚动
+    overflow: hidden;
+    // 左侧内容table
+    .left-content-table {
+      // transition设置
+      transition-timing-function: cubic-bezier(0.1, 0.57, 0.1, 1);
+      transition-duration: 0ms;
+    }
+  }
+}
+
+// right
+.right {
+  flex: 1;
+  overflow: hidden;
+  // 右侧头部table
+  .right-header-table {
+    // transition设置
+    transition-timing-function: cubic-bezier(0.1, 0.57, 0.1, 1);
+    transition-duration: 0ms;
+
+    background-color: #4c495e;
+  }
+  // 右侧内容
+  .right-content {
+    // 可滚动
+    overflow: auto;
+  }
+}
+</style>

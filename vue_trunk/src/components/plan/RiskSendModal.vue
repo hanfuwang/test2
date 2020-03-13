@@ -1,0 +1,471 @@
+<template>
+  <section class="risk-send-modal">
+    <Modal class="dp-model" :show="showModal" v-if="showModal">
+      <div class="content">
+        <div class="top">
+          <!-- 封面选择 -->
+          <div class="cover">
+            <div>
+              <img
+                src="@/assets/imgs/plan/icon/icon_prev.png"
+                class="btn-prev"
+                @click="changeCover('prev')"
+              />
+              <img :src="selectedCover.filepath" class="banner" />
+              <img
+                src="@/assets/imgs/plan/icon/icon_next.png"
+                class="btn-next"
+                @click="changeCover('next')"
+              />
+            </div>
+            <p>封面选择</p>
+          </div>
+          <!-- 可选选项1 -->
+          <div class="select-item">
+            <div
+              v-for="(item, index) in setting1"
+              :key="index"
+              class="one"
+              @click="handleCheck(item, index, setting1)"
+            >
+              <img
+                :src="
+                  item.checked
+                    ? require('@/assets/imgs/common/icon/icon_selected_yes.png')
+                    : require('@/assets/imgs/common/icon/icon_selected_no.png')
+                "
+                alt=""
+                class="icon"
+              />
+              <span class="desc">{{ item.desc }}</span>
+            </div>
+          </div>
+          <!-- 可选选项2 -->
+          <div class="select-item">
+            <div
+              v-for="(item, index) in setting2"
+              :key="index"
+              class="one"
+              @click="handleCheck(item, index, setting2)"
+            >
+              <img
+                :src="
+                  item.checked
+                    ? require('@/assets/imgs/common/icon/icon_selected_yes.png')
+                    : require('@/assets/imgs/common/icon/icon_selected_no.png')
+                "
+                alt=""
+                class="icon"
+              />
+              <span class="desc">{{ item.desc }}</span>
+            </div>
+          </div>
+          <!-- 可选选项3 -->
+          <div class="select-item">
+            <div
+              v-for="(item, index) in setting3"
+              :key="index"
+              class="one"
+              @click="handleCheck(item, index, setting3)"
+            >
+              <img
+                :src="
+                  item.checked
+                    ? require('@/assets/imgs/common/icon/icon_selected_yes.png')
+                    : require('@/assets/imgs/common/icon/icon_selected_no.png')
+                "
+                alt=""
+                class="icon"
+              />
+              <span class="desc">{{ item.desc }}</span>
+            </div>
+          </div>
+          <!-- 可选选项4 -->
+          <div class="select-item">
+            <div
+              v-for="(item, index) in setting4"
+              :key="index"
+              class="one"
+              @click="handleCheck(item, index, setting4)"
+            >
+              <img
+                :src="
+                  item.checked
+                    ? require('@/assets/imgs/common/icon/icon_selected_yes.png')
+                    : require('@/assets/imgs/common/icon/icon_selected_no.png')
+                "
+                alt=""
+                class="icon"
+              />
+              <span class="desc">{{ item.desc }}</span>
+            </div>
+          </div>
+          <!--  -->
+          <!-- 必选项1 -->
+          <ValiForm :form="form" :vali="vali">
+            <FormSelect
+              v-model="form.incomeDuring"
+              :selectList="incomeDuringList"
+              :rules="rules.incomeDuring"
+              label="收益间隔"
+              placeholder="请选择收益间隔"
+            ></FormSelect>
+            <!-- 必选项1 -->
+            <FormInput
+              v-model="form.email"
+              label="邮箱"
+              :rules="rules.email"
+              placeholder="请选择邮箱"
+            ></FormInput>
+          </ValiForm>
+          <div class="bottom">
+            <button class="cancel" @click="cancel">取消</button>
+            <button
+              class="send"
+              @click="sure"
+              :class="btnlight ? 'btnlight' : ''"
+            >
+              发送
+            </button>
+          </div>
+        </div>
+      </div>
+    </Modal>
+  </section>
+</template>
+
+<script>
+import ValiForm from "@/components/common/form/ValiForm";
+import FormInput from "@/components/common/form/FormInput";
+import FormSelect from "@/components/common/form/FormSelect";
+import Modal from "../common/ui/Modal";
+import { mapState } from "vuex";
+export default {
+  components: {
+    Modal,
+    ValiForm,
+    FormSelect,
+    FormInput
+  },
+  props: {
+    showModal: {
+      type: Boolean,
+      default: false
+    }
+  },
+  data() {
+    return {
+      setting1: [
+        {
+          desc: "封面",
+          checked: true,
+          disabled: false
+        },
+        {
+          desc: "公司介绍",
+          checked: true,
+          disabled: false
+        }
+      ],
+      setting2: [
+        {
+          desc: "保障说明",
+          checked: true,
+          disabled: false
+        },
+        {
+          desc: "保费明细",
+          checked: true,
+          disabled: false
+        }
+      ],
+      setting3: [
+        {
+          desc: "综合利益分析",
+          checked: true,
+          disabled: false
+        },
+        {
+          desc: "险种利益说明",
+          checked: true,
+          disabled: false
+        }
+      ],
+      setting4: [
+        {
+          desc: "保险利益演示表",
+          checked: true,
+          disabled: true
+        },
+        {
+          desc: "重点内容说明",
+          checked: true,
+          disabled: false
+        }
+      ],
+      incomeDuringList: [
+        {
+          code: "1",
+          desc: "每年"
+        },
+        {
+          code: "3",
+          desc: "三年"
+        },
+        {
+          code: "5",
+          desc: "五年"
+        },
+        {
+          code: "10",
+          desc: "十年"
+        }
+      ],
+      form: {
+        incomeDuring: "", //收益间隔
+        email: ""
+      },
+      // form验证对象
+      vali: {
+        status: false,
+        unlegalValiList: []
+      },
+      rules: {
+        incomeDuring: [
+          {
+            regExp: "require",
+            msg: "请选择收益间隔"
+          }
+        ],
+        email: [
+          {
+            regExp: "require",
+            msg: "请输入邮箱"
+          },
+          {
+            regExp: "email",
+            msg: "请输入正确邮箱"
+          }
+        ]
+      },
+      coverList: [], //封面list
+      selectedCover: {}, //当前展示的封面
+      btnlight: false //按钮高亮
+    };
+  },
+  computed: {
+    ...mapState({
+      mainProposalProductList: state => state.plan.mainProposalProductList, //主险列表
+      userInfo: state => state.user.userInfo //用户信息
+    })
+  },
+  watch: {
+    form: {
+      handler: function(val) {
+        if (val.email && val.incomeDuring) {
+          this.btnlight = true;
+        }
+      },
+      deep: true
+    },
+    showModal() {
+      this.form.email = globalConfig.isWx
+        ? this.userInfo && this.userInfo.weChatAgenctDTO.email
+        : this.userInfo && this.userInfo.user && this.userInfo.user.email; //查询持有人ID
+    }
+  },
+  created() {
+    this.initComponent();
+  },
+  methods: {
+    //初始化
+    initComponent() {
+      const productCode = this.mainProposalProductList[0].productCode;
+      //针对这三款主险不能有利益演示表
+      if (
+        productCode === "DTRB03" ||
+        productCode === "ATRB01" ||
+        productCode === "ATIB01"
+      ) {
+        this.setting4 = [
+          {
+            desc: "保险利益演示表",
+            checked: false,
+            disabled: true
+          },
+          {
+            desc: "重点内容说明",
+            checked: true,
+            disabled: false
+          }
+        ];
+      }
+      console.log(this.userInfo);
+      this.queryCoverList();
+    },
+    sure() {
+      if (!this.vali.status) return;
+      this.$emit("sure", {
+        setting1: this.setting1,
+        setting2: this.setting1,
+        setting3: this.setting1,
+        setting4: this.setting1,
+        incomeDuring: this.form.incomeDuring, //收益间隔
+        email: this.form.email,
+        selectedCover: this.selectedCover //被选择的封面
+      });
+    },
+    cancel() {
+      this.form = {
+        incomeDuring: "",
+        email: ""
+      };
+      this.btnlight = false;
+      this.$emit("cancel");
+    },
+    handleCheck(item, index, setting) {
+      if (item.disabled) return;
+      setting[index].checked = !setting[index].checked;
+      this[setting] = setting;
+    },
+    //获取封面
+    queryCoverList() {
+      const params = {
+        proposalPlan: {
+          productId: ""
+        }
+      };
+      utils.http.post(interfaces.plan.queryCoverList, params).then(res => {
+        // console.log(res);
+        this.coverList = res.proposalViewDto.coverList;
+        this.selectedCover = res.proposalViewDto.coverList[0];
+      });
+    },
+    //切换封面
+    changeCover(type) {
+      let coverList = this.coverList;
+      let selectedCover = this.selectedCover;
+      if (type == "next") {
+        //下一张
+        coverList.forEach((item, index) => {
+          if (item.filepath === selectedCover.filepath) {
+            if (index < coverList.length - 1) {
+              this.selectedCover = coverList[index + 1];
+            } else {
+              this.selectedCover = coverList[0];
+            }
+          }
+        });
+      } else {
+        //上一张
+        coverList.forEach((item, index) => {
+          if (item.filepath === selectedCover.filepath) {
+            if (index - 1 < 0) {
+              this.selectedCover = coverList[coverList.length - 1];
+            } else {
+              this.selectedCover = coverList[index - 1];
+              //this.selectedCover = coverList[coverList.length - 1];
+            }
+          }
+        });
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.risk-send-modal {
+  .content {
+    position: absolute;
+    width: 295px;
+    height: auto;
+    background: $color-bg;
+    top: 50%;
+    left: 50%;
+    margin-top: -250px;
+    margin-left: -147px;
+    .top {
+      .cover {
+        margin-top: 22px;
+        div {
+          margin: 0 auto;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          .banner {
+            width: 128px;
+            height: 83px;
+          }
+          .btn-next {
+            margin-left: 15px;
+            width: 20px;
+            height: 20px;
+          }
+          .btn-prev {
+            margin-right: 15px;
+            width: 20px;
+            height: 20px;
+          }
+        }
+        p {
+          text-align: center;
+          font-size: 14px;
+          color: #333333;
+          margin-top: 11px;
+        }
+      }
+      .select-item {
+        display: flex;
+        justify-content: space-between;
+        margin: 5px 11px 0 11px;
+        border-bottom: 1px solid $color-ds;
+        padding: 10px;
+        .one {
+          display: flex;
+          flex: 1;
+          padding-left: 5px;
+        }
+        .desc {
+          margin-left: 11px;
+          font-size: 14px;
+        }
+        .icon {
+          width: 12px;
+          height: 12px;
+          margin-top: 4px;
+        }
+      }
+    }
+    .bottom {
+      margin-top: 15px;
+      height: 55px;
+      display: flex;
+      justify-content: space-between;
+
+      button {
+        width: 102px;
+        height: 38px;
+        border-radius: 19px;
+        border: 1px solid #e7e7e7;
+        font-size: 18px;
+        color: #333333;
+      }
+      .send {
+        margin-right: 27px;
+        background: #c8cbd2;
+        color: #fff;
+      }
+      .btnlight {
+        background: $color-theme;
+        color: #333;
+      }
+      .cancel {
+        margin-left: 27px;
+        background: $color-bg;
+        color: $color-theme;
+      }
+    }
+  }
+}
+</style>

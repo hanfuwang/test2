@@ -1,0 +1,132 @@
+<template>
+  <section class="risk-setting-radio">
+    <div class="top" @click.stop="handlerIconClick">
+      <h2>{{ label }}</h2>
+      <div>{{ name }}</div>
+      <img :src="src" class="icon" />
+    </div>
+    <Modal class="dp-model" :show="showModal">
+      <div class="content">
+        <LibItem
+          v-for="(item, index) in list"
+          :key="index"
+          :itemObj="item"
+          :selectCode="selectSecondCode"
+          @handleSelect="handleSelect"
+        />
+      </div>
+    </Modal>
+  </section>
+</template>
+
+<script>
+import Modal from "../common/ui/Modal";
+import LibItem from "./LibItem";
+export default {
+  name: "riskSettingRadio",
+  components: {
+    Modal,
+    LibItem
+  },
+  props: {
+    //被选中的code
+    selectCode: {
+      type: String,
+      default: function() {
+        return "";
+      }
+    },
+    //label
+    label: {
+      type: String,
+      default: function() {
+        return "";
+      }
+    },
+    list: {
+      type: Array,
+      default: function() {
+        return [];
+      }
+    }
+  },
+  data() {
+    return {
+      src: require("@/assets/imgs/common/icon/icon_arrow_right.png"),
+      name: "",
+      showModal: false,
+      selectSecondCode: ""
+    };
+  },
+  mounted() {
+    //console.log(this.itemObj);
+  },
+  computed: {},
+  watch: {},
+  created() {
+    this.initComponents();
+  },
+  methods: {
+    initComponents() {
+      console.log(this.selectCode);
+      console.log(this.list);
+      this.list.forEach(item => {
+        if (this.selectCode == item.code) {
+          this.name = item.text;
+        }
+      });
+      this.selectSecondCode = this.selectCode;
+    },
+    //唤起模态窗体
+    handlerIconClick() {
+      this.showModal = true;
+    },
+    handleSelect(item) {
+      this.selectSecondCode = item.code;
+      this.showModal = false;
+      this.name = item.text;
+      this.$emit("handle", item);
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/assets/css/common/form.scss";
+.risk-setting-radio {
+  .top {
+    margin: 0 20px;
+    padding: 15px 0;
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid $color-ds;
+    position: relative;
+    align-items: center;
+    h2 {
+      font-size: 15px;
+      color: #333333;
+      font-weight: normal;
+      max-width: 90px;
+    }
+    div {
+      max-width: 200px;
+      font-size: 12px;
+      font-weight: normal;
+      color: #999;
+      margin-right: 10px;
+    }
+    .icon {
+      width: 8px;
+      position: absolute;
+      right: 0;
+      top: 50%;
+      margin-top: -4px;
+    }
+  }
+  .content {
+    background: #fff;
+    border-radius: 5px;
+    width: 300px;
+  }
+}
+</style>

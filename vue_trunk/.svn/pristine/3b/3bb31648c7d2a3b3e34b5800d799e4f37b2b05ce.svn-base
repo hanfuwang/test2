@@ -1,0 +1,134 @@
+<template>
+  <article
+    class="app-content"
+    :class="{ loadmore: needLoadmore }"
+    @scroll="handlerScroll"
+  >
+    <!-- 主内容插槽 -->
+    <slot></slot>
+
+    <!-- loadmore-tips -->
+    <section class="loadmore-tips" v-show="showLoadmoreTips">
+      <!-- 正在加载 -->
+      <CircularProgress
+        v-show="loadmoreOpt.loadmoreing && hadScroll"
+        class="loadmoreing"
+        :color="globalConfig.ui.colorTheme"
+        :stroke-width="2"
+        :size="20"
+      ></CircularProgress>
+      <!-- 全部加载完毕 -->
+      <div v-show="loadmoreOpt.loadmoreFinish" class="loadmore-finish">
+        {{ loadmoreOpt.loadmoreFinishDesc || "没有更多数据啦~" }}
+      </div>
+    </section>
+  </article>
+</template>
+
+<script>
+import { CircularProgress } from "muse-ui/es5/Progress";
+export default {
+  name: "appContent",
+  components: {
+    CircularProgress
+  },
+  props: {
+    // 是否需要加载更多
+    needLoadmore: {
+      type: Boolean,
+      default: false
+    },
+    // 加载更多配置项
+    loadmoreOpt: {
+      type: Object,
+      default: function() {
+        return {
+          // 当前是否正在加载更多
+          loadmoreing: false,
+          // 当前是否已经全部加载完毕
+          loadmoreFinish: false,
+          // 触发底部loadmore的距离
+          bottomDistance: 30,
+          // 加载完毕的描述
+          loadmoreFinishDesc: ""
+        };
+      }
+    }
+  },
+  data() {
+    return {
+      hadScroll: false // 当前是否滚动过
+    };
+  },
+  computed: {
+    // 是否展示加载更多的tips
+    showLoadmoreTips() {
+      if (
+        // 加载更多中
+        this.loadmoreOpt.loadmoreing ||
+        // 全部加载完毕
+        this.loadmoreOpt.loadmoreFinish
+      ) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+  },
+  methods: {
+    // 处理滚动
+    handlerScroll() {
+      // 设置当前已经滚动过
+      this.hadScroll = true;
+
+      // 获取当前加载更多配置项
+      const loadmoreOpt = this.loadmoreOpt;
+      // 不处理的情况
+      if (
+        !this.needLoadmore ||
+        loadmoreOpt.loadmoreing ||
+        loadmoreOpt.loadmoreFinish
+      )
+        return;
+      // 当前滚动元素
+      const appContent = this.$el;
+      // 当前元素高度
+      const offsetHeight = appContent.offsetHeight;
+      // 当前元素滚动高度
+      const scrollTop = appContent.scrollTop;
+      // 当前元素滚动内容总高度
+      const scrollHeight = appContent.scrollHeight;
+      // 触发底部loadmore的距离
+      const bottomDistance = loadmoreOpt.bottomDistance || 30;
+      if (offsetHeight + scrollTop + bottomDistance >= scrollHeight) {
+        // 滚动到底部，触发loadmore方法
+        this.$emit("loadmore");
+        // 强制滚动到元素底部
+        setTimeout(() => {
+          appContent.scrollTo(0, scrollHeight);
+        }, 100);
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.app-content {
+  // 带加载更多
+  &.loadmore {
+    height: 100vh;
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+.loadmore-tips {
+  @include display-flex;
+  padding: 15px 0;
+  .loadmore-finish {
+    font-size: 13px;
+    color: #999999;
+  }
+}
+</style>

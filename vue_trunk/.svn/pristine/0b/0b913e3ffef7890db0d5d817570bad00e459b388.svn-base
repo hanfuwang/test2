@@ -1,0 +1,353 @@
+<template>
+  <Page class="production_list" :withAppBar="!globalConfig.isWx">
+    <!-- 导航栏 -->
+    <AppBar class="app-bar" v-if="!globalConfig.isWx">
+      <img
+        slot="left"
+        src="@/assets/imgs/common/icon/icon_back.png"
+        class="icon icon-back"
+        @click="goBack"
+      />
+      <template slot="center">
+        回访进度查询
+      </template>
+    </AppBar>
+    <AppContent>
+      <!-- 回访列表头部搜索bar -->
+      <section class="search-bar">
+        <!-- 搜索框 -->
+        <input
+          class="search-ipt"
+          type="search"
+          placeholder="请输入投保人姓名/保单号"
+          v-model="productNoName"
+          @focus="handlerIptFocus"
+          @blur="handlerIptBlur"
+        />
+        <!-- 右侧搜索按钮 -->
+        <img
+          class="icon icon-search"
+          src="@/assets/imgs/common/icon/icon_search.png"
+          @click="search"
+        />
+      </section>
+      <!-- 回访列表头部tabBar -->
+      <section class="tab-bar">
+        <nav
+          class="tab-item"
+          v-for="(item, index) in tabName"
+          :key="index"
+          :class="{ choosed: tabshow == item.code }"
+          @click="newSwitch(item.code)"
+        >
+          {{ item.desc }}
+        </nav>
+      </section>
+      <!-- 回访列表内容部分 -->
+      <section class="list_content">
+        <!-- 回访列表每条回访信息 -->
+        <div
+          v-for="item in productListForShow"
+          :key="item.productNo"
+          class="content_item"
+          @click="goDetail(item)"
+        >
+          <ul class="list-content_item">
+            <li>
+              <i>保单号</i>
+              <i>{{ item.productNo }}</i>
+            </li>
+            <li>
+              <i>投保人姓名</i>
+              <i>{{ item.policyHolderName }}</i>
+            </li>
+            <li>
+              <i>任务状态</i>
+              <i>{{ item.dataState }}</i>
+            </li>
+            <li>
+              <i>回访方式</i>
+              <i :class="{ 'is-nodata': !item.dealSwfListForWhow }">{{
+                item.dealSwfListForWhow ? item.dealSwfListForWhow.dealType : "-"
+              }}</i>
+            </li>
+            <li>
+              <i>回访结果</i>
+              <i :class="{ 'is-nodata': !item.dealSwfListForWhow }">{{
+                item.dealSwfListForWhow ? item.dealSwfListForWhow.result : "-"
+              }}</i>
+            </li>
+            <li>
+              <i>回访时间</i>
+              <i :class="{ 'is-nodata': !item.dealSwfListForWhow }">{{
+                item.dealSwfListForWhow
+                  ? item.dealSwfListForWhow.dealTime.split(".")[0]
+                  : "-"
+              }}</i>
+            </li>
+          </ul>
+        </div>
+        <div v-show="noData">
+          <div class="no-data">未查询到相关数据</div>
+        </div>
+      </section>
+    </AppContent>
+  </Page>
+</template>
+
+<script>
+import { mapState } from "vuex";
+export default {
+  name: "VisitList",
+  components: {},
+  props: {},
+  data() {
+    return {
+      isIptFocus: false, // 输入框是否获取焦点
+      // 搜索框输入数据
+      productNoName: "",
+      // tab选择标签
+      tabName: [
+        {
+          desc: "未完成",
+          code: "1"
+        },
+        {
+          desc: "已完成",
+          code: "2"
+        }
+      ],
+      //默认选项是产品列表分类的code值
+      tabshow: "1",
+      // 回访列表
+      productList: [],
+      noData: false
+    };
+  },
+  computed: {
+    ...mapState({
+      // userInfo
+      userInfo: state => state.user.userInfo.weChatAgenctDTO
+    }),
+    // 从所有回访列表中取出每一条回访数据的第一条回访记录数据
+    productListForShow() {
+      let pro = this.productList;
+      pro.forEach(item => {
+        if (item.dealSwfList.length && item["dealSwfList"])
+          item["dealSwfListForWhow"] = item["dealSwfList"].filter(
+            i => i["dealType"]
+          )[0];
+      });
+      return pro;
+    }
+  },
+  watch: {},
+  created() {
+    this.initPage();
+  },
+  methods: {
+    // 返回
+    goBack() {
+      this.back();
+    },
+    // ipt得到焦点
+    handlerIptFocus() {
+      this.isIptFocus = true;
+      this.selectType = "search";
+    },
+    // ipt失去焦点
+    handlerIptBlur() {
+      this.isIptFocus = false;
+      // ios微信键盘bug修复 开始
+      utils.ui.handlerIOSKeyboardHidden();
+    },
+    // 查询
+    search() {
+      if (this.productNoName) {
+        this.productList = [];
+      } else {
+        this.productList = [];
+        this.tabshow = 1;
+      }
+      this.initPage();
+    },
+    //tabBar切换
+    newSwitch(code) {
+      this.tabshow = code;
+      this.productList = [];
+      this.initPage();
+    },
+    //获取回访数据
+    initPage() {
+      this.dataStateId = this.tabshow == 2 ? "9,10,11" : "0,1,2,3,4,7"; //未完成：0、1、2、3、4、7;已完成：9、10、11
+      let cn = /\d/,
+        policyHolderName = "",
+        productNo = "";
+      cn.test(this.productNoName)
+        ? (productNo = this.productNoName)
+        : (policyHolderName = this.productNoName);
+      let req = {
+        visitTaskQueryRequest: {
+          channelCode: globalConfig.isWx
+            ? this.userInfo &&
+              this.userInfo.weChatAgenctDTO &&
+              this.userInfo.weChatAgenctDTO.channelId
+            : this.userInfo &&
+              this.userInfo.user &&
+              this.userInfo.user.channelId, // 渠道代码
+          salesmanCode: this.userInfo.weChatAgenctDTO.agentCode || "",
+          productNo: productNo,
+          policyHolderName: policyHolderName,
+          dataStateId: this.dataStateId // 数据未完成已完成状态
+        }
+      };
+      utils.http
+        .post(interfaces.visit.visitList, req)
+        .then(response => {
+          console.log(response);
+          if (response.total > 0) {
+            this.productList = response.productList;
+            this.noData = false;
+          } else {
+            this.noData = true;
+          }
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    goDetail(item) {
+      if (this.tabshow == 1)
+        this.$router.push({ name: "visitDetail", params: item });
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+$search-bar-height: 60px;
+.app-bar {
+  .icon {
+    height: auto;
+    &.icon-back {
+      width: 11.5px;
+    }
+  }
+}
+.production_list {
+  background: $color-app-bar;
+  // search-bar
+  .search-bar {
+    @include display-flex;
+    justify-content: space-between;
+    position: relative;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: $search-bar-height;
+    padding: 0 20px;
+    box-shadow: 0 -2px 8px 0 rgba(0, 0, 0, 0.1);
+    background: #ffffff;
+    z-index: 1;
+    .search-ipt {
+      @include reset-input;
+      @include display-flex;
+      height: 34px;
+      line-height: 20px;
+      justify-content: flex-start;
+      flex: 1;
+      background: #f3f3f3;
+      border-radius: 17px;
+      font-size: 14px;
+      color: #000000;
+      padding: 0 20px;
+      letter-spacing: 1px;
+      text-align: center;
+      // x去除
+      &::-webkit-search-cancel-button {
+        display: none;
+      }
+      // placeholder样式重写
+      &::placeholder {
+        font-size: 15px;
+        color: #c0c0c0;
+        text-align: center;
+      }
+    }
+    .icon {
+      height: auto;
+      &.icon-search {
+        width: 20px;
+        margin-left: 10px;
+      }
+    }
+  }
+  // tabBar
+  .tab-bar {
+    @include display-flex;
+    margin-top: 2px;
+    overflow: hidden;
+    position: relative;
+    justify-content: space-around;
+    background-color: #fff;
+    border-bottom: 0.5px solid #cccccc;
+    .tab-item {
+      padding: 10px 28px;
+      font-size: 14px;
+      color: black;
+      float: left;
+      text-align: center;
+    }
+    .choosed {
+      border-bottom: 2px solid #ffcc00;
+    }
+  }
+  .list_content {
+    overflow: hidden;
+    .content_item {
+      display: flex;
+      width: 100%;
+      background-color: #fff;
+      color: #444;
+      position: relative;
+      z-index: 2;
+      font-size: 16px;
+      padding-top: 0;
+      margin-top: 0px;
+      font-size: 15px !important;
+      padding-left: 20px;
+      padding-right: 20px;
+      margin-bottom: 10px;
+      .list-content_item {
+        width: 100%;
+        li {
+          display: flex;
+          flex-direction: row;
+          justify-content: space-between;
+          align-items: center;
+          line-height: 19px;
+          padding: 9px 0 10px 0;
+          border-bottom: 0.5px solid #e7e7e7;
+          i {
+            font-style: normal;
+            &:nth-child(1) {
+              font-size: 13px;
+              color: #333333;
+            }
+            &:nth-child(2) {
+              font-size: 12px;
+              color: #999999;
+              .is-nodata {
+                padding-right: 15px;
+              }
+            }
+          }
+        }
+      }
+    }
+    .no-data {
+      text-align: center;
+      padding-top: 50px;
+    }
+  }
+}
+</style>

@@ -1,0 +1,235 @@
+<template>
+  <Page class="make-plan" :withAppBar="!globalConfig.isWx">
+    <!-- 导航栏 -->
+    <AppBar class="app-bar" v-if="!globalConfig.isWx">
+      <img
+        slot="left"
+        src="../../assets/imgs/common/icon/icon_back.png"
+        class="icon icon-back"
+        @click="goBack"
+      />
+      <template slot="center">
+        制作规划书
+      </template>
+    </AppBar>
+
+    <!-- 主体 -->
+    <AppContent class="app-content">
+      <!-- 被保人信息 -->
+      <Insurant ref="insurantRef" @chooseInsurant="chooseInsurant" />
+
+      <!-- 投保人信息 -->
+      <Applicant
+        ref="applicantRef"
+        @chooseApplicant="chooseApplicant"
+        @changeRelation="changeRelation"
+      />
+
+      <!-- 险种信息 -->
+      <ProductMsg @addProduct="addProduct" @delRisk="delRisk" />
+
+      <!-- 按钮组 -->
+      <div class="btns">
+        <button class="view" @click="viewPlan">查看规划书</button>
+        <button class="send" @click="sendPlan">生成规划书并发送</button>
+      </div>
+    </AppContent>
+  </Page>
+</template>
+
+<script>
+import Applicant from "@/components/plan/Applicant";
+import Insurant from "@/components/plan/Insurant";
+import ProductMsg from "@/components/plan/ProductMsg";
+import { mapState } from "vuex";
+export default {
+  name: "makePlan",
+  components: {
+    Applicant,
+    Insurant,
+    ProductMsg
+  },
+  computed: {
+    ...mapState({
+      insurant: state => state.plan.insurant, //被保人
+      applicant: state => state.plan.applicant, //投保人
+      mainProposalProductList: state => state.plan.mainProposalProductList, //主险列表
+      riskProposalProductList: state => state.plan.riskProposalProductList, //附加险列表
+      totalPremium: state => state.plan.totalPremium //总保费
+    })
+  },
+  data() {
+    return {};
+  },
+  watch: {},
+  created() {
+    this.initPage();
+  },
+  methods: {
+    //初始化页面
+    initPage() {},
+    // 返回
+    goBack() {
+      this.back();
+    },
+
+    //查看规划书
+    viewPlan() {
+      if (!this.isMsgEmpty()) return;
+    },
+
+    //发送规划书
+    sendPlan() {
+      if (!this.isMsgEmpty()) return;
+    },
+
+    //添加险种
+    addProduct() {
+      if (!this.isMsgEmpty()) return;
+      let applicant = this.applicant; //投保人信息
+      let insurant = this.insurant; //被保人信息
+      this.goWithQuery("insuranceSelect", {
+        applicantBirthday: applicant.birthdate, //投保人生日
+        insurantBirthday: insurant.birthdate, //被保人生日
+        insurantSex: insurant.sex, //被保人性别
+        holderRelation: applicant.holderRelation //关系
+      });
+    },
+    //删除险种
+    delRisk(data) {
+      if (data.deltType == "main") {
+        //删除的是主险种
+        //主险清空
+        this.$store.commit("plan/setState", {
+          attr: "mainProposalProductList",
+          data: []
+        });
+        //附加清空
+        this.$store.commit("plan/setState", {
+          attr: "riskProposalProductList",
+          data: []
+        });
+        //总保费清空
+        this.$store.commit("plan/setState", {
+          attr: "totalPremium",
+          data: ""
+        });
+      } else {
+        //删除的是附加险种
+        //附加重置
+        this.$store.commit("plan/setState", {
+          attr: "riskProposalProductList",
+          data: this.riskProposalProductList.filter((item, index) => {
+            return index != data.delIndex;
+          })
+        });
+        //总保费重置
+        this.$store.commit("plan/setState", {
+          attr: "totalPremium",
+          data: this.totalPremium - data.delObj.premium
+        });
+      }
+    },
+    //选择关系
+    changeRelation(holderRelation) {
+      let isSelf = holderRelation == "00" ? true : false; //是否是本人
+      if (isSelf) {
+        //本人
+        this.$nextTick(() => {
+          this.$store.commit("plan/setState", {
+            attr: "applicant",
+            data: {
+              name: this.insurant.name,
+              sex: this.insurant.sex,
+              birthdate: this.insurant.birthdate,
+              occupation: this.insurant.occupation,
+              isoldCustomer: this.insurant.isoldCustomer,
+              holderRelation: "00"
+            }
+          });
+        });
+      } else {
+        //非本人
+        this.$store.commit("plan/setState", {
+          attr: "applicant",
+          data: {
+            name: "",
+            sex: "0",
+            birthdate: "",
+            occupation: "",
+            isoldCustomer: "0",
+            holderRelation: holderRelation
+          }
+        });
+        this.chooseApplicant();
+      }
+    },
+    //选择被保人
+    chooseInsurant() {
+      this.goWithQuery("chooseCustomer", { id: 0 });
+    },
+    //选择投保人
+    chooseApplicant() {
+      if (this.insurant.name == "") {
+        utils.ui.confirm("请先选择被保人");
+        return;
+      }
+      if (this.applicant.holderRelation == "") {
+        utils.ui.confirm("请先选择关系");
+        return;
+      }
+      if (this.applicant.holderRelation == "00") return;
+      this.goWithQuery("chooseCustomer", { id: 1 });
+    },
+    //校验投、被保人信息
+    isMsgEmpty() {
+      if (this.insurant.name == "") {
+        utils.ui.confirm("请先选择被保人");
+        return false;
+      }
+      if (this.applicant.holderRelation == "") {
+        utils.ui.confirm("请选择关系");
+        return false;
+      }
+      if (this.applicant.name == "") {
+        utils.ui.confirm("请选择投保人");
+        return false;
+      }
+      return true;
+    }
+  }
+
+  // activated() {
+  //   console.log(this.$store.state.plan.insurant);
+  //   console.log(this.$store.state.plan.applicant);
+  // }
+};
+</script>
+
+<style lang="scss" scoped>
+.app-bar {
+  .icon {
+    height: auto;
+    &.icon-back {
+      width: 11.5px;
+    }
+  }
+}
+.make-plan {
+  .btns {
+    padding: 0 40px 20px 40px;
+    .view {
+      margin-right: 30px;
+    }
+    button {
+      width: 130px;
+      height: 33px;
+      display: inline-block;
+      border: 1px solid $color-theme;
+      border-radius: 16.5px;
+      background: $color-bg;
+      font-size: 13px;
+    }
+  }
+}
+</style>

@@ -1,0 +1,69 @@
+<template>
+  <Modal
+    class="confirm"
+    :show="show"
+    @close="close"
+    :backgroundColor="backgroundColor"
+  >
+    <!-- loading -->
+    <CircularProgress
+      class="loading"
+      :color="loadingColor"
+      :stroke-width="3"
+      :size="40"
+    ></CircularProgress>
+  </Modal>
+</template>
+
+<script>
+import Modal from "./Modal";
+import { CircularProgress } from "muse-ui/es5/Progress";
+
+export default {
+  name: "loading",
+  components: {
+    Modal,
+    CircularProgress
+  },
+  props: {
+    // 是否显示loading
+    show: {
+      type: Boolean,
+      default: false
+    },
+    // loading的颜色
+    loadingColor: {
+      type: String,
+      default: function() {
+        return globalConfig.ui.colorTheme;
+      }
+    },
+    // 背景色
+    backgroundColor: {
+      type: String,
+      default: "rgba(255, 255, 255, 0)"
+    }
+  },
+  data() {
+    return {};
+  },
+  computed: {},
+  created() {},
+  methods: {
+    // 关闭
+    close() {
+      this.$emit("close");
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+// loading
+.loading {
+  /deep/ .mu-circle-spinner {
+    border-color: $color-theme;
+    transition: border 0.3s ease-out;
+  }
+}
+</style>

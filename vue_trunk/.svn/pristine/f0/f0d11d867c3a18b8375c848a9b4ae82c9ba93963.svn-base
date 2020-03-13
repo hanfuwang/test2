@@ -1,0 +1,357 @@
+<template>
+  <Page class="demo-app" :withAppBar="!globalConfig.isWx">
+    <!-- app-bar -->
+    <AppBar class="app-bar" v-if="!globalConfig.isWx">
+      <img
+        slot="left"
+        src="../../assets/imgs/common/icon/icon_back.png"
+        class="icon icon-back"
+        @click="$router.go(-1)"
+      />
+      <template slot="center"
+        >基本信息</template
+      >
+    </AppBar>
+
+    <!-- app-content -->
+    <AppContent class="app-content">
+      <ValiForm :form="form" :vali="vali">
+        <FormInput
+          v-model="form.name"
+          label="姓名"
+          placeholder="请输入姓名"
+          :rules="rules.name"
+        ></FormInput>
+        <FormInput
+          type="tel"
+          v-model="form.mobilePhone"
+          label="电话"
+          placeholder="请输入电话"
+          :rules="rules.mobilePhone"
+        ></FormInput>
+        <FormSelect
+          v-model="form.purpose"
+          :selectList="purposeSelectList"
+          label="证件类型"
+          placeholder="请选择证件类型"
+          :rules="rules.purpose"
+        ></FormSelect>
+        <FormInput
+          type="tel"
+          v-model="form.mobilePhone"
+          label="证件号码"
+          placeholder="请输入证件号码"
+          :rules="rules.mobilePhone"
+        ></FormInput>
+        <FormRadio
+          v-model="form.sex"
+          label="性别"
+          :rules="rules.sex"
+          :selectList="sexSelectList"
+        ></FormRadio>
+        <FormDatepicker
+          label="出生日期"
+          placeholder="请选择出生日期"
+          v-model="form.birthday"
+          :rules="rules.birthday"
+        ></FormDatepicker>
+        <FormDatepicker
+          label="证件有效期"
+          placeholder="请选择证件有效期"
+          v-model="form.birthday"
+          :rules="rules.birthday"
+        ></FormDatepicker>
+        <FormRadio
+          v-model="form.cus"
+          label="客户类型"
+          :rules="rules.sex"
+          :selectList="cusSelectList"
+        ></FormRadio>
+        <FormSelector
+          :selectData.sync="job"
+          type="job"
+          label="职业"
+          placeholder="请选择职业"
+          ref="jobSelector"
+        ></FormSelector>
+        <FormRadio
+          v-model="form.sex"
+          label="是否有社保"
+          :rules="rules.sex"
+          :selectList="socialSelectList"
+        ></FormRadio>
+        <FormInput
+          v-model="form.name"
+          label="身高"
+          placeholder="请输入身高"
+          :rules="rules.name"
+        ></FormInput>
+        <FormInput
+          v-model="form.name"
+          label="体重"
+          placeholder="请输入体重"
+          :rules="rules.name"
+        ></FormInput>
+        <FormInput
+          v-model="form.name"
+          label="年收入"
+          placeholder="请输入年收入"
+          :rules="rules.name"
+        ></FormInput>
+        <FormRadio
+          v-model="form.marry"
+          label="婚姻状态"
+          :rules="rules.sex"
+          :selectList="marrySelectList"
+        ></FormRadio>
+        <section class="nav">
+          <div class="left">客户联系方式</div>
+          <div class="right">
+            <img
+              width="16"
+              @click="addCon"
+              src="@/assets/imgs/common/icon/icon_add.png"
+            />
+          </div>
+        </section>
+        <section class="nav">
+          <div class="left">银行账户信息</div>
+          <div class="right">
+            <img width="16" src="@/assets/imgs/common/icon/icon_add.png" />
+          </div>
+        </section>
+      </ValiForm>
+      <button
+        class="theme-btn"
+        :class="{ disabled: !vali.status }"
+        @click="submitForm"
+      >
+        保存
+      </button>
+    </AppContent>
+  </Page>
+</template>
+
+<script>
+import ValiForm from "@/components/common/form/ValiForm";
+import FormInput from "@/components/common/form/FormInput";
+import FormRadio from "@/components/common/form/FormRadio";
+import FormDatepicker from "@/components/common/form/FormDatepicker";
+import FormSelector from "@/components/common/form/FormSelector";
+import FormSelect from "@/components/common/form/FormSelect";
+
+export default {
+  name: "addCustomer",
+  components: {
+    ValiForm,
+    FormInput,
+    FormRadio,
+    FormDatepicker,
+    FormSelector,
+    FormSelect
+  },
+  data() {
+    return {
+      //模态框
+      isShow: false,
+      // form表单
+      form: {
+        name: "", //姓名
+        sex: "0", //性别
+        birthday: "", //生日
+        mobilePhone: "", //电话
+        purpose: "0" //证件类型
+      },
+      // form验证对象
+      vali: {
+        status: false,
+        unlegalValiList: []
+      },
+      // 码表
+      sexSelectList: globalCode.sex,
+      cusSelectList: [
+        {
+          code: "1",
+          desc: "缘故"
+        },
+        {
+          code: "2",
+          desc: "陌生"
+        },
+        {
+          code: "3",
+          desc: "转介绍"
+        }
+      ],
+      socialSelectList: [
+        {
+          code: "1",
+          desc: "是"
+        },
+        {
+          code: "2",
+          desc: "否"
+        }
+      ],
+      marrySelectList: [
+        {
+          code: "1",
+          desc: "未婚"
+        },
+        {
+          code: "2",
+          desc: "已婚"
+        },
+        {
+          code: "3",
+          desc: "离异"
+        },
+        {
+          code: "4",
+          desc: "丧偶"
+        }
+      ],
+      purposeSelectList: [
+        {
+          code: "1",
+          desc: "身份证"
+        },
+        {
+          code: "2",
+          desc: "护照"
+        },
+        {
+          code: "3",
+          desc: "军官证"
+        },
+        {
+          code: "4",
+          desc: "户口本"
+        },
+        {
+          code: "5",
+          desc: "出生证"
+        },
+        {
+          code: "6",
+          desc: "士兵证"
+        },
+        {
+          code: "7",
+          desc: "临时身份证"
+        },
+        {
+          code: "8",
+          desc: "台湾居民来往大陆通行证"
+        },
+        {
+          code: "9",
+          desc: "港澳居民往来内地通行证"
+        }
+      ],
+      // 校验规则
+      rules: {
+        name: [
+          {
+            regExp: "require",
+            msg: "姓名不能为空"
+          },
+          {
+            regExp: "chinese",
+            msg: "姓名必须由汉字组成"
+          },
+          {
+            regExp: /^.{2,10}$/,
+            msg: "姓名长度必须在2~10字符之内"
+          }
+        ],
+        sex: [
+          {
+            regExp: "require",
+            msg: "性别不能为空"
+          }
+        ],
+        birthday: [
+          {
+            regExp: "require",
+            msg: "生日不能为空"
+          }
+        ],
+        mobilePhone: [
+          {
+            regExp: "require",
+            msg: "电话不能为空"
+          },
+          {
+            regExp: "mobilePhone",
+            msg: "请输入正确的电话"
+          }
+        ],
+        purpose: [
+          {
+            regExp: "require",
+            msg: "职业意向不能为空"
+          }
+        ],
+        area: [
+          {
+            regExp: "require",
+            msg: "家庭住址不能为空"
+          }
+        ]
+      }
+    };
+  },
+  created() {
+    console.log("111111111111");
+  },
+  watch: {},
+  methods: {
+    addCon() {
+      this.$router.push({
+        name: "customerContact"
+      });
+    },
+    submitForm() {
+      // 根据vali对象判断当前form元素是否全部输入合法
+      if (!this.vali.status) {
+        // utils.ui.confirm(this.vali.unlegalValiList[0].msg);
+        return;
+      } else {
+        utils.ui.confirm("提交成功");
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.app-bar {
+  .icon {
+    height: auto;
+    &.icon-back {
+      width: 11.5px;
+    }
+    &.icon-search {
+      width: 20px;
+    }
+  }
+}
+.nav {
+  @include lineheight-height(37px);
+  margin: 0 20px;
+  padding: 0 15px;
+  background: $color-ds;
+  font-size: 14px;
+  color: #333333;
+  display: flex;
+  justify-content: space-between;
+  .right {
+    color: #ffcc00;
+    font-size: 12px;
+    img {
+      vertical-align: middle;
+    }
+  }
+}
+</style>

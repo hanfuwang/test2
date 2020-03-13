@@ -1,0 +1,213 @@
+<template>
+  <page class="demo-app" :withAppBar="!globalConfig.isWx">
+    <AppBar class="app-bar" v-if="!globalConfig.isWx">
+      <img
+        slot="left"
+        src="../../assets/imgs/common/icon/icon_back.png"
+        class="icon icon-back"
+        @click="$router.go(-1)"
+      />
+      <template slot="center">
+        保单查询
+      </template>
+    </AppBar>
+    <AppContent class="app-content">
+      <FormInput
+        v-model="Currentbound.Numbers"
+        label="投保单号:"
+        placeholder="请输入"
+      ></FormInput>
+
+      <FormSelect
+        v-model="Currentbound.purpose"
+        :selectList="rules.purposeSelectList"
+        label="险种名称:"
+        placeholder="请选择险种名称"
+      ></FormSelect>
+
+      <FormInput
+        v-model="Currentbound.Applicant"
+        label="投保人:"
+        placeholder="请输入"
+      ></FormInput>
+
+      <FormInput
+        v-model="Currentbound.recognizee"
+        label="被保险人:"
+        placeholder="请输入"
+      ></FormInput>
+      <span class="reset" @click="reset()">重置</span>
+      <div class="box">
+        <span class="left" @click="$router.push('/policy/policyList')"
+          >取消</span
+        >
+        <span class="right" @click="isok">确定</span>
+      </div>
+    </AppContent>
+  </page>
+</template>
+
+<script>
+import { mapState } from "vuex";
+import FormInput from "@/components/common/form/FormInput";
+import FormSelect from "@/components/common/form/FormSelect";
+export default {
+  name: "policyQuery",
+  components: {
+    FormSelect,
+    FormInput
+  },
+  data() {
+    return {
+      Currentbound: {
+        Numbers: "",
+        Applicant: "",
+        recognizee: "",
+        purpose: ""
+      },
+      page: 1,
+      pageSize: 10,
+      rules: {
+        purposeSelectList: []
+      }
+    };
+  },
+  computed: {
+    ...mapState({
+      userInfo: state => state.user.userInfo //用户信息
+    })
+  },
+  created() {
+    this.loadata("", "", "");
+  },
+  methods: {
+    reset() {
+      this.Currentbound.Numbers = "";
+      this.Currentbound.types = "";
+      this.Currentbound.Applicant = "";
+      this.Currentbound.recognizee = "";
+      this.Currentbound.purpose = "";
+    },
+    isok() {
+      this.Queryrequest();
+    },
+    //产品列表请求
+    loadata(type, val, name) {
+      let flag = false;
+      if (!flag) {
+        flag = true;
+        const params = {
+          attrName: type || "product_type_category", //产品分类(Y)
+          attrValue: val || "all", //分类代码(Y)
+          infoId: this.userInfo.weChatAgenctDTO.infoId,
+          productName: name || "", //产品名称(N))
+          channelId: this.userInfo.weChatAgenctDTO.channelId || "01", //渠道(Y)
+          orgCode: this.userInfo.orgLdcom.comcode, //管理机构(Y)
+          pageNum: 1, //页码(Y)
+          pageSize: 10 //分页大小(Y)
+        };
+        console.log(this.userInfo.weChatAgenctDTO);
+        utils.http.post(interfaces.policy.productlist, params).then(res => {
+          console.log(res);
+          flag = false;
+          if (res.flag == "true") {
+            for (let i = 1; i < res.returnList.length; i++) {
+              this.rules.purposeSelectList.push({
+                code: res.returnList[i].productCode,
+                desc: res.returnList[i].name
+              });
+            }
+          }
+        });
+      }
+    },
+    //查询请求参数
+    Queryrequest() {
+      const params = {
+        policyQuery: {
+          fpInfoId: this.userInfo.weChatAgenctDTO.infoId || "",
+          agentCode: this.userInfo.weChatAgenctDTO.agentCode || "",
+          memberInfoId: undefined,
+          applyCode: "", //投保单号
+          policyCode: this.Currentbound.Numbers, //投保单号
+          holderName: this.Currentbound.Applicant, //投保人姓名
+          insuredName: this.Currentbound.recognizee, //被保人姓名
+          pageNum: this.page, //查询第几页
+          pageSize: this.pageSize, //每页显示多少条
+          riskCode: this.Currentbound.purpose, //第一主险名称
+          riskName: "",
+          status: 1, //状态：0查询未完成，1查询已完成
+          familyNum: "" //家庭单号
+        }
+      };
+      this.$router.push({ name: "policyList", params: { req: params } });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.app-bar {
+  border-bottom: 1px solid #cccccc;
+  .icon {
+    height: auto;
+    &.icon-back {
+      width: 11.5px;
+    }
+    &.icon-search {
+      width: 20px;
+    }
+  }
+}
+.reset {
+  font-family: HYQiHei-DES;
+  font-size: 14px;
+  color: #71a8f9;
+  letter-spacing: 0;
+  position: absolute;
+  top: 185px;
+  right: 25px;
+}
+.box {
+  text-align: center;
+  font-family: HYQiHei-DES;
+  font-size: 18px;
+
+  .left {
+    width: 102px;
+    border: 1px solid #ffcc00;
+    border-radius: 19px;
+    height: 38px;
+    display: inline-block;
+    margin-top: 73px;
+    margin-right: 37px;
+    color: #ffcc00;
+    line-height: 38px;
+    color: #ffcc00;
+  }
+  .right {
+    width: 102px;
+    background: #ffcc00;
+    border-radius: 19px;
+    height: 38px;
+    display: inline-block;
+    line-height: 38px;
+  }
+}
+.bga::after {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  border-top: 5px solid;
+  border-right: 5px solid transparent;
+  border-left: 5px solid transparent;
+  color: #999;
+  content: "";
+  pointer-events: none;
+}
+.f-wrap {
+  >>> .btn-wrap {
+    border: 0px solid #e7e7e7;
+  }
+}
+</style>

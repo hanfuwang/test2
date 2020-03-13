@@ -1,0 +1,84 @@
+<template>
+  <Page class="demo-app">
+    <AppBar>
+      <img
+        slot="left"
+        src="../../assets/imgs/common/icon/icon_back.png"
+        class="icon icon-back"
+        @click="goBack"
+      />
+      <template slot="center">
+        {{ tittle }}
+      </template>
+    </AppBar>
+    <AppContent class="app-content">
+      <iframe
+        :style="{ height: `calc(100vh - ${globalConfig.ui.topRemain}px` }"
+        :src="tk"
+      ></iframe>
+    </AppContent>
+  </Page>
+</template>
+<script>
+import { mapState } from "vuex";
+export default {
+  name: "ProIframe",
+  props: {},
+  data() {
+    return {
+      tx: "",
+      tittle: ""
+    };
+  },
+  computed: {
+    ...mapState({
+      proIframeTittle: state => state.production.proIframeTittle, //iframe的头部的内容
+      clauseList: state => state.production.clauseList //条款的列表
+    })
+  },
+  created() {
+    console.log(this.proIframeTittle);
+    switch (this.proIframeTittle) {
+      case "PD001":
+        this.tittle = "投保条款";
+        break;
+      case "PD004":
+        this.tittle = "投保须知";
+        break;
+      case "PD005":
+        this.tittle = "产品说明书";
+        break;
+    }
+    this.clauseList.map(item => {
+      switch (item.docType) {
+        case this.proIframeTittle:
+          if (item.fileUrl.indexOf("https://") != -1) {
+            //用户信息协议
+            this.tk =
+              globalConfig.openOfficeUrl + "?ssl=1&furl=" + item.fileUrl;
+          } else if (item.fileUrl.indexOf("http://") != -1) {
+            this.tk = globalConfig.openOfficeUrl + "?furl=" + item.fileUrl;
+          }
+          break;
+      }
+    });
+  },
+  methods: {
+    goBack() {
+      this.back();
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.icon {
+  height: auto;
+  &.icon-back {
+    width: 11.5px;
+  }
+}
+iframe {
+  width: 100%;
+}
+</style>

@@ -1,0 +1,28 @@
+const plan = {
+  getPlanList: {
+    requestType: "AXPROPOSALLIST",
+    requestDesc: "建议书列表查询"
+  },
+  delPlan: {
+    requestType: "AXPROPOSALDELETE",
+    requestDesc: "删除规划书"
+  },
+  getProductSetting: {
+    requestType: "AXPROPOSEPRODUCTLIST",
+    requestDesc: "获取产品配置"
+  },
+  getCustomerList: {
+    requestType: "CUSMEMBERLIST",
+    requestDesc: "获取客户列表"
+  },
+  queryMember: {
+    requestType: "QUERYMEMBERINFOEDIT",
+    requestDesc: "查询客户"
+  },
+  saveMember: {
+    requestType: "CUSMEMBERSAVE",
+    requestDesc: "保存客户信息"
+  }
+};
+
+export default plan;

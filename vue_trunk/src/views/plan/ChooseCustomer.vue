@@ -1,0 +1,666 @@
+<template>
+  <Page class="choose-customer" :withAppBar="!globalConfig.isWx">
+    <!-- 头部搜索bar -->
+    <AppBar v-if="!globalConfig.isWx">
+      <!-- 左侧返回箭头 -->
+      <img
+        slot="left"
+        class="icon icon-back"
+        src="@/assets/imgs/common/icon/icon_back.png"
+        @click="back()"
+      />
+      <template slot="center">
+        <input
+          v-show="isSearch"
+          v-model="itemInput"
+          class="search-ipt"
+          placeholder="请输入姓名"
+        />
+        <!-- 标题 -->
+        <div v-show="!isSearch" class="area-tips">客户列表</div>
+      </template>
+    </AppBar>
+
+    <!-- app-content -->
+    <AppContent class="app-content">
+      <ListArea
+        :list="customerLists"
+        needLoadmore
+        needRefresh
+        @loadmore="loadmore"
+        :refreshing="refreshOpt.refreshing"
+        :loadmoreing="loadmoreOpt.loadmoreing"
+        :loadmoreFinish="loadmoreOpt.loadmoreFinish"
+        @refresh="refresh"
+      >
+        <section>
+          <div class="list" v-for="(user, index) in customerLists" :key="index">
+            <nav class="zimu">{{ user.key }}</nav>
+            <Article
+              class="row item"
+              v-for="(cust, index) in user.value"
+              :key="index"
+            >
+              <header class="item_head" @click="selectedCus(cust)">
+                <div style="text-align: center;">
+                  <img
+                    v-if="cust.sex == '0'"
+                    class="cust_sex"
+                    src="../../assets/imgs/common/icon/icon_male.png"
+                  />
+                  <img
+                    v-if="cust.sex == '1'"
+                    class="cust_sex"
+                    src="../../assets/imgs/common/icon/icon_female.png"
+                  />
+                </div>
+              </header>
+              <aside style="width:68%;float:left;">
+                <div style="display:flex;padding-top:4%">
+                  <span
+                    @click.stop="selectedCus(cust)"
+                    style="color:#000000;font-family: HYQiHei-DES;"
+                    >{{ cust.name }}</span
+                  >
+                  <div
+                    style="margin-left: 5%"
+                    v-for="star of parseInt(cust.grade)"
+                    :key="star"
+                  >
+                    <img
+                      class="star"
+                      src="../../assets/imgs/common/icon/icon_Fill .png"
+                    />
+                  </div>
+                </div>
+                <div style="padding:2% 0">
+                  <span
+                    v-if="cust.age"
+                    class="item_age"
+                    @click.stop="selectedCus(cust)"
+                    >{{ cust.age }}岁</span
+                  >
+                  <span class="item_mobile" @click.stop="selectedCus(cust)">{{
+                    cust.mobile
+                  }}</span>
+                </div>
+
+                <div
+                  v-show="cust.infoType == '0' || cust.infoType == ''"
+                  class="new_customer"
+                >
+                  新客户
+                </div>
+                <div
+                  v-show="cust.infoType != '0' && cust.infoType != ''"
+                  class="new_customer2"
+                >
+                  新客户
+                </div>
+              </aside>
+              <div class="item_modeify">
+                <img
+                  src="../../assets/imgs/common/icon/icon_bianji.png"
+                  @click="modifyCusInfo(cust.infoId, '3')"
+                  style="width: 18px;"
+                />
+              </div>
+            </Article>
+          </div>
+        </section>
+      </ListArea>
+    </AppContent>
+    <div class="float_box">
+      <img
+        class="top"
+        src="../../assets/imgs/common/icon/icon_fix_search.png"
+        @click="search"
+      />
+      <img
+        class="buttom"
+        src="../../assets/imgs/common/icon/icon_fix_add.png"
+        @click="addCus"
+      />
+    </div>
+  </Page>
+</template>
+
+<script>
+import ListArea from "@/components/common/ListArea";
+import { mapState } from "vuex";
+export default {
+  name: "chooseCustomer",
+  components: {
+    ListArea
+  },
+  data() {
+    return {
+      starNum: "",
+      result: {},
+      result1: {},
+      id: this.$route.query.id,
+      loadmoreOpt: {
+        loadmoreing: false,
+        loadmoreFinish: false
+      },
+      //下拉刷新配置
+      refreshOpt: {
+        refreshing: false
+      },
+      //loading配置
+      isLoading: {
+        needLoading: true
+      },
+      customerLists: [],
+      pageNum: 0,
+      pageSize: 20,
+      itemInput: "", //搜索框元素
+      isSearch: false //默认不显示搜索框
+    };
+  },
+  computed: {
+    ...mapState({
+      insurant: state => state.plan.insurant,
+      applicant: state => state.plan.applicant,
+      userInfo: state => state.user.userInfo,
+      cusQueryForm: state => state.plan.cusQueryForm, //客户姓名(s搜索)
+      concList: state => state.plan.concList,
+      bankInfoList: state => state.plan.bankInfoList,
+      introduce: state => state.plan.introduce
+    })
+  },
+  watch: {
+    pageNum(newVal) {
+      if (newVal == 10) {
+        this.isLoading.needLoading = false;
+      }
+    }
+  },
+  activated() {
+    // 解决ios清空list顶部fixed定位失效，延时清空list
+    setTimeout(() => {
+      this.reset();
+      this.initPage();
+    }, 10);
+  },
+  methods: {
+    reset() {
+      this.pageNum = 0;
+      this.customerLists = [];
+    },
+    // 初始化页面
+    initPage() {
+      // 加载更多
+      this.loadmore();
+    },
+    //点击搜索
+    search() {
+      this.$router.push("/plan/QueryCustomer");
+    },
+    //新增客户
+    addCus() {
+      this.$store.commit("plan/setState", {
+        attr: "introduce",
+        data: {}
+      });
+      if (this.id == "0" || this.id == "1") {
+        this.$router.push({
+          name: "addCustomer",
+          query: {
+            id: this.id
+          }
+        });
+      } else {
+        this.$router.push({
+          name: "addCustomer"
+        });
+      }
+    },
+    //获取客户列表
+    searchCusList() {
+      console.log(this.userInfo.weChatAgenctDTO.agentCode);
+      const params = {
+        agentCode: globalConfig.isWx
+          ? this.userInfo.weChatAgenctDTO.agentCode
+          : this.userInfo.user.agentCode, //代理人工号
+        personId: globalConfig.isWx
+          ? this.userInfo && this.userInfo.weChatAgenctDTO.infoId
+          : this.userInfo && this.userInfo.user && this.userInfo.user.personId,
+        // personId: "227c77c30a404845b2514ecde2fe1efd",
+        // personId: "227c77c30a404845b2514ecde2fe1efd",
+        infoId:
+          this.$route.query.id == "1"
+            ? this.insurant.customerId || this.insurant.infoId
+            : "", //通过关系选择投保人需要传被保人客户ID
+        attrKey:
+          this.$route.query.id == "1" ? this.insurant.holderRelation : "", //客户关系
+        infoId2: "", //客户2主键id
+        flag: "3", //模块标识  1.客户管理转介绍 2.投保客户列表 3.建议书 4.财务分析 5.客户管理 6.日程 7.健康管理
+        name: this.cusQueryForm.customerName,
+        startNum: this.pageNum, //请求数据开始的位置0、10、1...
+        pageSize: this.pageSize, //请求数据一次的条数
+        sex:
+          this.$route.query.id == "1" && this.insurant.holderRelation === "01"
+            ? this.insurant.sex === "0"
+              ? "1"
+              : "0"
+            : undefined,
+        isShowFamly:
+          this.$route.query.id == "1"
+            ? this.insurant.holderRelation == "01" ||
+              this.insurant.holderRelation == "02" ||
+              this.insurant.holderRelation == "03" ||
+              this.insurant.holderRelation == "05" ||
+              this.insurant.holderRelation == "15"
+              ? "1"
+              : "0"
+            : "" //是否显示本人及家庭成员 0-不显示 1-显示
+      };
+      //请求的方法体
+      //CUSMEMBERLIST;
+      return new Promise(resolve => {
+        utils.http
+          .post(interfaces.plan.getCustomerList, params, this.isLoading)
+          .then(res => {
+            //清空搜索
+            this.$store.commit("plan/setState", {
+              attr: "cusQueryForm",
+              data: {
+                data: { customerName: "" }
+              }
+            });
+            resolve(res.returnMap);
+            this.isLoading.needLoading = false;
+          });
+      });
+    },
+    //选中客户
+    selectedCus(cust) {
+      const certNo = cust.certNo,
+        name = cust.name;
+      this.$emit("yyInfo", { certNo, name });
+      //查询回显数据再回调
+      this.getCusInfoDetail(cust.infoId, "1");
+    },
+    getCusInfoDetail(infoId, num) {
+      const params = {
+        infoId: infoId
+      };
+      //QUERYMEMBERINFOEDIT
+      utils.http.post(interfaces.plan.queryMember, params).then(res => {
+        this.$store.commit("plan/setState", {
+          attr: "concList",
+          data: res.cusMemberContactAttributeList
+        });
+        this.$store.commit("plan/setState", {
+          attr: "bankInfoList",
+          data: res.cusMemberBankinfoList
+        });
+
+        this.result = res.cusMemberInfoList[0];
+        for (var i = 0; i < res.cusMemberAttributeList.length; i++) {
+          if (res.cusMemberAttributeList[i].attrKey == "REFERRALSTAGE") {
+            this.result1 = res.cusMemberAttributeList[i];
+          }
+        }
+        this.submitForm(num);
+      });
+    },
+    // 下拉刷新
+    async refresh() {
+      // 重置pageNum为1
+      this.pageNum = 0;
+      // 重置loadmoreFinish为false
+      this.loadmoreOpt.loadmoreFinish = false;
+      // 设置refreshing为true
+      this.refreshOpt.refreshing = true;
+      // 获取数据
+      const data = await this.searchCusList().catch(() => {});
+      // 设置refreshing为false
+      this.refreshOpt.refreshing = false;
+
+      if (data) {
+        // 查询成功的情况
+        // pageNum + 1
+        this.pageNum = 20;
+        // 赋值list
+        this.customerLists = data;
+      } else {
+        // 处理加载完毕的情况
+        this.loadmoreOpt.loadmoreFinish = true;
+      }
+    },
+    // 加载更多
+    async loadmore() {
+      // 设置loadmoreing为true
+      this.loadmoreOpt.loadmoreing = true;
+      // 获取数据
+      const data = await this.searchCusList().catch(() => {});
+      // 设置loadmoreing为false
+      this.loadmoreOpt.loadmoreing = false;
+      let customerLists = this.customerLists;
+      if (data) {
+        this.pageNum += 20;
+        if (customerLists.length == 0) {
+          this.customerLists = data;
+        } else {
+          this.customerLists = customerLists.concat(data);
+        }
+      } else {
+        console.log(this.customerLists);
+        // 处理加载完毕的情况
+        this.loadmoreOpt.loadmoreFinish = true;
+      }
+    },
+    submitForm(num) {
+      if (this.$route.params.num) {
+        this.$store.commit("plan/setState", {
+          attr: "introduce",
+          data: {
+            cusMemberReference: this.result.name,
+            salesStage: this.result.salesStage,
+            cusMemberReferenceId: this.result.infoId
+          }
+        });
+        this.back();
+        return;
+      }
+      if (num == "3") {
+        //编辑
+        this.$store.commit("plan/setState", {
+          attr: "introduce",
+          data: {
+            cusMemberReference: this.result1 ? this.result1.description : "",
+            salesStage: this.result1 ? this.result1.attrValue : "",
+            cusMemberReferenceId: this.result.infoId
+          }
+        });
+        this.$router.push({
+          name: "addCustomer",
+          params: {
+            result: this.result,
+            num: num
+          }
+        });
+        return;
+      }
+      //字段统一转换
+      //生日
+      this.result["birthdate"] = String(this.result.birthday).replace(
+        /\s\s*$/,
+        ""
+      )
+        ? String(this.result.birthday).substr(0, 10)
+        : "";
+      //delete this.result.birthday;
+      //新老客户
+      this.result["isoldCustomer"] = this.result.category;
+      delete this.result.category;
+      //职业
+      this.result.cdOccupation = {
+        occupationCode: this.result.profession,
+        occupationLevel: "",
+        occupationName: this.result.professionName,
+        occupationRiskLevel: this.result.professionLevel, //这个需要加上去
+        occupationRiskMetical: ""
+      };
+
+      if (this.id == "0") {
+        //选择被保人
+        this.$store.commit("plan/setState", {
+          attr: "insurant",
+          data: Object.assign(
+            {
+              name: "",
+              sex: "0", //性别
+              birthdate: "",
+              //职业信息
+              cdOccupation: {
+                occupationCode: "",
+                occupationLevel: "",
+                occupationName: "",
+                occupationRiskLevel: "",
+                occupationRiskMetical: ""
+              },
+              isoldCustomer: "0", //默认是新客户
+              holderRelation: ""
+            },
+            this.result
+          )
+        });
+        this.$store.commit("plan/setState", {
+          attr: "applicant",
+          data: {
+            name: "",
+            sex: "0", //性别
+            birthdate: "",
+            //职业信息
+            cdOccupation: {
+              occupationCode: "",
+              occupationLevel: "",
+              occupationName: "",
+              occupationRiskLevel: "",
+              occupationRiskMetical: ""
+            },
+            isoldCustomer: "0" //默认是新客户
+          }
+        });
+        //主险清空
+        this.$store.commit("plan/setState", {
+          attr: "mainProposalProductList",
+          data: []
+        });
+        //附加清空
+        this.$store.commit("plan/setState", {
+          attr: "riskProposalProductList",
+          data: []
+        });
+        //总保费清空
+        this.$store.commit("plan/setState", {
+          attr: "totalPremium",
+          data: ""
+        });
+      } else {
+        //选择投保人
+        this.$store.commit("plan/setState", {
+          attr: "applicant",
+          data: Object.assign(
+            {
+              name: "",
+              sex: "0", //性别
+              birthdate: "",
+              //职业信息
+              cdOccupation: {
+                occupationCode: "",
+                occupationLevel: "",
+                occupationName: "",
+                occupationRiskLevel: "",
+                occupationRiskMetical: ""
+              },
+              isoldCustomer: "0" //默认是新客户
+            },
+            this.result
+          )
+        });
+      }
+      this.back("makePlan");
+    },
+    //编辑
+    modifyCusInfo(infoId, num) {
+      this.$store.commit("plan/setState", {
+        attr: "introduce",
+        data: {}
+      });
+      this.getCusInfoDetail(infoId, num);
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/assets/css/demo/index.scss";
+.choose-customer {
+  background: $color-ds;
+  .area-tips {
+    @include display-flex;
+    height: 34px;
+    flex: 1;
+    letter-spacing: 1px;
+    color: #000000;
+  }
+
+  .icon {
+    height: auto;
+    &.icon-back {
+      width: 12px;
+      margin-right: 10px;
+    }
+    &.icon-search {
+      width: 20px;
+      margin-left: 10px;
+    }
+    &.icon-head {
+      width: 20px;
+      margin-left: 10px;
+    }
+  }
+  .float_box {
+    position: fixed;
+    overflow: hidden;
+    width: 46px;
+    height: 102px;
+    bottom: 60px;
+    right: 50px;
+    @include display-flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .search-ipt {
+    @include reset-input;
+    @include display-flex;
+    height: 34px;
+    line-height: 20px;
+    justify-content: flex-start;
+    flex: 1;
+    background: #f3f3f3;
+    border-radius: 17px;
+    font-size: 14px;
+    color: #000000;
+    padding: 0 20px;
+    letter-spacing: 1px;
+    // x去除
+    &::-webkit-search-cancel-button {
+      display: none;
+    }
+    // placeholder样式重写
+    &::placeholder {
+      font-size: 15px;
+      color: #c0c0c0;
+      text-align: center;
+    }
+  }
+  .app-content {
+    //字母的样式
+    .zimu {
+      color: #949495;
+      width: 100%;
+      background: #f3f3f3;
+      line-height: 20px;
+      padding-left: 10px;
+      margin-bottom: 1px;
+      font-family: PingFang-SC-Medium;
+      font-size: 12px;
+      color: #9b9b9b;
+      letter-spacing: -0.29px;
+    }
+    .row {
+      display: flex;
+      width: 100%;
+      border-top: 0px;
+      border-right: 0px;
+      border-bottom: 7px solid #f3f3f3;
+    }
+    .item {
+      background-color: #fff;
+      color: #444;
+      position: relative;
+      font-size: 16px;
+    }
+    //头像栏
+    .item_head {
+      float: left;
+      width: 20%;
+      margin-top: 3%;
+    }
+    //头像性别显示图像
+    .cust_sex {
+      width: 48px;
+    }
+    .star {
+      width: 10px;
+      height: 10px;
+    }
+    //姓名
+    .item_name {
+      width: 25%;
+      text-align: left !important;
+      display: inline-block;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+    //年纪
+    .item_age {
+      width: 10%;
+      font-family: HYQiHei-DES;
+      font-size: 14px;
+      color: #999999;
+      letter-spacing: 0;
+      margin-right: 10px;
+    }
+    //手机号
+    .item_mobile {
+      width: 27%;
+      font-family: HYQiHei-DES;
+      font-size: 14px;
+      color: #999999;
+      letter-spacing: 0;
+    }
+    //修改的图标
+    .item_modeify {
+      width: 12%;
+      margin: auto;
+      float: right;
+    }
+    //新客户
+    .new_customer {
+      background: #71a8f9;
+      border-radius: 2px;
+      font-family: HYQiHei-DES;
+      font-size: 10px;
+      color: #ffffff;
+      letter-spacing: 0;
+      text-align: center;
+      width: 20%;
+      height: 18px;
+      line-height: 18px;
+      margin-bottom: 3%;
+    }
+    .new_customer2 {
+      border-radius: 2px;
+      font-family: HYQiHei-DES;
+      font-size: 10px;
+      color: #ffffff;
+      letter-spacing: 0;
+      text-align: center;
+      width: 20%;
+      height: 18px;
+      line-height: 18px;
+      margin-bottom: 3%;
+    }
+  }
+  .icon_search {
+    width: 46px;
+  }
+}
+</style>

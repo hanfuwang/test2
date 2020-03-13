@@ -1,0 +1,399 @@
+<template>
+  <!-- <img src="../../assets/imgs/common/icon/icon_goback.png" alt=""> -->
+  <Page class="look-plan" :withAppBar="!globalConfig.isWx">
+    <!-- 导航栏 -->
+    <AppBar class="app-bar" v-if="!globalConfig.isWx">
+      <img
+        slot="left"
+        src="../../assets/imgs/common/icon/icon_goback.png"
+        class="icon icon-back"
+        @click="goBack"
+      />
+      <!-- AXPROPOSALSHARE -->
+      <template slot="center">
+        爱心人寿家庭保障规划
+      </template>
+    </AppBar>
+    <div v-if="!isPageTimeout">
+      <transition name="mybox">
+        <div
+          class="popup"
+          v-show="popout"
+          @click="Add"
+          :style="{ height: `calc(100vh - ${globalConfig.ui.topRemain}px` }"
+        >
+          <img
+            src="../../assets/imgs/plan/pic/pic_open.png"
+            alt=""
+            class="imgwidth"
+          />
+          <transition name="fadeIn">
+            <div class="texts" v-show="insurant.name">
+              敬呈
+              {{ insurant.name }}
+              {{ insurant.sex == 0 ? "先生" : "女士" }}
+            </div>
+          </transition>
+        </div>
+      </transition>
+      <!-- 主体 -->
+      <transition name="content">
+        <div v-show="add">
+          <AppContent class="app-content" style="background: #F7C21E;">
+            <div class="tp">
+              <img v-lazy="productImage" />
+            </div>
+            <nav class="nav">
+              <ul v-for="item in Navarr" :key="item.e">
+                <li
+                  :v-model="identifier"
+                  :class="{ identifier: item.e == identifier }"
+                  @click="identifier = item.e"
+                >
+                  {{ item.c }}
+                </li>
+              </ul>
+            </nav>
+            <div v-if="identifier == 'project'">
+              <div class="message">
+                <span>被保人:</span>
+                <span v-if="insurant.name">{{ insurant.name }}</span>
+                <span v-if="insurant.sex">{{
+                  insurant.sex == 0 ? "男" : "女"
+                }}</span>
+                <span v-if="insurant.age">{{ insurant.age }}岁</span
+                ><span v-if="insurant.shebao">{{
+                  insurant.shebao == 1 ? "有社保" : "没社保"
+                }}</span>
+              </div>
+              <!-- 投保险种 -->
+              <ParticularsInsurant :productList="productList" />
+              <!-- 保障责任 -->
+              <Guarantee :clausesDtoList="clausesDtoList"></Guarantee>
+              <!-- 利益演示 -->
+              <Benefit
+                v-if="benifitDtoList.productCode != 'ATRB01'"
+                :benifitDtoList="benifitDtoList"
+                :benifitOutLineItemDtoList="benifitOutLineItemDtoList"
+              ></Benefit>
+              <!-- 风险提示 -->
+              <RiskWarning></RiskWarning>
+              <div class="gap"></div>
+              <!-- 底部 -->
+              <Gopolicy
+                class="foot"
+                :agent="agent"
+                :shareProductImagePath="shareProductImagePath"
+                :productName="productName"
+              ></Gopolicy>
+            </div>
+            <div v-if="identifier == 'product'" class="product">
+              <img v-lazy="productIntroductionUrl" />
+            </div>
+            <div v-if="identifier == 'company'" class="product">
+              <img
+                v-for="item in companyIntroductionUrl"
+                :key="item"
+                v-lazy="item"
+              />
+            </div>
+            <div v-if="identifier == 'flow'" class="product">
+              <img v-lazy="claimProcessUrl" />
+            </div>
+            <!-- 代理人名片 -->
+            <Gopolicy
+              class="foot"
+              :agent="agent"
+              :shareProductImagePath="shareProductImagePath"
+              :productName="productName"
+            ></Gopolicy>
+          </AppContent>
+        </div>
+      </transition>
+    </div>
+    <div v-else class="tip">页面已失效</div>
+  </Page>
+</template>
+<script>
+import Guarantee from "@/components/plan/Guarantee";
+import Benefit from "@/components/plan/Benefit";
+import RiskWarning from "@/components/plan/RiskWarning";
+import Gopolicy from "@/components/plan/Gopolicy";
+import ParticularsInsurant from "@/components/plan/ParticularsInsurant";
+export default {
+  components: {
+    Guarantee,
+    Benefit,
+    RiskWarning,
+    Gopolicy,
+    ParticularsInsurant
+  },
+  data() {
+    return {
+      productName: "", //产品名称
+      shareProductImagePath: "", //小图片地址
+      isPageTimeout: false, //默认页面不失效
+      add: false,
+      popout: true,
+      bookId: this.$route.query.bookId,
+      identifier: "project",
+      insurant: {}, //被保人信息
+      productList: {}, //投保险种列表
+      sexSelectList: [], //性别码表
+      //保障责任
+      clausesDtoList: [],
+      pdtLiabDtoList: [],
+      productImage: "",
+      agent: {}, //规划师信息
+      benifitOutLineItemDtoList: [], //利益演示表
+      benifitDtoList: [], //利益演示
+      claimProcessUrl: "", //理赔图片
+      productIntroductionUrl: "",
+      companyIntroductionUrl: [],
+      Navarr: [
+        {
+          c: "保障规划",
+          e: "project"
+        },
+        {
+          c: "产品介绍",
+          e: "product"
+        },
+        {
+          c: "公司介绍",
+          e: "company"
+        },
+        {
+          c: "理赔流程",
+          e: "flow"
+        }
+      ]
+    };
+  },
+  created() {
+    this.initPage();
+    // console.log($);
+  },
+  methods: {
+    initPage() {
+      const timestamp = this.$route.query.timestamp;
+      if (timestamp && utils.format.getDateTimeBefor(timestamp)) {
+        //超过30天
+        this.isPageTimeout = true;
+      } else {
+        this.isPageTimeout = false;
+        this.loadata();
+      }
+    },
+    Add() {
+      this.popout = false;
+      this.add = true;
+    },
+    goBack() {
+      this.back();
+    },
+    loadata() {
+      const params = {
+        proposalPlan: {
+          bookId: "d0127461c29f4c99a0335f03ff2509c9"
+          // bookId: this.bookId
+        }
+      };
+      utils.http.post(interfaces.plan.queryPlan, params).then(res => {
+        this.productImage =
+          "https://officeweb365.aixin-life.net/?ssl=1&furl=" +
+          res.proposalViewDto.productImage;
+        //理赔流程
+        this.claimProcessUrl =
+          "https://officeweb365.aixin-life.net/?ssl=1&furl=" +
+          res.proposalViewDto.claimProcessUrlList[0].clausesItemDtoList[0]
+            .clausesItemUrl;
+        //公司介绍
+        this.companyIntroductionUrl = res.proposalViewDto.companyIntroductionUrlList[0].clausesItemDtoList.map(
+          item =>
+            "https://officeweb365.aixin-life.net/?ssl=1&furl=" +
+            item.clausesItemUrl
+        );
+        //产品介绍
+        this.productIntroductionUrl =
+          "https://officeweb365.aixin-life.net/?ssl=1&furl=" +
+          res.proposalViewDto.productIntroductionUrlList[0]
+            .clausesItemDtoList[0].clausesItemUrl;
+        this.insurant =
+          res.proposalViewDto.insurantProductList[0].plan.insurant;
+        this.productList =
+          res.proposalViewDto.insurantProductList[0].plan.productList;
+        this.clausesDtoList = res.proposalViewDto.clausesDtoList;
+        //规划师信息
+        this.agent = res.proposalViewDto.orgAgent.agent;
+        //利益演示表
+        this.benifitOutLineItemDtoList =
+          res.proposalViewDto.benifitOutLineDtoList[0].benifitOutLineItemDtoList;
+        //利益演示
+        this.benifitDtoList = res.proposalViewDto.benifitDtoList[0];
+        //微信小图片
+        this.shareProductImagePath = res.proposalViewDto.shareProductImagePath;
+        //产品名称
+        this.productName =
+          res.proposalViewDto.insurantProductList[0].plan.productList[0].productName;
+      });
+    }
+    // disposeUrl(url) {
+    //   if (url.indexOf("https://") != -1) {
+    //     return globalConfig.openOffice + "?ssl=1&furl=" + url;
+    //   } else if (url.indexOf("http://") != -1) {
+    //     return globalConfig.openOffice + "?furl=" + url;
+    //   } else {
+    //     console.log(url);
+    //   }
+    // }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.app-bar {
+  font-family: HYQiHei-DES;
+  .icon {
+    height: auto;
+    &.icon-back {
+      width: 11.5px;
+    }
+  }
+}
+ul {
+  padding-left: 20px;
+  li {
+    list-style: none;
+    font-size: 15px;
+    color: #333333;
+    float: left;
+    margin-right: 20px;
+  }
+}
+.nav {
+  height: 47px;
+  background: #f8f8f8;
+  line-height: 47px;
+  margin: 0 auto;
+  padding-left: 15px;
+  ul {
+    margin: 0 auto;
+  }
+  .identifier {
+    color: #f7c21e;
+    border-bottom: 2px solid #eb5656;
+  }
+}
+.product {
+  img {
+    width: 100%;
+  }
+}
+.tp {
+  width: 100%;
+  height: 100%;
+  img {
+    width: 100%;
+    height: 100%;
+  }
+}
+.message {
+  width: 300px;
+  height: 37px;
+  margin: 0 auto;
+  background: #ffffff;
+  border-radius: 27.5px;
+  margin-top: 26px;
+  margin-bottom: 20px;
+  padding: 0 26px;
+  line-height: 37px;
+  display: flex;
+
+  :first-child {
+    font-family: HYQiHei-DES;
+    font-size: 14px;
+    color: #333333;
+    letter-spacing: 0;
+  }
+  span {
+    font-size: 14px;
+    color: #333333;
+    flex: 1;
+    text-align: center;
+    vertical-align: middle;
+  }
+}
+.look-plan {
+  background: $color-ds;
+  .tip {
+    text-align: center;
+    padding-top: 20px;
+    color: #999;
+    font-size: 14px;
+  }
+}
+.gap {
+  height: 20px;
+  margin-top: 60px;
+}
+.foot {
+  width: 100%;
+  position: fixed;
+  bottom: 0;
+  font-size: 14px;
+}
+
+// popup
+.popup {
+  position: relative;
+  background-color: white;
+  // 亲启图片
+  .imgwidth {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: auto;
+  }
+  // 敬呈文字
+  .texts {
+    @include display-flex;
+    position: absolute;
+    bottom: 50px;
+    width: 100vw;
+    height: 50px;
+    font-size: 15px;
+    color: white;
+  }
+}
+
+.mybox-leave-active,
+.mybox-enter-active {
+  transition: all 1.5s ease;
+}
+
+.mybox-leave-active,
+.mybox-enter {
+  opacity: 0 !important;
+  transform: translateY(-100%);
+}
+.mybox-leave,
+.mybox-enter-active {
+  opacity: 100;
+  transform: translateY(0%);
+}
+.content-leave-active,
+.content-enter-active {
+  transition: all 1s ease;
+}
+
+.content-leave-active,
+.content-enter {
+  opacity: 100 !important;
+}
+
+.content-leave,
+.content-enter-active {
+  opacity: 0;
+}
+</style>

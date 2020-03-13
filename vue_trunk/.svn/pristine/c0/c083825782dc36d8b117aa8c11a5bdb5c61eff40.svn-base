@@ -1,0 +1,37 @@
+<template>
+  <main class="page" :class="{ 'with-app-bar': withAppBar }">
+    <slot></slot>
+  </main>
+</template>
+
+<script>
+export default {
+  name: "page",
+  props: {
+    // 是否带appBar
+    withAppBar: {
+      type: Boolean,
+      default: false
+    }
+  },
+  data() {
+    return {};
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.page {
+  width: 100vw;
+  min-height: 100vh;
+  background-color: $color-bg;
+  // 带appbar
+  &.with-app-bar {
+    padding-top: $height-app-bar;
+    // 带loadmore的app-content，重写其高度为带appbar的高度
+    /deep/ .app-content.loadmore {
+      height: calc(100vh - #{$height-app-bar});
+    }
+  }
+}
+</style>

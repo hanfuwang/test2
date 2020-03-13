@@ -1,0 +1,152 @@
+<template>
+  <page class="change-pwd">
+    <!-- vf -->
+    <ValiForm class="vf" ref="vf">
+      <!-- 原密码 -->
+      <FormPwd
+        v-if="type !== 'NOOLD'"
+        v-model="form.aOldPwd"
+        placeholder="请输入该账户的原密码"
+        :rules="rules.aOldPwd"
+        needPwdIcon
+      ></FormPwd>
+      <!-- 新密码 -->
+      <FormPwd
+        v-model="form.aNewPwd"
+        placeholder="填写新密码"
+        :rules="rules.aNewPwd"
+        needPwdIcon
+        ref="newFP"
+      ></FormPwd>
+      <!-- 确认新密码 -->
+      <FormPwd
+        v-model="form.aReNewPwd"
+        placeholder="再次填写确认新密码"
+        :rules="rules.aReNewPwd"
+        needPwdIcon
+        ref="reNewFP"
+      ></FormPwd>
+    </ValiForm>
+
+    <!-- tips -->
+    <section class="tips">
+      <p class="tips-line">密码录入规则：</p>
+      <p class="tips-line">
+        1、密码长度为8位至20位，支持录入字母、数字特殊字符!@#$%^&；
+      </p>
+      <p class="tips-line">
+        2、必须包含如下字符：1位大写字母、1位小写字母、1位数字；
+      </p>
+      <p class="tips-line">3、新密码不能与前3次密码相同；</p>
+      <p class="tips-line">4、新密码有效期为90天。</p>
+    </section>
+
+    <!-- 确定按钮 -->
+    <button class="confirm theme-btn">确定</button>
+  </page>
+</template>
+
+<script>
+import ValiForm from "@/components/common/form/ValiForm";
+import FormPwd from "@/components/common/form/FormPwd";
+export default {
+  name: "changePwd",
+  components: {
+    ValiForm,
+    FormPwd
+  },
+  data() {
+    return {
+      type: this.$route.query.type, // 页面类型：NOOLD：无需原密码
+      // form
+      form: {
+        aOldPwd: "", // 老密码
+        aNewPwd: "", // 新密码
+        aReNewPwd: "" // 重复：新密码
+      },
+      // 校验规则
+      rules: {
+        aOldPwd: [
+          {
+            regExp: "require",
+            msg: "原密码不能为空"
+          }
+        ],
+        aNewPwd: [
+          {
+            regExp: "require",
+            msg: "新密码不能为空"
+          },
+          {
+            regExp: this.checkPwd,
+            msg: "新密码不符合校验规则"
+          }
+        ],
+        aReNewPwd: [
+          {
+            regExp: "require",
+            msg: "确认新密码不能为空"
+          },
+          {
+            regExp: this.checkPwd,
+            msg: "确认新密码不符合校验规则"
+          },
+          {
+            regExp: value => value === this.form.aNewPwd,
+            msg: "确认新密码与新密码不一致，请检查"
+          }
+        ]
+      }
+    };
+  },
+  computed: {},
+  watch: {
+    // 监听新密码
+    "form.aNewPwd": {
+      handler() {
+        // 手动更新重复新密码的校验
+        this.$refs.reNewFP.$refs.fi.updateVali();
+      }
+    },
+    // 监听重复新密码
+    "form.aReNewPwd": {
+      handler() {
+        // 手动更新新密码的校验
+        this.$refs.newFP.$refs.fi.updateVali();
+      }
+    }
+  },
+  mounted() {},
+  methods: {
+    // 验证密码
+    checkPwd(pwd) {
+      // 1、密码长度为8位至20位，支持录入字母、数字特殊字符!@#$%^&；
+      // 2、必须包含如下字符：1位大写字母、1位小写字母、1位数字；
+      const regExp = /^[a-zA-Z0-9!@#$%^&]{8,20}$/;
+      return (
+        regExp.test(pwd) &&
+        /[A-Z]/.test(pwd) &&
+        /[a-z]/.test(pwd) &&
+        /[0-9]/.test(pwd)
+      );
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.change-pwd {
+  padding-top: 30px;
+}
+.vf {
+  margin-bottom: 25px;
+}
+.tips {
+  width: 283px;
+  padding: 0 20px;
+  margin-bottom: 80px;
+  font-size: 11px;
+  line-height: 18px;
+  color: #fa7070;
+}
+</style>

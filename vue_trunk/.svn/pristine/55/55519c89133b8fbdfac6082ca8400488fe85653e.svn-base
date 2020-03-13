@@ -1,0 +1,165 @@
+<template>
+  <section class="insurant">
+    <!-- radio -->
+    <div class="f-radio">
+      <div
+        class="radio-item"
+        :class="{ active: item.code === value }"
+        v-for="item of selectList"
+        :key="item.code"
+        @click="handlerRadioClick(item)"
+      >
+        <div class="circle"></div>
+        <div class="desc">{{ item.desc }}</div>
+      </div>
+      <ValiForm :form="insurant" :vali="vali">
+        <!-- 职业 -->
+        <FormSelect
+          v-model="insurant.occupation"
+          :selectList="occupationSelectList"
+          label="职业"
+          placeholder="请选择职业"
+        ></FormSelect>
+        <!-- 基本保险金额 -->
+        <FormInput
+          label="保险费"
+          :disabled="true"
+          :rightLabel="'100元'"
+        ></FormInput>
+        <!-- 保险期间 -->
+        <FormButton
+          label="保险期间"
+          :disabled="true"
+          :type="'button'"
+          value="终身"
+        ></FormButton>
+        <!-- 交费频次 -->
+        <FormButton
+          label="交费频次"
+          :disabled="true"
+          :type="'button'"
+          value="终身"
+        ></FormButton>
+        <!-- 交费期间 -->
+        <FormButton
+          label="交费期间"
+          :disabled="true"
+          :type="'button'"
+          value="终身"
+        ></FormButton>
+      </ValiForm>
+    </div>
+  </section>
+</template>
+
+<script>
+import ValiForm from "@/components/common/form/ValiForm";
+import FormInput from "@/components/common/form/FormInput";
+import FormSelect from "@/components/common/form/FormSelect";
+import FormButton from "./FormButton";
+import { mapState } from "vuex";
+export default {
+  name: "insurant",
+  components: {
+    ValiForm,
+    FormInput,
+    FormSelect,
+    FormButton
+  },
+  props: {},
+  data() {
+    return {
+      //职业码表
+      occupationSelectList: [
+        {
+          code: "00001",
+          desc: "精算师"
+        },
+        {
+          code: "00002",
+          desc: "保险代理人"
+        }
+      ],
+      iconSrc: require("@/assets/imgs/common/icon/icon_search.png"), //客户小图标
+
+      //insurant验证对象
+      vali: {
+        status: false,
+        unlegalValiList: []
+      }
+    };
+  },
+  computed: {
+    ...mapState({
+      insurant: state => state.plan.insurant, //被保人对象
+      applicant: state => state.plan.applicant //投保人对象
+    })
+  },
+  watch: {
+    insurant: {
+      handler(newValue) {
+        if (this.applicant.relation == "00") {
+          console.log(newValue);
+          //关系为本人时，当被保人信息更改投保人同步更新
+          this.$store.commit("plan/setState", {
+            attr: "applicant",
+            data: {
+              name: newValue.name,
+              sex: newValue.sex,
+              birthday: newValue.birthday,
+              occupation: newValue.occupation,
+              isNew: newValue.isNew,
+              relation: "00"
+            }
+          });
+        }
+      },
+      deep: true
+    }
+  },
+  created() {
+    this.initCodeList();
+  },
+  methods: {
+    //选择客户
+    chooseCustomer() {
+      this.$emit("chooseInsurant");
+    },
+    //初始化码表
+    async initCodeList() {
+      //性别码表
+      let sexSelectList = await utils.code.getCode("sys_user_sex");
+      this.sexSelectList = sexSelectList.filter(item => {
+        return item.code != "2";
+      });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.insurant {
+  margin-top: 8px;
+  // radio
+  .f-radio {
+    @include display-flex;
+    justify-content: flex-end;
+    flex: 1;
+    .vali-form {
+      width: 100%;
+      .form-select /deep/ .form-input {
+        padding: 0px;
+      }
+      .form-datepicker.form-item {
+        padding: 0px;
+      }
+      .form-item {
+        padding: 0px;
+      }
+      .form-item /deep/ .f-wrap {
+        padding-right: 10px;
+      }
+    }
+  }
+}
+</style>

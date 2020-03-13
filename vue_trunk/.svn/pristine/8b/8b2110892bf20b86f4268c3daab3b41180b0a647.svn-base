@@ -1,0 +1,112 @@
+<template>
+  <Page class="app-access"></Page>
+</template>
+
+<script>
+import { setGlobalConfigUi } from "@/plugins/modules/globalListener";
+export default {
+  name: "appAccess",
+  data() {
+    return {};
+  },
+  computed: {},
+  created() {
+    // 设置globalConfig中的inApp为true
+    globalConfig.inApp = true;
+    // inApp发生变化，重新设置globalConfig.ui
+    setGlobalConfigUi();
+    // 验证页面，防止非法进入
+    const vali = this.valiPage();
+    if (vali.state) {
+      // 验证通过，走access方法
+      this.access();
+    } else {
+      // 验证不通过，跳转到非法页面
+      this.$router.replace({
+        name: "illegalRequest",
+        query: {
+          msg: vali.msg
+        }
+      });
+    }
+  },
+  methods: {
+    // 验证页面，防止非法进入
+    valiPage() {
+      // 验证对象
+      const vali = {
+        state: true,
+        msg: []
+      };
+      // 检查链接参数
+      if (!this.haveQueryParam("infoId")) {
+        vali.state = false;
+        vali.msg.push("[APPACCESS]缺少infoId参数，请检查链接");
+      }
+      if (!this.haveQueryParam("path")) {
+        vali.state = false;
+        vali.msg.push("[APPACCESS]缺少path参数，请检查链接");
+      }
+      vali.msg = vali.msg.join("；");
+      return vali;
+    },
+    // 检查查询参数中是否包含某项
+    haveQueryParam(param) {
+      const query = this.$route.query;
+      return query[param];
+    },
+    // 获取剩余的请求参数
+    getRemainQuery() {
+      // 防止影响原对象
+      const query = JSON.parse(JSON.stringify(this.$route.query));
+      // 删除query中无用的参数
+      Reflect.deleteProperty(query, "infoId");
+      Reflect.deleteProperty(query, "path");
+      Reflect.deleteProperty(query, globalConfig.navKeyName);
+      return query;
+    },
+    // app进入access
+    async access() {
+      // 码表检测更新
+      const updateResult = await utils.code.updateCode();
+      if (updateResult.errMsg) {
+        // 码表检测更新报错
+        utils.ui.tips({
+          msg: updateResult.errMsg,
+          type: "error"
+        });
+        return;
+      }
+
+      const infoId = this.$route.query.infoId;
+      const path = this.$route.query.path;
+
+      // infoId塞入store
+      this.$store.commit("user/setState", {
+        attr: "infoId",
+        data: infoId
+      });
+
+      // 根据infoId获取用户信息
+      const userInfo = await this.$store
+        .dispatch("user/getUserInfoByInfoId")
+        .catch(() => {});
+      if (userInfo) {
+        // 根据path跳转到对应的页面
+        this.$router.replace({
+          name: path,
+          query: this.getRemainQuery() // 多余的query参数重新挂载到目标页面
+        });
+      } else {
+        // 查不到用户信息，app端直接报错
+        utils.ui.tips({
+          msg: "通过infoId获取用户信息失败",
+          type: "error"
+        });
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped></style>

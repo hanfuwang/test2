@@ -1,0 +1,168 @@
+<template>
+  <section class="additional-risk">
+    <div v-for="(item, index) in AllRiskList" :key="index">
+      <div @click="handleSelectRisk(index)">
+        <span class="circle" v-if="item.productName != ''"></span>
+        <span class="desc">{{ item.productName }}</span>
+      </div>
+
+      <!--附加险按钮配置 -->
+      <div v-show="item.isSelect">
+        <!-- 配置选项-->
+        <content v-for="(etl, index) in item.attList" :key="index">
+          <RiskSettingSelect
+            :label="etl.attName"
+            :list="etl.attValueList"
+            :selectCode="etl.attValue"
+            @handle="SelectEtl"
+            v-if="etl.attValueList.length > 0"
+          />
+        </content>
+      </div>
+    </div>
+  </section>
+</template>
+
+<script>
+import RiskSettingSelect from "./RiskSettingSelect";
+import { mapState } from "vuex";
+
+export default {
+  name: "additionalRisk",
+  components: { RiskSettingSelect },
+  props: {
+    //传进来的险种信息 附带附加险
+    SelectMain: {
+      type: Object,
+      default: function() {
+        return {};
+      }
+    },
+    //传进来的主险选项
+    mainSetting: {
+      type: Object,
+      default: function() {
+        return {};
+      }
+    }
+  },
+  data() {
+    return {
+      AllRiskList: [], //传递过来的附加险
+      MainSettingList: [], //主险选项
+      //附加险种配置
+      selectRiskCode: "" //选中附加险code
+    };
+  },
+  mounted() {
+    console.log(this.SelectMain);
+    //传递过来的附加险重新赋值
+    this.AllRiskList = this.SelectMain.extraList;
+    //主险选项
+    this.MainSettingList = this.mainSetting;
+    this.initIsSelect(); //初始化附加险选中
+  },
+  computed: {
+    ...mapState({
+      mainProposalProductList: state => state.plan.mainProposalProductList, //主险列表
+      riskProposalProductList: state => state.plan.riskProposalProductList //附加险列表
+    })
+  },
+  watch: {
+    MainSettingList: {
+      handler(newVal, oldVal) {
+        console.log(newVal, oldVal);
+      },
+      deep: true
+    }
+  },
+  created() {},
+  methods: {
+    initIsSelect() {
+      this.AllRiskList.map(item => (item.isSelect = false));
+    },
+    handleSelectRisk(num) {
+      this.AllRiskList.forEach((item, index) => {
+        if (index == num) {
+          item.isSelect = !item.isSelect;
+          if (item.isSelect) this.selectRiskCode = item.productCode;
+          item.additional.forEach(element => {
+            //豁免险处理
+            if (element.key == "huomian" && element.value == "yes") {
+              this.DealHuoMian(item);
+            } else {
+              //赋默认值
+              item.attList.forEach(data => {
+                if (element.key == data.attCode) {
+                  data.attValue = element.value.split(",")[0];
+                }
+              });
+            }
+          });
+          this.$forceUpdate();
+          console.log(item);
+        }
+      });
+    },
+    DealHuoMian(data) {
+      // 处理豁免险
+      data.attList.forEach(val => {
+        if (val.attCode == "payMode") {
+          this.SelectMain.attList.filter(key => {
+            if (key.attCode == "payMode") {
+              val.attValueList =
+                key.attValueList &&
+                key.attValueList.filter(item => {
+                  console.log(this.MainSettingList);
+                  console.log(key.attValue);
+                  debugger;
+                  return this.MainSettingList.payMode.includes(item.code);
+                });
+            }
+          });
+        }
+        console.log(val);
+      });
+    },
+    SelectEtl(item) {
+      console.log(item);
+      let SelectRisk = this.AllRiskList.filter(val => {
+        if (this.selectRiskCode == val.productCode) return val;
+      });
+      console.log(SelectRisk[0]);
+      console.log(this.MainSettingList);
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/assets/css/common/form.scss";
+.additional-risk {
+  @include overflow-emphasis;
+  width: 320px;
+  margin: 5px 0;
+  &.active {
+    .circle {
+      @include small-circle(12px, 4px, solid, #4ac4a3);
+    }
+    .desc {
+      color: $font-color;
+    }
+  }
+  // 圆圈
+  .circle {
+    @include small-circle(12px, 1px, solid, #4ac4a3);
+    border-radius: 50%;
+    margin-right: 20px;
+    transition: border-width 0.2s ease-out;
+    display: inline-block;
+  }
+  // 描述
+  .desc {
+    @include overflow-emphasis;
+    font-size: $font-size;
+    color: #333;
+  }
+}
+</style>

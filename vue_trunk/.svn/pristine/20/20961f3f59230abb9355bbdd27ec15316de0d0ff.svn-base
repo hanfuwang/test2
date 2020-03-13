@@ -1,0 +1,25 @@
+/* ------------------------------------------ scss var ------------------------------------------ */
+
+$design-width: 375; // 设计稿宽度
+$page-trans-duration: 0.4s; // 页面过渡动画持续时间
+
+// 颜色相关
+$color-theme: #ffcc00;  // 主题色
+$color-theme-light: #ffd11a;  // 主题色-亮
+$color-theme-dark: #e6b800; // 主题色-暗
+$color-success: #52c750;  // 成功色
+$color-error: #ff3333;  // 失败色
+$color-warn: #fdd835; // 警告色
+
+$color-bg: #ffffff; // 背景色
+$color-app-bar: #f9f9f9;  // app-bar颜色
+
+// z-index相关
+$zIndex-app-bar: 2;
+$zIndex-app-content: 1;
+$zIndex-modal: 999;
+$zIndex-tips: 1000;
+$zIndex-popup: 998;
+
+// 高度相关
+$height-app-bar: 50px;

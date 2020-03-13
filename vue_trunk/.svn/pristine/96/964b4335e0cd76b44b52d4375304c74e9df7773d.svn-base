@@ -1,0 +1,305 @@
+<template>
+  <Page class="insurance-select" :withAppBar="!globalConfig.isWx">
+    <!-- 导航栏 -->
+    <AppBar class="app-bar" v-if="!globalConfig.isWx">
+      <template slot="center">
+        爱心人寿险种选择
+      </template>
+    </AppBar>
+
+    <!-- 主体 -->
+    <AppContent class="app-content">
+      <!-- 主险 -->
+      <div class="main-list">
+        <InsuranceItem
+          v-for="(item, index) in mainInsurancList"
+          :key="index"
+          :itemObj="item"
+          :selectCode="selectMainCode"
+          @handleSelect="handleSelectMain"
+        />
+      </div>
+      <!-- 配置选项1----------- 缴费方式 -->
+      <RiskSetting
+        label="领取方式"
+        :list="drawModeList"
+        :selectCode="drawMode"
+        @handle="handleDrawMode"
+        v-if="drawModeList.length != 0"
+      />
+      <!-- 配置选项2----------- 保险期限 -->
+      <RiskSetting
+        label="保险期限"
+        :list="policyPeriodList"
+        :selectCode="policyPeriod"
+        @handle="handlePolicyPeriod"
+        v-if="policyPeriodList.length != 0"
+      />
+      <!-- 配置选项3----------- 交费期间 -->
+      <RiskSetting
+        label="交费期间"
+        :list="payPeriodList"
+        :selectCode="payPeriod"
+        @handle="handlePayPeriod"
+        v-if="payPeriodList.length != 0"
+      />
+      <!-- 配置选项4----------- 缴费方式 -->
+      <RiskSetting
+        label="缴费方式"
+        :list="payModeList"
+        :selectCode="payMode"
+        @handle="handlePayMode"
+        v-if="payModeList.length != 0"
+      />
+
+      <!-- <p class="tips-one">*本险种首单基本保额须大于等于50万</p> -->
+      <!-- 被保人类型 -->
+      <!-- <InsurantType
+        @handleInsurantType="handleInsurantType"
+        :insurantTypeList="insurantTypeList"
+        :selectCode="selectInsurantTypeCode"
+      /> -->
+      <!-- <p class="tips-two">(需依据体检结果评估被保险人是否获得优选费率)</p> -->
+      <!-- 附加险 -->
+      <div class="additional-list" v-if="additionalInsurancList.length != 0">
+        <h2>可选计划</h2>
+        <InsuranceItem
+          v-for="(item, index) in additionalInsurancList"
+          :key="index"
+          :itemObj="item"
+          :selectCode="selectAdditionalCode"
+          @handleSelect="handleSelectAdditional"
+        />
+      </div>
+      <!-- 按钮组 -->
+      <div class="btns">
+        <button class="cancel">取消</button>
+        <button class="sure" @click="handleSure">确定</button>
+      </div>
+    </AppContent>
+  </Page>
+</template>
+
+<script>
+import InsuranceItem from "@/components/plan/InsuranceItem";
+import RiskSetting from "@/components/plan/RiskSetting";
+//import InsurantType from "@/components/plan/InsurantType";
+
+export default {
+  name: "insuranceSelect",
+  components: {
+    InsuranceItem,
+    RiskSetting
+    // InsurantType
+  },
+  data() {
+    return {
+      //被选择的主险编码
+      selectMainCode: "",
+      //主险列表
+      mainInsurancList: [],
+
+      //领取方式
+      drawMode: "",
+      //领取方式列表
+      drawModeList: [],
+
+      //被选择当保险期限
+      policyPeriod: "",
+      //保险期限列表
+      policyPeriodList: [],
+
+      //被选择的交费期间
+      payPeriod: "",
+      //交费期间列表
+      payPeriodList: [],
+
+      //缴费方式
+      payMode: "",
+      //缴费方式列表
+      payModeList: [],
+
+      //被选择当被保人类型
+      selectInsurantTypeCode: "",
+      //被保人类型码表
+      insurantTypeList: [
+        { code: "01", desc: "标准" },
+        { code: "02", desc: "优选" }
+      ],
+
+      //被选择的附加险
+      selectAdditionalCode: "",
+      //附加险列表
+      additionalInsurancList: [
+        // {
+        //   code: "1001",
+        //   desc: "爱心人寿附加投保人豁免保险费重大疾重大疾重大疾重大疾"
+        // },
+        // {
+        //   code: "1002",
+        //   desc: "爱心人寿爱心延喜养老年金保险B款（分红型）"
+        // }
+      ]
+    };
+  },
+  computed: {},
+  watch: {},
+  created() {
+    this.initPage();
+  },
+  methods: {
+    //选择主险
+    handleSelectMain(item) {
+      //被选择的主险
+      this.selectMainCode = item.productCode;
+      //附加险列表
+      this.additionalInsurancList = item.extraList;
+      this.initMainSetting(item);
+    },
+    //初始化主险配置
+    initMainSetting(item) {
+      item.attList.forEach(element => {
+        switch (element.attCode) {
+          case "drawMode": //领取方式
+            this.drawModeList = element.attValueList;
+            break;
+          case "policyPeriod": //保险期限
+            this.policyPeriodList = element.attValueList;
+            break;
+          case "payPeriod": //交费期间
+            this.payPeriodList = element.attValueList;
+            break;
+          case "payMode": //缴费方式
+            this.payModeList = element.attValueList;
+            break;
+        }
+      });
+    },
+    //选择领取方式
+    handleDrawMode(item) {
+      this.drawMode = item.code;
+    },
+    //选择保险期限
+    handlePolicyPeriod(item) {
+      this.policyPeriod = item.code;
+    },
+    //选择交费期间
+    handlePayPeriod(item) {
+      this.payPeriod = item.code;
+    },
+    //选择缴费方式
+    handlePayMode(item) {
+      this.payMode = item.code;
+    },
+    //配置项目点击事件
+    handleInsurantType() {},
+    //选择附加险种
+    handleSelectAdditional(item) {
+      this.selectAdditionalCode = item.productCode;
+    },
+    //确定
+    handleSure() {
+      this.back();
+    },
+    //初始化页面
+    initPage() {
+      let applicantBirthday = this.$route.query.applicantBirthday;
+      let insurantBirthday = this.$route.query.insurantBirthday;
+      let insurantSex = this.$route.query.insurantSex;
+      let holderRelation = this.$route.query.holderRelation;
+      let userInfo = this.$store.state.user.userInfo;
+      //初始化页面配置对象
+      let params = {
+        agentDto: {
+          agent: {
+            channelId: userInfo.channelId, //渠道id
+            personId: userInfo.infoId, //登陆人id
+            qualificationId: ""
+          },
+          ldcom: {
+            comcode: "",
+            id: ""
+          }
+        },
+        cusMemberInfo: {
+          holderBrith: applicantBirthday, //投保人生日
+          name: insurantBirthday, //被保人生日
+          relation: holderRelation, //关系
+          sex: insurantSex //被保人性别
+        }
+      };
+      utils.http.post(interfaces.plan.getProductSetting, params).then(res => {
+        this.mainInsurancList = res.productDefList; //主险列表
+      });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.app-bar {
+  .icon {
+    height: auto;
+    &.icon-back {
+      width: 11.5px;
+    }
+  }
+}
+.insurance-select {
+  background: $color-bg;
+  .main-list {
+    background: $color-bg;
+    margin: 0 10px;
+    padding: 14px 20px;
+    box-shadow: 0 0 4px 1px #e5e9f1;
+    border-radius: 0 0 5px 5px;
+  }
+  .tips-one {
+    font-size: 12px;
+    color: #fa7070;
+    margin-left: 30px;
+    margin-bottom: 5px;
+  }
+  .tips-two {
+    font-size: 12px;
+    color: #fa7070;
+    margin-left: 30px;
+    margin-bottom: 10px;
+    margin-top: 10px;
+  }
+  .additional-list {
+    background: $color-bg;
+    margin: 0 10px;
+    padding: 14px 20px;
+    box-shadow: 0 0 4px 1px #e5e9f1;
+    border-radius: 0 0 5px 5px;
+    h2 {
+      font-size: 15px;
+      color: #333333;
+      font-weight: normal;
+      border-bottom: 1px solid #e5e9f1;
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+    }
+  }
+  .btns {
+    padding: 40px 40px 20px 40px;
+    @include display-flex;
+    justify-content: space-around;
+    .sure {
+      background: $color-theme;
+    }
+    .cancel {
+      color: $color-theme;
+    }
+    button {
+      width: 102px;
+      height: 38px;
+      border: 1px solid $color-theme;
+      border-radius: 19px;
+      background: $color-bg;
+      font-size: 18px;
+    }
+  }
+}
+</style>

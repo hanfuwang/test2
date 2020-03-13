@@ -1,0 +1,22 @@
+<template>
+  <article class="app-content">
+    <slot></slot>
+  </article>
+</template>
+
+<script>
+export default {
+  name: "appContent",
+  props: {},
+  data() {
+    return {};
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.app-content {
+  position: relative;
+  z-index: $zIndex-app-content;
+}
+</style>

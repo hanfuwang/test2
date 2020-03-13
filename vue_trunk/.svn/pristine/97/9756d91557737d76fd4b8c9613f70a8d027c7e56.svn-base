@@ -1,0 +1,90 @@
+<template>
+  <Page class="demo-home demo-page">
+    <section class="menu-wrap">
+      <p
+        class="menu-line"
+        v-for="(menu, index) of menuList"
+        :key="menu.path"
+        @click="go(menu.path)"
+      >
+        {{ index + 1 }}：{{ menu.desc }}
+      </p>
+    </section>
+  </Page>
+</template>
+
+<script>
+export default {
+  name: "demoHome",
+  data() {
+    return {
+      menuList: [
+        {
+          path: "demoForm",
+          desc: "form表单"
+        },
+        {
+          path: "demoUi",
+          desc: "UI相关"
+        },
+        {
+          path: "demoLazyload",
+          desc: "图片懒加载 + 预览"
+        },
+        {
+          path: "demoIframe",
+          desc: "iframe"
+        },
+        {
+          path: "demoThrottle",
+          desc: "事件防抖与节流"
+        },
+        {
+          path: "demoStore",
+          desc: "刷新页面不丢失的vuex"
+        },
+        {
+          path: "demoEventBus",
+          desc: "eventBus兄弟组件之间传值"
+        },
+        {
+          path: "demoFundebug",
+          desc: "fundebug错误监控"
+        },
+        {
+          path: "demoHttp",
+          desc: "http请求"
+        },
+        {
+          path: "demoApp",
+          desc: "app与微信"
+        },
+        {
+          path: "demoJssdk",
+          desc: "jssdk"
+        }
+      ]
+    };
+  },
+  computed: {},
+  created() {},
+  methods: {}
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/assets/css/demo/index.scss";
+.demo-home {
+  .menu-wrap {
+    .menu-line {
+      height: 40px;
+      line-height: 40px;
+      font-size: 13px;
+      color: #4b4b4b;
+      &:not(:last-of-type) {
+        border-bottom: 1px solid #cccccc;
+      }
+    }
+  }
+}
+</style>

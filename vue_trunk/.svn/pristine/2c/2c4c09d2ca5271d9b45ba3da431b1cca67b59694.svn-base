@@ -1,0 +1,479 @@
+<template>
+  <div class="form-datepicker">
+    <!-- disabled 输入框 -->
+    <FormInput
+      v-model="iptValue"
+      :label="label"
+      :placeholder="placeholder"
+      :rules="rules"
+      :iconSrc="iconSrc"
+      :iconWidth="iconWidth"
+      :showBottomUnlegalMsg="showBottomUnlegalMsg"
+      :showRequire="showRequire"
+      disabled
+      @formInputClick="handlerFormInputClick"
+      @iconClick="handlerIconClick"
+      @updateVali="handlerUpdateVali"
+      ref="fi"
+    ></FormInput>
+    <!-- 日期选择器模态层 -->
+    <Modal class="dp-model" :show="showModal" @close="closeDatepicker">
+      <div class="dp-wrap">
+        <!-- 显示当前所选时间 -->
+        <div class="selected-date">{{ value || "未选择" }}</div>
+        <!-- slidepicker -->
+        <SlidePicker
+          v-if="slidePickerFlag"
+          :values="nowDate"
+          :visible-item-count="visibleItemCount"
+          :slots="slots"
+          @change="handlerChange"
+        ></SlidePicker>
+        <!-- 按钮组 -->
+        <div class="btn-wrap">
+          <button class="btn" @click="handlerCancel">取消</button>
+          <button class="btn" @click="handlerConfirm">确定</button>
+        </div>
+      </div>
+    </Modal>
+  </div>
+</template>
+
+<script>
+import FormInput from "./FormInput";
+import Modal from "../ui/Modal";
+import SlidePicker from "muse-ui/es5/SlidePicker";
+export default {
+  name: "formDatepicker",
+  components: {
+    FormInput,
+    Modal,
+    SlidePicker
+  },
+  props: {
+    // value
+    value: {
+      type: String,
+      default: undefined
+    },
+    // 左侧的label描述
+    label: {
+      type: String,
+      default: undefined
+    },
+    // iconSrc
+    iconSrc: {
+      type: String,
+      default: require("@/assets/imgs/common/icon/icon_arrow_right.png")
+    },
+    // icon宽度
+    iconWidth: {
+      type: Number,
+      default: 7
+    },
+    // placeholder
+    placeholder: {
+      type: String,
+      default: undefined
+    },
+    // rules校验规则
+    rules: {
+      type: Array,
+      default: () => {
+        return [];
+      }
+    },
+    // 最大日期
+    max: {
+      type: String,
+      default: utils.format.dateToStr(new Date(), "yyyy-MM-dd")
+    },
+    // 最小日期
+    min: {
+      type: String,
+      default: "1900-01-01"
+    },
+    // 默认日期
+    default: {
+      type: String,
+      default: "1990-01-01"
+    },
+    // disabled
+    disabled: {
+      type: Boolean,
+      default: false
+    },
+    // 当前可见的日期个数
+    visibleItemCount: {
+      type: Number,
+      default: 5
+    },
+    // 是否在必填的时候显示*
+    showRequire: {
+      type: Boolean,
+      default: true
+    }
+  },
+  data() {
+    return {
+      iptValue: "", // 当前输入的值
+      nowYear: null, // 当前选中年
+      nowMonth: null, // 当前选中月
+      nowDay: null, // 当前选中日
+      showModal: false, // 是否显示datepicker模态层
+      slidePickerFlag: true, // 用于重置slidePicker
+      showBottomUnlegalMsg: false, // 是否显示底部错误信息
+      // 当前验证状态
+      vali: {
+        status: false, // 校验结果，符合rules为true，不符合为false
+        msg: "" // 校验信息
+      }
+    };
+  },
+  computed: {
+    // 年显示数组
+    years() {
+      // 取得最大和最小年
+      const maxDate = utils.format.strToDate(this.max);
+      const minDate = utils.format.strToDate(this.min);
+
+      const maxYear = maxDate.getFullYear();
+      const minYear = minDate.getFullYear();
+
+      // 根据min与max生成yaer数组
+      const years = [];
+      for (let nowYear = minYear; nowYear <= maxYear; nowYear++) {
+        years.push(nowYear + "年");
+      }
+      return years;
+    },
+    // 月显示数组
+    months() {
+      const maxDate = utils.format.strToDate(this.max);
+      const minDate = utils.format.strToDate(this.min);
+
+      const maxYear = maxDate.getFullYear();
+      const minYear = minDate.getFullYear();
+      const maxMonth = maxDate.getMonth() + 1;
+      const minMonth = minDate.getMonth() + 1;
+
+      const nowYear = this.nowYear;
+
+      let min = 1;
+      let max = 12;
+      if (nowYear === minYear) {
+        // 当前年份为最小年份
+        min = minMonth;
+      }
+      if (nowYear === maxYear) {
+        // 当前年份为最大年份
+        max = maxMonth;
+      }
+
+      // 月份超限重置
+      // eslint-disable-next-line
+      this.nowMonth < min ? (this.nowMonth = min) : null;
+      // eslint-disable-next-line
+      this.nowMonth > max ? (this.nowMonth = max) : null;
+
+      // 根据min与max生成month数组
+      const months = [];
+      for (let nowMonth = min; nowMonth <= max; nowMonth++) {
+        months.push(nowMonth + "月");
+      }
+      return months;
+    },
+    // 日显示数组
+    days() {
+      const maxDate = utils.format.strToDate(this.max);
+      const minDate = utils.format.strToDate(this.min);
+
+      const maxYear = maxDate.getFullYear();
+      const minYear = minDate.getFullYear();
+      const maxMonth = maxDate.getMonth() + 1;
+      const minMonth = minDate.getMonth() + 1;
+      const maxDay = maxDate.getDate();
+      const minDay = minDate.getDate();
+
+      const nowYear = this.nowYear;
+      const nowMonth = this.nowMonth;
+
+      let min = 1;
+      let max = this.getMaxDayByYearAndMonth(nowYear, nowMonth);
+
+      if (nowYear === minYear && nowMonth === minMonth) {
+        // 当前年份为最小年份，且当前月份为最小月份
+        min = minDay;
+      }
+      if (nowYear === maxYear && nowMonth === maxMonth) {
+        // 当前年份为最大年份，且当前月份为最大月份
+        max = maxDay;
+      }
+
+      // 日超限重置
+      // eslint-disable-next-line
+      this.nowDay < min ? (this.nowDay = min) : null;
+      // eslint-disable-next-line
+      this.nowDay > max ? (this.nowDay = max) : null;
+
+      // 根据min与max生成day数组
+      const days = [];
+      for (let nowDay = min; nowDay <= max; nowDay++) {
+        days.push(nowDay + "日");
+      }
+      return days;
+    },
+    // 用于picker的显示
+    nowDate() {
+      const nowYear = this.nowYear;
+      const nowMonth = this.nowMonth;
+      const nowDay = this.nowDay;
+      return [nowYear + "年", nowMonth + "月", nowDay + "日"];
+    },
+    // 初始化picker的slots
+    slots() {
+      return [
+        {
+          width: "100%",
+          textAlign: "center",
+          values: this.years
+        },
+        {
+          width: "100%",
+          textAlign: "center",
+          values: this.months
+        },
+        {
+          width: "100%",
+          textAlign: "center",
+          values: this.days
+        }
+      ];
+    }
+  },
+  watch: {
+    // 监听value
+    value: {
+      handler(newVal, oldVal) {
+        if (!oldVal && newVal) {
+          // 日期选择器的值从无到有，重新初始化默认值
+          this.initDefault();
+        }
+        // 更新iptValue
+        this.iptValue = newVal;
+        // 根据value重置nowYear, nowMonth, nowDay，防止直接赋值value导致的ui不刷新
+        if (newVal) {
+          const selectedDate = utils.format.strToDate(newVal);
+          this.nowYear = selectedDate.getFullYear();
+          this.nowMonth = selectedDate.getMonth() + 1;
+          this.nowDay = selectedDate.getDate();
+        }
+      },
+      // 立即执行
+      immediate: true
+    },
+    // 监听iptValue
+    iptValue(newVal) {
+      // 更新value
+      this.$emit("input", newVal);
+    },
+    // max发生变化
+    max() {
+      // 重置slidePicker
+      this.resetSlidePicker();
+    },
+    // min发生变化
+    min() {
+      // 重置slidePicker
+      this.resetSlidePicker();
+    },
+    // 在日期选择框弹出的时候，不显示底部错误信息
+    showModal(newVal) {
+      newVal
+        ? (this.showBottomUnlegalMsg = false)
+        : (this.showBottomUnlegalMsg = true);
+    }
+  },
+  created() {
+    // 初始化默认值
+    this.initDefault();
+  },
+  methods: {
+    // 初始化默认值
+    initDefault() {
+      const valueDate = this.value ? utils.format.strToDate(this.value) : null;
+      const maxDate = utils.format.strToDate(this.max);
+      const minDate = utils.format.strToDate(this.min);
+      const defaultDate = utils.format.strToDate(this.default);
+      // default校验
+      if (defaultDate > maxDate || defaultDate < minDate) {
+        throw new Error("default不能大于max或小于min，请重新指定");
+      }
+      // 根据value与default初始化nowYear, nowMonth, nowDay
+      this.nowYear = valueDate
+        ? valueDate.getFullYear()
+        : defaultDate.getFullYear();
+      this.nowMonth = valueDate
+        ? valueDate.getMonth() + 1
+        : defaultDate.getMonth() + 1;
+      this.nowDay = valueDate ? valueDate.getDate() : defaultDate.getDate();
+    },
+    // 根据年份和月份获取当月最大天数
+    getMaxDayByYearAndMonth(year, month) {
+      let maxDay = 31;
+      // 有30天的月份数组
+      const monthWith30Day = [4, 6, 9, 11];
+      if (monthWith30Day.includes(month)) {
+        // 30天月
+        maxDay = 30;
+      } else if (month === 2) {
+        if ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0) {
+          // 判断闰年的标准是：1、能整除4且不能整除100 2、能整除400
+          // 闰年
+          maxDay = 29;
+        } else {
+          // 平年
+          maxDay = 28;
+        }
+      }
+      return maxDay;
+    },
+    // 打开datepicker
+    openDatepicker() {
+      if (this.disabled) return;
+
+      this.showModal = true;
+    },
+    // 关闭datepicker
+    closeDatepicker() {
+      this.showModal = false;
+    },
+    // 重置slidePicker，slidePicker在待选项改变的时候有时会发生显示的bug，需手动重置
+    resetSlidePicker() {
+      this.slidePickerFlag = false;
+      this.$nextTick(() => {
+        this.slidePickerFlag = true;
+      });
+    },
+
+    // 处理slide picker变化
+    handlerChange(value, index) {
+      switch (index) {
+        // 年
+        case 0: {
+          const year = parseInt(value);
+          this.nowYear = year;
+          break;
+        }
+        // 月
+        case 1: {
+          const month = parseInt(value);
+          this.nowMonth = month;
+          break;
+        }
+        // 日
+        case 2: {
+          const day = parseInt(value);
+          this.nowDay = day;
+          break;
+        }
+      }
+
+      // 重置slidePicker
+      this.resetSlidePicker();
+    },
+
+    // 处理formInput click
+    handlerFormInputClick() {
+      // 打开datepicker
+      this.openDatepicker();
+    },
+    // 处理icon click
+    handlerIconClick() {
+      // formInput中的icon默认是click.stop的，此处需要手动触发formInput中的click
+      this.$refs.fi.$el.click();
+      // 打开datepicker
+      this.openDatepicker();
+    },
+    // 处理取消
+    handlerCancel() {
+      // 未选择，且之前有值，重写赋值nowYear，nowMonth，nowDay
+      if (this.value) {
+        const selectedDate = utils.format.strToDate(this.value);
+        this.nowYear = selectedDate.getFullYear();
+        this.nowMonth = selectedDate.getMonth() + 1;
+        this.nowDay = selectedDate.getDate();
+      }
+      // 关闭弹窗
+      this.closeDatepicker();
+    },
+    // 处理确定
+    handlerConfirm() {
+      const nowYear = this.nowYear;
+      const nowMonth = this.nowMonth;
+      const nowDay = this.nowDay;
+      // 更新value
+      this.$emit(
+        "input",
+        `${nowYear}-${nowMonth < 10 ? "0" + nowMonth : nowMonth}-${
+          nowDay < 10 ? "0" + nowDay : nowDay
+        }`
+      );
+      // 关闭弹窗
+      this.closeDatepicker();
+    },
+    // 根组件vali更新处理：更新当前组件的vali，保持同步
+    handlerUpdateVali(vali) {
+      this.vali = vali;
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.dp-wrap {
+  width: 270px;
+  padding: 23px 16px;
+  background-color: #ffffff;
+  border-radius: 5px;
+  // highlight
+  /deep/ .mu-slide-picker-center-highlight {
+    border-top: 1px solid #e5e9f1;
+    border-bottom: 1px solid #e5e9f1;
+    border-left: 2px solid #71a8f9;
+  }
+  // 当前选中项
+  /deep/ .mu-slide-picker-item {
+    font-size: 14px;
+    &.selected {
+      color: #71a8f9;
+    }
+  }
+  // 当前选中的日期
+  .selected-date {
+    @include display-flex;
+    height: 30px;
+    font-size: 16px;
+    color: #000000;
+  }
+  // 按钮组
+  .btn-wrap {
+    display: flex;
+    width: 230px;
+    margin: 10px auto 0;
+    border: 1px solid #f3f3f3;
+    border-radius: 17px;
+    .btn {
+      @include reset-button;
+      @include display-flex;
+      flex: 1;
+      height: 30px;
+      font-size: 15px;
+      color: #333333;
+      &:first-of-type {
+        border-right: 1px solid #f3f3f3;
+      }
+    }
+  }
+}
+</style>

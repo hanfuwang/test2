@@ -1,0 +1,22 @@
+/* ------------------------------------------ user接口 ------------------------------------------ */
+
+const user = {
+  forgetPwd: {
+    requestType: "AXWECHATFORGETPWD",
+    requestDesc: "忘记密码"
+  },
+  changePwd: {
+    requestType: "AXWECHATMODIFYPASSWORD",
+    requestDesc: "修改密码"
+  },
+  getUserInfoByPhone: {
+    requestType: "AXWECHATGETAGENTINFO",
+    requestDesc: "根据手机号获取用户信息"
+  },
+  changeUserPhone: {
+    requestType: "AXWECHATCHANGEPHONE",
+    requestDesc: "修改用户绑定手机号"
+  }
+};
+
+export default user;

@@ -1,0 +1,54 @@
+<template>
+  <div class="access"></div>
+</template>
+
+<script>
+export default {
+  name: "access",
+  data() {
+    return {};
+  },
+  computed: {},
+  created() {
+    // 微信进入授权：获取openId
+    this.access();
+  },
+  mounted() {},
+  methods: {
+    // 微信进入授权：获取openId
+    access() {
+      // 获取openId
+      const openId = this.$route.query.openId;
+      if (!openId) {
+        utils.ui.tips({
+          msg: "openId获取失败，请检查链接",
+          type: "error",
+          icon: true
+        });
+        return;
+      }
+      // 获取跳转路径
+      const path = this.$route.query.path;
+      if (!path) {
+        utils.ui.tips({
+          msg: "未指定跳转path参数，请检查链接",
+          type: "error",
+          icon: true
+        });
+        return;
+      }
+      // openId塞入store
+      this.$store.commit("global/setState", {
+        attr: "openId",
+        data: openId
+      });
+      // 根据path跳转到对应的页面
+      this.go({
+        path: path
+      });
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped></style>

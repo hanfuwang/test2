@@ -1,0 +1,26 @@
+// demo-page
+.demo-page {
+  padding: 20px;
+  // 提示信息
+  .tips {
+    font-weight: normal;
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+
+  // 按钮组
+  .btn-wrap {
+    margin-top: 20px;
+    // 按钮
+    .btn {
+      margin-right: 20px;
+      margin-bottom: 10px;
+      padding: 5px 10px;
+      line-height: 20px;
+      font-size: 12px;
+      color: white;
+      background: $color-theme;
+      box-shadow: 0 0 3px 0.5px #f96;
+    }
+  }
+}

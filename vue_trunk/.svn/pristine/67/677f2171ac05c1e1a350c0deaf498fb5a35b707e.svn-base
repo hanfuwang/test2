@@ -1,0 +1,46 @@
+/* ------------------------------------------ global接口 ------------------------------------------ */
+
+const global = {
+  test: {
+    requestType: "AXQUERYQUESTIONS",
+    requestDesc: "用于测试的接口"
+  },
+  getIp: {
+    requestPath: "https://wxd.rhassurance.com/com.ifp.ipartner/weixin/ip?",
+    requestDesc: "获取用户ip"
+  },
+  queryAgencyList: {
+    requestType: "AXWECHATQUERYAGENCYBYNAME",
+    requestDesc: "模糊查询银行网点"
+  },
+  queryNextLevalAgencyList: {
+    requestType: "AXWECHATQUERYAGENCYLIST",
+    requestDesc: "查询下一级银行网点"
+  },
+  getValiCode: {
+    requestType: "AXMSGVERIFICAT",
+    requestDesc: "发送短信验证码"
+  },
+  valiValiCode: {
+    requestType: "AXMSGVERIFICAT",
+    requestDesc: "验证短信验证码"
+  },
+  codeVersion: {
+    requestPath: "cdCodeVersion/queryCdCodeVersionList",
+    requestDesc: "字典码表版本号查询"
+  },
+  code: {
+    requestType: "QUERYALLDICTDATA",
+    requestDesc: "字典码表查询"
+  },
+  area: {
+    requestType: "QUERYAREA",
+    requestDesc: "地区码表查询"
+  },
+  job: {
+    requestType: "QUERYOCCUPTION",
+    requestDesc: "职业码表查询"
+  }
+};
+
+export default global;

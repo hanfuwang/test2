@@ -1,0 +1,95 @@
+<template>
+  <Page class="wx-access"></Page>
+</template>
+
+<script>
+export default {
+  name: "wxAccess",
+  data() {
+    return {};
+  },
+  computed: {},
+  created() {
+    // 验证页面，防止非法进入
+    const vali = this.valiPage();
+    if (vali.state) {
+      // 验证通过，走access方法
+      this.access();
+    } else {
+      // 验证不通过，跳转到非法页面
+      this.$router.replace({
+        name: "illegalRequest",
+        query: {
+          msg: vali.msg
+        }
+      });
+    }
+  },
+  methods: {
+    // 验证页面，防止非法进入
+    valiPage() {
+      // 验证对象
+      const vali = {
+        state: true,
+        msg: []
+      };
+      // 检查链接参数
+      if (!this.haveQueryParam("openId")) {
+        vali.state = false;
+        vali.msg.push("[WXACCESS]缺少openId参数，请检查链接");
+      }
+      if (!this.haveQueryParam("path")) {
+        vali.state = false;
+        vali.msg.push("[WXACCESS]缺少path参数，请检查链接");
+      }
+      vali.msg = vali.msg.join("；");
+      return vali;
+    },
+    // 检查查询参数中是否包含某项
+    haveQueryParam(param) {
+      const query = this.$route.query;
+      return query[param];
+    },
+    // 微信进入授权：获取openId
+    async access() {
+      // 码表检测更新
+      const updateResult = await utils.code.updateCode();
+      if (updateResult.errMsg) {
+        // 码表检测更新报错
+        utils.ui.tips({
+          msg: updateResult.errMsg,
+          type: "error"
+        });
+        return;
+      }
+
+      const openId = this.$route.query.openId;
+      const path = this.$route.query.path;
+
+      // openId塞入store
+      this.$store.commit("user/setState", {
+        attr: "openId",
+        data: openId
+      });
+
+      // 根据openId获取用户信息
+      const userInfo = await this.$store
+        .dispatch("user/getUserInfoByOpenId")
+        .catch(() => {});
+      if (userInfo) {
+        // 根据path跳转到对应的页面
+        this.$router.replace({
+          name: path
+        });
+      } else {
+        // 查不到用户信息，说明没绑定openId，进入登陆页面
+        this.$router.replace({
+          name: "login"
+        });
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped></style>

@@ -1,0 +1,215 @@
+<template>
+  <page class="demo-form">
+    <ValiForm ref="valiForm">
+      <FormInput
+        v-model="form.name"
+        label="姓名"
+        placeholder="请输入姓名"
+        :rules="formRules.name"
+      ></FormInput>
+      <FormRadio
+        v-model="form.sex"
+        label="性别"
+        :rules="formRules.sex"
+        :selectList="sexSelectList"
+      ></FormRadio>
+      <FormDatepicker
+        label="生日"
+        placeholder="请选择生日"
+        v-model="form.birthday"
+        :rules="formRules.birthday"
+      ></FormDatepicker>
+      <FormPwd
+        v-model="form.password"
+        label="密码"
+        placeholder="请输入密码"
+        :rules="formRules.password"
+        needPwdIcon
+      ></FormPwd>
+      <FormInput
+        type="tel"
+        v-model="form.mobile"
+        label="手机号"
+        placeholder="请输入手机号"
+        :rules="formRules.mobile"
+      ></FormInput>
+      <FormInput
+        type="tel"
+        v-model="form.agentCode"
+        label="工号"
+        :rules="formRules.agentCode"
+        disabled
+      ></FormInput>
+      <FormInput
+        type="tel"
+        v-model="form.intro"
+        label="推荐人"
+        placeholder="如有，请输入其工号"
+      ></FormInput>
+      <FormNumVali v-model="form.valiCode" :mobile="form.mobile" label="验证码">
+      </FormNumVali>
+      <FormBankWebsite
+        :bankWebsite="bankWebsite"
+        label="所属机构"
+        placeholder="请选择银行网点"
+        :rules="formRules.bankWebsite"
+        ref="fbws"
+      ></FormBankWebsite>
+    </ValiForm>
+
+    <button class="submit-btn" @click="submitForm">提交</button>
+  </page>
+</template>
+
+<script>
+import ValiForm from "@/components/common/form/ValiForm";
+import FormInput from "@/components/common/form/FormInput";
+import FormRadio from "@/components/common/form/FormRadio";
+import FormNumVali from "@/components/common/form/FormNumVali";
+import FormPwd from "@/components/common/form/FormPwd";
+import FormDatepicker from "@/components/common/form/FormDatepicker";
+import FormBankWebsite from "@/components/common/form/FormBankWebsite";
+export default {
+  name: "demoForm",
+  components: {
+    ValiForm,
+    FormInput,
+    FormRadio,
+    FormNumVali,
+    FormPwd,
+    FormDatepicker,
+    FormBankWebsite
+  },
+  data() {
+    return {
+      // form表单
+      form: {
+        name: "",
+        sex: "M",
+        birthday: "",
+        mobile: "",
+        password: "",
+        agentCode: "A201908",
+        valiCode: "",
+        intro: "",
+        bankWebsite: ""
+      },
+      // 银行网点对象
+      bankWebsite: {
+        bankId: "",
+        bankName: ""
+      },
+      // 校验规则
+      formRules: {
+        name: [
+          {
+            regExp: "require",
+            msg: "姓名不能为空"
+          },
+          {
+            regExp: "chinese",
+            msg: "姓名必须由汉字组成"
+          },
+          {
+            regExp: /^.{2,10}$/,
+            msg: "姓名长度必须在2~10字符之内"
+          },
+          {
+            regExp: val => {
+              const month = new Date().getMonth() + 1;
+              if (month > 7 && !val.startsWith("七")) {
+                return false;
+              }
+              return true;
+            },
+            msg: "7月份以后注册的姓名必须以七开头"
+          }
+        ],
+        sex: [
+          {
+            regExp: "require",
+            msg: "性别不能为空"
+          }
+        ],
+        birthday: [
+          {
+            regExp: "require",
+            msg: "生日不能为空"
+          }
+        ],
+        mobile: [
+          {
+            regExp: "require",
+            msg: "手机号不能为空"
+          },
+          {
+            regExp: "mobile",
+            msg: "请输入正确的手机号"
+          }
+        ],
+        password: [
+          {
+            regExp: "require",
+            msg: "密码不能为空"
+          },
+          {
+            regExp: "pwd",
+            msg: "请输入6~20位的密码"
+          }
+        ],
+        agentCode: [
+          {
+            regExp: "require",
+            msg: "工号不能为空"
+          }
+        ],
+        bankWebsite: [
+          {
+            regExp: "require",
+            msg: "银行网点不能为空"
+          }
+        ]
+      },
+      // 码表
+      sexSelectList: globalCode.sex
+    };
+  },
+  beforeRouteLeave(to, from, next) {
+    if (this.$refs.fbws.showSelector) {
+      // 银行网点选择器打开，先关闭
+      this.$refs.fbws.close();
+      next(false);
+    } else {
+      next();
+    }
+  },
+  methods: {
+    submitForm() {
+      // 获取form的验证对象
+      const vali = this.$refs.valiForm.getVali();
+      if (!vali.status) {
+        utils.ui.confirm(vali.unlegalValiList[0].msg);
+      } else {
+        utils.ui.confirm("提交成功");
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "@/assets/css/demo/index.scss";
+.submit-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  display: block;
+  width: 246px;
+  height: 38px;
+  margin: 20px auto;
+  background: $color-theme;
+  border-radius: 19px;
+  font-size: 18px;
+  color: #333333;
+}
+</style>

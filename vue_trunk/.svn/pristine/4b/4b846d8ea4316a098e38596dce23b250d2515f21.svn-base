@@ -1,0 +1,104 @@
+<template>
+  <page class="user-info">
+    <!-- 用户信息 -->
+    <section class="info-wrap">
+      <!-- 姓名 -->
+      <FormInput v-model="userInfo.aName" label="姓名" disabled></FormInput>
+      <!-- 性别 -->
+      <FormRadio
+        v-model="userInfo.aSex"
+        label="性别"
+        :selectList="sexSelectList"
+        disabled
+      ></FormRadio>
+      <!-- 生日 -->
+      <FormDatepicker
+        label="生日"
+        v-model="userInfo.aBirthday"
+      ></FormDatepicker>
+      <!-- 工号 -->
+      <FormInput
+        v-model="userInfo.aAgentCode"
+        label="工号"
+        disabled
+      ></FormInput>
+      <!-- 所属机构 -->
+      <FormBankWebsite
+        :bankWebsite="bankWebsite"
+        label="所属机构"
+        placeholder="请选择所属机构"
+      ></FormBankWebsite>
+      <!-- 手机号 -->
+      <FormInput
+        v-model="userInfo.aMobile"
+        label="手机号"
+        :iconSrc="arrowRightIconSrc"
+        :iconWidth="7"
+        @formInputClick="goToChangeMobile"
+        @iconClick="goToChangeMobile"
+        disabled
+      ></FormInput>
+    </section>
+
+    <!-- 保存按钮 -->
+    <button class="save theme-btn">保存</button>
+  </page>
+</template>
+
+<script>
+import FormInput from "@/components/common/form/FormInput";
+import FormRadio from "@/components/common/form/FormRadio";
+import FormDatepicker from "@/components/common/form/FormDatepicker";
+import FormBankWebsite from "@/components/common/form/FormBankWebsite";
+export default {
+  name: "userInfo",
+  components: {
+    FormInput,
+    FormRadio,
+    FormDatepicker,
+    FormBankWebsite
+  },
+  data() {
+    return {
+      // 个人信息对象
+      userInfo: {
+        aName: "李现", // 姓名
+        aSex: "M", // 性别
+        aBirthday: "1989-01-31", // 生日
+        aAgentCode: "89323", // 工号
+        aMobile: "18932210572"
+      },
+      // 银行网点对象
+      bankWebsite: {
+        bankId: "",
+        bankName: "光大银行北京分行"
+      },
+      // 码表
+      sexSelectList: globalCode.sex,
+      arrowRightIconSrc: require("@/assets/imgs/common/icon/icon_arrow_right.png") // 右箭头图标
+    };
+  },
+  computed: {},
+  mounted() {},
+  methods: {
+    // 跳转到修改手机页面
+    goToChangeMobile() {
+      this.go(`/user/ChangeMobile?mobile=${this.userInfo.aMobile}`);
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.user-info {
+  padding-top: 10px;
+}
+.info-wrap {
+  margin-bottom: 30px;
+  /deep/ .f-label {
+    .label {
+      margin-left: -10px;
+    }
+  }
+}
+</style>

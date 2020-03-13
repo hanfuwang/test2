@@ -6,7 +6,7 @@
         slot="left"
         src="../../assets/imgs/common/icon/icon_back.png"
         class="icon icon-back"
-        @click="back()"
+        @click="back()"      
       />
       <template slot="center">
         基本信息

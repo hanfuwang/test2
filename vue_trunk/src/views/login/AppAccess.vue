@@ -1,7 +1,7 @@
 <template>
   <Page class="app-access"></Page>
 </template>
-11
+1111
 <script>
 import { setGlobalConfigUi } from "@/plugins/modules/globalListener";
 export default {

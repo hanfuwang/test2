@@ -1,7 +1,7 @@
 <template>
   <Page class="app-access"></Page>
 </template>
-<script>
+<script>   
 import { setGlobalConfigUi } from "@/plugins/modules/globalListener";
 export default {
   name: "appAccess",

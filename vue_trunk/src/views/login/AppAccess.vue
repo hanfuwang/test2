@@ -1,6 +1,5 @@
 <template>
   <Page class="app-access"></Page>
-  111111
 </template>
 <script>   
 import { setGlobalConfigUi } from "@/plugins/modules/globalListener";
